@@ -18,8 +18,14 @@ All Stash code lives in this single repository. See `docs/architecture/Stash_Fol
 
 ## Getting Started (Backend)
 
+Requires JDK 21 or newer.
+
 ```bash
-mvn clean install   # builds all Java modules
+# Windows
+.\mvnw.cmd clean install
+
+# macOS/Linux
+./mvnw clean install
 ```
 
 ## Reference

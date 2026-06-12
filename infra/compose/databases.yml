@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: ${MONOLITH_DB_USER}
       POSTGRES_PASSWORD: ${MONOLITH_DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5436:5432"
     volumes:
       - monolith-db-data:/var/lib/postgresql/data
     healthcheck:

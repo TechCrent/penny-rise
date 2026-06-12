@@ -4,9 +4,9 @@
 
 include:
   - infra/compose/databases.yml
+  - infra/compose/messaging.yml
 
 # Future includes added here as later issues complete:
-#   - infra/compose/messaging.yml       (v0.1-004)
 #   - infra/compose/stubs.yml           (v0.1-xxx)
 #   - infra/compose/storage.yml         (v0.1-xxx)
 #   - infra/compose/email.yml           (v0.1-xxx)

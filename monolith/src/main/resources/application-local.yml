@@ -1,0 +1,7 @@
+# Local development overrides.
+# Activated by: SPRING_PROFILES_ACTIVE=local
+# All sensitive values come from environment variables — never hardcode here.
+
+spring:
+  jpa:
+    show-sql: true

@@ -1,5 +1,6 @@
 package com.stash.shared.apierrors;
 
+import com.stash.shared.correlation.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -41,7 +42,6 @@ import java.util.UUID;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-    private static final String CORRELATION_HEADER = "X-Correlation-Id";
 
     // ── Domain exceptions ──────────────────────────────────────────────────
 
@@ -203,7 +203,11 @@ public class GlobalExceptionHandler {
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private String correlationId(HttpServletRequest request) {
-        String header = request.getHeader(CORRELATION_HEADER);
+        String fromContext = CorrelationContext.get();
+        if (fromContext != null && !fromContext.isBlank()) {
+            return fromContext;
+        }
+        String header = request.getHeader(CorrelationContext.HEADER);
         return (header != null && !header.isBlank()) ? header : UUID.randomUUID().toString();
     }
 }

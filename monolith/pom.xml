@@ -81,6 +81,10 @@
             <groupId>com.stash</groupId>
             <artifactId>time</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stash</groupId>
+            <artifactId>api-errors</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

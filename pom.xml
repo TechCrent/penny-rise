@@ -17,6 +17,7 @@
         <module>shared/money</module>
         <module>shared/time</module>
         <module>shared/events-java</module>
+        <module>shared/api-errors</module>
 
         <!-- Backend services -->
         <module>monolith</module>
@@ -61,6 +62,11 @@
             <dependency>
                 <groupId>com.stash</groupId>
                 <artifactId>events-java</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.stash</groupId>
+                <artifactId>api-errors</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

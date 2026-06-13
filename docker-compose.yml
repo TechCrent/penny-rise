@@ -5,6 +5,8 @@
 include:
   - infra/compose/databases.yml
   - infra/compose/messaging.yml
+  # Uncomment to enable local Prometheus + Grafana:
+  # - infra/compose/observability.yml
 
 # Future includes added here as later issues complete:
 #   - infra/compose/stubs.yml           (v0.1-xxx)

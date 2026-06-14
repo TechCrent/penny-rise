@@ -73,6 +73,10 @@
             <groupId>com.stash</groupId>
             <artifactId>uuid-v7</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stash</groupId>
+            <artifactId>money</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

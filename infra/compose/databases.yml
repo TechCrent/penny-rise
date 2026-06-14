@@ -32,7 +32,7 @@ services:
       POSTGRES_USER: ${PAYMENTS_DB_USER}
       POSTGRES_PASSWORD: ${PAYMENTS_DB_PASSWORD}
     ports:
-      - "5433:5432"
+      - "15433:5432"
     volumes:
       - payments-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -41,6 +41,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    # Note: host port 15433 (not 5433) — avoids collision with native PostgreSQL on Windows that owns 5433.
+    # Container still listens on 5432 internally.
 
   kyc-db:
     image: postgres:16

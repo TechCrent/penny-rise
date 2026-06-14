@@ -1,17 +1,52 @@
 spring:
   application:
-    name: payments-service
+    name: stash-payments
+
+  config:
+    import: optional:file:../.env[.properties]
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/stash_payments
-    username: stash
-    password: stash
+    url: jdbc:postgresql://${PAYMENTS_DB_HOST:localhost}:${PAYMENTS_DB_PORT:15433}/${PAYMENTS_DB_NAME:payments_db}
+    username: ${PAYMENTS_DB_USER}
+    password: ${PAYMENTS_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 10
+      pool-name: PaymentsHikariPool
+
   jpa:
     hibernate:
       ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
     open-in-view: false
+
   flyway:
     enabled: true
+    locations:
+      - classpath:db/migration/ledger
+      - classpath:db/migration/transaction
+      - classpath:db/migration/outbox
+      - classpath:db/migration/webhook
+      - classpath:db/migration/idempotency
     baseline-on-migrate: true
+    baseline-version: 0
+    out-of-order: false
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: stash
+
+  jackson:
+    time-zone: UTC
 
 server:
   port: 8081
@@ -20,7 +55,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always

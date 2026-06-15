@@ -20,6 +20,10 @@
             <groupId>com.stash</groupId>
             <artifactId>api-errors</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

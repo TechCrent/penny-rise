@@ -81,3 +81,5 @@ springdoc:
     enabled: true
     tags-sorter: alpha
     operations-sorter: alpha
+logging:
+  config: classpath:logback-spring.xml

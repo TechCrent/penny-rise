@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <!--
+    Structured JSON logging for the Stash platform.
+    System Design §8.1: one JSON object per line, stdout only.
+
+    Required fields: timestamp, level, service, logger, message
+    MDC fields (when set): correlation_id, user_id
+    Sensitive fields blocked: password, token, ghana_card_number
+  -->
+
+  <!-- Service identity — overridden per service -->
+  <springProperty name="SERVICE_NAME" source="spring.application.name"
+                  defaultValue="stash-unknown"/>
+
+  <!-- Register the masking converter -->
+  <conversionRule conversionWord="maskedMsg"
+      converterClass="com.stash.shared.logging.MaskingConverter"/>
+
+  <!-- ── Production profile: JSON to stdout ──────────────────────────── -->
+
+  <springProfile name="!local">
+    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <!-- Rename default fields to match §8.1 schema -->
+        <fieldNames>
+          <timestamp>timestamp</timestamp>
+          <message>message</message>
+          <logger>logger</logger>
+          <level>level</level>
+          <levelValue>[ignore]</levelValue>
+          <version>[ignore]</version>
+        </fieldNames>
+
+        <!-- Timestamp in ISO 8601 with ms, UTC -->
+        <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+        <timeZone>UTC</timeZone>
+
+        <!-- Include MDC fields — correlation_id and user_id come from here -->
+        <includeMdc>true</includeMdc>
+
+        <!-- Static service field on every line -->
+        <customFields>{"service":"${SERVICE_NAME}"}</customFields>
+
+        <!-- Strip stack traces from JSON body — they appear in stackTrace field -->
+        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+          <maxDepthPerCause>10</maxDepthPerCause>
+          <rootCauseFirst>true</rootCauseFirst>
+        </throwableConverter>
+      </encoder>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="STDOUT_JSON"/>
+    </root>
+
+    <!-- Quiet noisy Spring internals in prod -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="org.flywaydb" level="INFO"/>
+  </springProfile>
+
+  <!-- ── Local/dev profile: human-readable to stdout ───────────────────── -->
+
+  <springProfile name="local">
+    <appender name="STDOUT_PLAIN" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%X{correlation_id:-no-corr})] %logger{36} - %maskedMsg%n</pattern>
+      </encoder>
+    </appender>
+
+    <root level="DEBUG">
+      <appender-ref ref="STDOUT_PLAIN"/>
+    </root>
+
+    <!-- Suppress very noisy loggers even in local -->
+    <logger name="org.springframework.web.servlet.mvc.method" level="WARN"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="com.zaxxer.hikari" level="INFO"/>
+  </springProfile>
+
+</configuration>

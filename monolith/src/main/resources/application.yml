@@ -46,8 +46,17 @@ spring:
     password: ${RABBITMQ_PASSWORD}
     virtual-host: stash
 
+  mvc:
+    problemdetails:
+      enabled: false
+
 server:
   port: 8080
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
 management:
   endpoints:

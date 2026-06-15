@@ -11,7 +11,10 @@ spring:
     password: ${MONOLITH_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      connection-timeout: 20000
+      connection-timeout: 3000
+      validation-timeout: 2000
+      keepalive-time: 30000
+      max-lifetime: 600000
       maximum-pool-size: 10
       pool-name: MonolithHikariPool
 
@@ -69,11 +72,23 @@ management:
       show-details: always
       probes:
         enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
     prometheus:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    db:
       enabled: true
   metrics:
     tags:
-      service: stash-monolith
+      service: ${spring.application.name}
     enable:
       jvm: true
       process: true

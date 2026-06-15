@@ -2,8 +2,11 @@ spring:
   application:
     name: stash-monolith
 
+  config:
+    import: optional:file:../.env[.properties]
+
   datasource:
-    url: jdbc:postgresql://${MONOLITH_DB_HOST:localhost}:${MONOLITH_DB_PORT:5432}/${MONOLITH_DB_NAME:monolith_db}
+    url: jdbc:postgresql://${MONOLITH_DB_HOST:localhost}:${MONOLITH_DB_PORT:5436}/${MONOLITH_DB_NAME:monolith_db}
     username: ${MONOLITH_DB_USER}
     password: ${MONOLITH_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -54,3 +57,13 @@ management:
   endpoint:
     health:
       show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha

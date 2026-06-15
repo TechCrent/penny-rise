@@ -1,0 +1,55 @@
+# infra/compose/observability.yml
+# Optional local observability stack: Prometheus + Grafana.
+# Off by default — include only when working on metrics.
+#
+# Usage:
+#   docker compose --profile observability up -d
+#
+# Prometheus UI: http://localhost:9090
+# Grafana UI:    http://localhost:3000  (admin / admin)
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: stash-prometheus
+    restart: unless-stopped
+    profiles:
+      - observability
+    ports:
+      - "9090:9090"
+    volumes:
+      - type: bind
+        source: ./infra/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: stash-grafana
+    restart: unless-stopped
+    profiles:
+      - observability
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - type: bind
+        source: ./infra/grafana/provisioning
+        target: /etc/grafana/provisioning
+        read_only: true
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:

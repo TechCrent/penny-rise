@@ -17,6 +17,7 @@
         <module>shared/money</module>
         <module>shared/time</module>
         <module>shared/events-java</module>
+        <module>shared/api-errors</module>
 
         <!-- Backend services -->
         <module>monolith</module>
@@ -63,12 +64,22 @@
                 <artifactId>events-java</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.stash</groupId>
+                <artifactId>api-errors</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>3.25.3</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>7.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

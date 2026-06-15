@@ -55,8 +55,17 @@ spring:
   jackson:
     time-zone: UTC
 
+  mvc:
+    problemdetails:
+      enabled: false
+
 server:
   port: 8082
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
 management:
   endpoints:
@@ -66,3 +75,6 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  config: classpath:logback-spring.xml

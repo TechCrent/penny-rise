@@ -18,6 +18,12 @@ node_modules/
 dist/
 .expo/
 
+# Mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/.env.local
+
 # Environment
 .env
 **/.env

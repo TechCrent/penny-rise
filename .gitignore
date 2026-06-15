@@ -24,6 +24,11 @@ mobile/.expo/
 mobile/dist/
 mobile/.env.local
 
+# Admin console
+admin-console/node_modules/
+admin-console/dist/
+admin-console/.env.local
+
 # Environment
 .env
 **/.env

@@ -1,0 +1,10 @@
+# Production profile overrides.
+#
+# Swagger UI and the raw OpenAPI spec are disabled in production —
+# they must never be reachable on a hosted environment.
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

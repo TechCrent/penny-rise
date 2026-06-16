@@ -112,5 +112,14 @@ management:
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
 logging:
   config: classpath:logback-spring.xml

@@ -1,6 +1,7 @@
 {
   "name": "@stash/mobile",
   "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
   "main": "index.ts",
   "scripts": {
     "start": "cross-env CI=false expo start --port 19000 --lan",

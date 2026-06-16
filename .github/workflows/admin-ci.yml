@@ -1,0 +1,63 @@
+name: Admin Console CI
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'admin-console/**'
+      - '.github/workflows/admin-ci.yml'
+  pull_request:
+    paths:
+      - 'admin-console/**'
+      - '.github/workflows/admin-ci.yml'
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & TypeScript Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('admin-console/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        working-directory: admin-console
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        working-directory: admin-console
+        run: pnpm lint
+
+      - name: Check Prettier formatting
+        working-directory: admin-console
+        run: pnpm format:check
+
+      - name: TypeScript compile check
+        working-directory: admin-console
+        run: pnpm typecheck
+
+      - name: Build
+        working-directory: admin-console
+        run: pnpm build

@@ -1,0 +1,123 @@
+spring:
+  application:
+    name: stash-audit
+
+  config:
+    import: optional:file:../.env[.properties]
+
+  datasource:
+    url: jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5435}/${AUDIT_DB_NAME:audit_db}
+    username: ${AUDIT_DB_USER}
+    password: ${AUDIT_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 3000
+      validation-timeout: 2000
+      keepalive-time: 30000
+      max-lifetime: 600000
+      maximum-pool-size: 5
+      pool-name: AuditHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations:
+      - classpath:db/migration/audit
+    baseline-on-migrate: true
+    baseline-version: 0
+    out-of-order: false
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
+    virtual-host: stash
+    listener:
+      simple:
+        # Placeholder: no active listeners yet — queues declared but no @RabbitListener beans.
+        # Consumer will be wired in when audit_log_entries schema is ready (v0.2+).
+        auto-startup: true
+        acknowledge-mode: manual
+        prefetch: 10
+
+  jackson:
+    time-zone: UTC
+
+  mvc:
+    problemdetails:
+      enabled: false
+
+server:
+  port: 8083
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,rabbit
+    prometheus:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    db:
+      enabled: true
+    rabbit:
+      enabled: true
+  metrics:
+    tags:
+      service: stash-audit
+    enable:
+      jvm: true
+      process: true
+      system: true
+      hikaricp: true
+      http:
+        server:
+          requests: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+logging:
+  config: classpath:logback-spring.xml

@@ -1,0 +1,14 @@
+# docker-compose.yml  (repo root)
+# Main entry point: docker compose up
+# Delegates to infra/compose/ include files for each concern.
+
+include:
+  - infra/compose/databases.yml
+  - infra/compose/messaging.yml
+  # Uncomment to enable local Prometheus + Grafana:
+  # - infra/compose/observability.yml
+
+# Future includes added here as later issues complete:
+#   - infra/compose/stubs.yml           (v0.1-xxx)
+#   - infra/compose/storage.yml         (v0.1-xxx)
+#   - infra/compose/email.yml           (v0.1-xxx)

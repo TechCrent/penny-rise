@@ -1,0 +1,89 @@
+# infra/compose/databases.yml
+# Four isolated Postgres 16 databases — one per backend service.
+# Included from the repo-root docker-compose.yml.
+
+services:
+
+  monolith-db:
+    image: postgres:16
+    container_name: stash-monolith-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: monolith_db
+      POSTGRES_USER: ${MONOLITH_DB_USER}
+      POSTGRES_PASSWORD: ${MONOLITH_DB_PASSWORD}
+    ports:
+      - "5436:5432"
+    volumes:
+      - monolith-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MONOLITH_DB_USER} -d monolith_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  payments-db:
+    image: postgres:16
+    container_name: stash-payments-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: payments_db
+      POSTGRES_USER: ${PAYMENTS_DB_USER}
+      POSTGRES_PASSWORD: ${PAYMENTS_DB_PASSWORD}
+    ports:
+      - "15433:5432"
+    volumes:
+      - payments-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PAYMENTS_DB_USER} -d payments_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Note: host port 15433 (not 5433) — avoids collision with native PostgreSQL on Windows that owns 5433.
+    # Container still listens on 5432 internally.
+
+  kyc-db:
+    image: postgres:16
+    container_name: stash-kyc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kyc_db
+      POSTGRES_USER: ${KYC_DB_USER}
+      POSTGRES_PASSWORD: ${KYC_DB_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - kyc-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KYC_DB_USER} -d kyc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  audit-db:
+    image: postgres:16
+    container_name: stash-audit-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: audit_db
+      POSTGRES_USER: ${AUDIT_DB_USER}
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - audit-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUDIT_DB_USER} -d audit_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  monolith-db-data:
+  payments-db-data:
+  kyc-db-data:
+  audit-db-data:

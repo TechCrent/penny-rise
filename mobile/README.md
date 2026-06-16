@@ -1,6 +1,6 @@
 # Stash Mobile App
 
-React Native + Expo (SDK 56) customer app for the Stash savings platform.
+React Native + Expo (SDK 54) customer app for the Stash savings platform.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ React Native + Expo (SDK 56) customer app for the Stash savings platform.
 | Expo CLI | latest | `npm install -g expo-cli` |
 | iOS Simulator | Xcode 15+ | Mac only — App Store |
 | Android Emulator | Android Studio | https://developer.android.com/studio |
-| Expo Go (SDK 56) | SDK 56 | **Not** Play Store — install from https://expo.dev/go |
+| Expo Go (SDK 54) | SDK 54 | Play Store / App Store, or https://expo.dev/go |
 
 ## Setup
 
@@ -35,14 +35,14 @@ pnpm android
 
 **Expo Go (physical device):**
 
-This project uses **Expo SDK 56**. The Play Store / App Store Expo Go app is still on an older SDK and **cannot load this project** (you may see `Failed to download remote update`).
+This project uses **Expo SDK 54**, which matches the current Play Store / App Store Expo Go app.
 
-1. On your phone, open https://expo.dev/go → **SDK 56** → **Android** → **Install** (direct APK, not Play Store).
+1. Install **Expo Go** from the Play Store or App Store (SDK 54).
 2. Start Metro (port 19000 avoids backend port clashes):
 
 ```bash
 pnpm start
-# Scan the QR code with the SDK 56 Expo Go you installed
+# Scan the QR code with Expo Go
 ```
 
 If the phone cannot reach your PC over Wi‑Fi, use the tunnel:

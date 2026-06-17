@@ -42,6 +42,18 @@ spring:
     baseline-version: 0
     out-of-order: false
 
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -114,3 +126,13 @@ springdoc:
     operations-sorter: alpha
 logging:
   config: classpath:logback-spring.xml
+
+stash:
+  email:
+    # Switch between Resend (production) and SMTP (local/staging)
+    # Set STASH_EMAIL_PROVIDER=resend to use Resend; default uses SMTP
+    provider: ${STASH_EMAIL_PROVIDER:smtp}
+    from-address: ${STASH_EMAIL_FROM:noreply@stash.local}
+    from-name: ${STASH_EMAIL_FROM_NAME:Stash}
+    resend-api-key: ${RESEND_API_KEY:}
+    base-url: ${STASH_BASE_URL:http://localhost:8080}

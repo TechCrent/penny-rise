@@ -5,3 +5,10 @@
 spring:
   jpa:
     show-sql: true
+
+stash:
+  email:
+    provider: smtp
+    from-address: noreply@stash.local
+    from-name: Stash (Local)
+    base-url: http://localhost:8080

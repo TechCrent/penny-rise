@@ -5,3 +5,7 @@
 spring:
   jpa:
     show-sql: true
+
+stash:
+  security:
+    bcrypt-cost: 12

@@ -1,4 +1,5 @@
--- Migration: V1__create_auth_refresh_tokens.sql
+-- Migration: V2__create_auth_refresh_tokens.sql
+-- Flyway version 2: V1 is user_module.users (v0.2-001). Versions are global across all locations.
 -- Creates the auth schema and refresh_tokens table per Schema doc §1.1.
 --
 -- Design decisions:
@@ -21,7 +22,7 @@
 --     requires a forward migration — intentional friction to keep the
 --     vocabulary stable.
 --
--- Rollback strategy: forward-only. Write a V2 corrective migration if needed.
+-- Rollback strategy: forward-only. Write a forward corrective migration if needed.
 
 -- ── Schema ─────────────────────────────────────────────────────────────────
 

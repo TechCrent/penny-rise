@@ -1,5 +1,5 @@
-
--- Migration: V4__create_deletion_requests.sql
+-- Migration: V5__create_deletion_requests.sql
+-- Flyway version 5: V4 is password_reset_tokens (v0.2-005). See MIGRATIONS.md.
 -- Creates user_module.deletion_requests per Schema doc §1.4.
 --
 -- Design decisions:
@@ -88,53 +88,3 @@ COMMENT ON COLUMN user_module.deletion_requests.scheduled_completion_at IS
 COMMENT ON COLUMN user_module.deletion_requests.cancelled_at IS
     'Set when the user cancels during the 30-day cool-off. '
     'Status moves to CANCELLED; the user resumes normal account usage.';
----Step 2 — Run the migration
-cd monolith
-mvn spring-boot:run
-Expected:
-o.f.core.internal.command.DbMigrate : Migrating schema "user_module" to version "4 - create deletion requests"
-o.f.core.internal.command.DbMigrate : Successfully applied 1 migration
----Step 3 — Verify in psql
-docker exec -it stash-monolith-db psql -U stash_monolith -d monolith_db
-\d user_module.deletion_requests
-
-SELECT indexname, indexdef
-FROM pg_indexes
-WHERE tablename = 'deletion_requests'
-  AND schemaname = 'user_module';
----Step 4 — Verify the partial index is used by the query planner
-Seed a test row and run EXPLAIN:
--- Insert a test user
-INSERT INTO user_module.users (id, email, password_hash, display_name)
-VALUES ('018f3a2b-3c4d-7e8f-9a0b-1c2d3e4f5abc', 'del-test@stash.com', 'hash', 'Del Test');
-
--- Insert a PENDING deletion request due in the past (simulating a due row)
-INSERT INTO user_module.deletion_requests
-    (id, user_id, status, scheduled_completion_at)
-VALUES (
-    '018f3a2b-3c4d-7e8f-9a0b-1c2d3e4f5001',
-    '018f3a2b-3c4d-7e8f-9a0b-1c2d3e4f5abc',
-    'PENDING',
-    NOW() - INTERVAL '1 day'   -- already due
-);
-
--- Insert a COMPLETED request (should NOT appear in index)
-INSERT INTO user_module.deletion_requests
-    (id, user_id, status, scheduled_completion_at, completed_at)
-VALUES (
-    '018f3a2b-3c4d-7e8f-9a0b-1c2d3e4f5002',
-    '018f3a2b-3c4d-7e8f-9a0b-1c2d3e4f5abc',
-    'COMPLETED',
-    NOW() - INTERVAL '5 days',
-    NOW() - INTERVAL '1 day'
-);
-
--- The cleanup job's query — verify the partial index is used
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT id, user_id, scheduled_completion_at
-FROM user_module.deletion_requests
-WHERE status = 'PENDING'
-  AND scheduled_completion_at <= NOW();
-Look for Index Scan using deletion_requests_cleanup_job_idx in the EXPLAIN output — this confirms the partial index is being used.
--- Clean up
-DELETE FROM user_module.users WHERE id = '018f3a2b-3c4d-7e8f-9a0b-1c2d3e4f5abc';

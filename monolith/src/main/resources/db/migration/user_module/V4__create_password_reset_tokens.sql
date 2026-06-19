@@ -1,4 +1,5 @@
--- Migration: V3__create_password_reset_tokens.sql
+-- Migration: V4__create_password_reset_tokens.sql
+-- Flyway version 4: after V3 email_verification_tokens (v0.2-004).
 -- Creates user_module.password_reset_tokens.
 --
 -- This table is not explicitly in Schema doc §1 as originally published

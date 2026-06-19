@@ -125,3 +125,4 @@ stash:
       # Empty by default; populated during quarterly key rotation.
       verification-keys: ${JWT_VERIFICATION_KEYS:}
       access-token-expiry-minutes: 15
+    bcrypt-cost: 12

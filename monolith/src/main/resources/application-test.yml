@@ -1,0 +1,3 @@
+stash:
+  security:
+    bcrypt-cost: 4   # low cost for fast unit tests — NEVER use in production

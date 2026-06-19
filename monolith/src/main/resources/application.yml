@@ -114,3 +114,15 @@ springdoc:
     operations-sorter: alpha
 logging:
   config: classpath:logback-spring.xml
+
+stash:
+  security:
+    jwt:
+      # Active signing key — base64-encoded HS256 secret (min 32 bytes decoded)
+      # In production this comes from the secret manager, never from this file.
+      signing-key: ${JWT_SIGNING_KEY}
+      # Previous signing keys still accepted during rotation window (comma-separated)
+      # Empty by default; populated during quarterly key rotation.
+      verification-keys: ${JWT_VERIFICATION_KEYS:}
+      access-token-expiry-minutes: 15
+    bcrypt-cost: 12

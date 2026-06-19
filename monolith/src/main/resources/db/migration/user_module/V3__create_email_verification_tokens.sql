@@ -1,5 +1,6 @@
 
--- Migration: V2__create_email_verification_tokens.sql
+-- Migration: V3__create_email_verification_tokens.sql
+-- Flyway version 3: V1 user_module.users (v0.2-001), V2 auth.refresh_tokens (v0.2-003).
 -- Creates user_module.email_verification_tokens per Schema doc §1.3.
 --
 -- Design decisions:

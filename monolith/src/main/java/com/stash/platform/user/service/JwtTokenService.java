@@ -130,13 +130,12 @@ public class JwtTokenService {
 
         for (SecretKey key : allVerificationKeys) {
             try {
-                Claims claims = Jwts.parser()
+                Jws<Claims> jws = Jwts.parser()
                         .verifyWith(key)
                         .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
+                        .parseSignedClaims(token);
 
-                return extractClaims(claims);
+                return extractClaims(jws);
 
             } catch (ExpiredJwtException e) {
                 // Expiry is definitive — no need to try other keys
@@ -155,16 +154,17 @@ public class JwtTokenService {
 
     // ── Private helpers ───────────────────────────────────────────────────
 
-    private AccessTokenClaims extractClaims(Claims claims) {
+    private AccessTokenClaims extractClaims(Jws<Claims> jws) {
+        Claims claims = jws.getPayload();
         String sub = claims.getSubject();
         if (sub == null || sub.isBlank()) {
-            throw new MissingClaimException(claims.getHeader(), claims, "sub",
-                    "Missing required claim: sub", null);
+            throw new MissingClaimException(jws.getHeader(), claims, "sub", null,
+                    "Missing required claim: sub");
         }
 
-        String kycStatusStr        = requireClaim(claims, CLAIM_KYC_STATUS);
-        String subscriptionTierStr = requireClaim(claims, CLAIM_SUBSCRIPTION_TIER);
-        String accountStatusStr    = requireClaim(claims, CLAIM_ACCOUNT_STATUS);
+        String kycStatusStr        = requireClaim(jws, CLAIM_KYC_STATUS);
+        String subscriptionTierStr = requireClaim(jws, CLAIM_SUBSCRIPTION_TIER);
+        String accountStatusStr    = requireClaim(jws, CLAIM_ACCOUNT_STATUS);
 
         try {
             return new AccessTokenClaims(
@@ -178,11 +178,12 @@ public class JwtTokenService {
         }
     }
 
-    private String requireClaim(Claims claims, String claimName) {
+    private String requireClaim(Jws<Claims> jws, String claimName) {
+        Claims claims = jws.getPayload();
         Object value = claims.get(claimName);
         if (value == null) {
-            throw new MissingClaimException(claims.getHeader(), claims, claimName,
-                    "Missing required claim: " + claimName, null);
+            throw new MissingClaimException(jws.getHeader(), claims, claimName, null,
+                    "Missing required claim: " + claimName);
         }
         return value.toString();
     }

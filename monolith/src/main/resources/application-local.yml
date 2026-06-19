@@ -8,4 +8,8 @@ spring:
 
 stash:
   security:
+    jwt:
+      signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItbG9jYWwtZGV2LW9ubHktMzItY2hhcg==
+      verification-keys: ""
+      access-token-expiry-minutes: 15
     bcrypt-cost: 12

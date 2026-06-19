@@ -114,3 +114,7 @@ springdoc:
     operations-sorter: alpha
 logging:
   config: classpath:logback-spring.xml
+
+stash:
+  security:
+    bcrypt-cost: 12

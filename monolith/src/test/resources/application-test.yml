@@ -1,0 +1,7 @@
+stash:
+  security:
+    bcrypt-cost: 4
+    jwt:
+      signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItdGVzdHMtb25seS0zMi1jaGFycw==
+      verification-keys: ""
+      access-token-expiry-minutes: 15

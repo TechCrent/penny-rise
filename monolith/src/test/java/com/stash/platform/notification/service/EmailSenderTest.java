@@ -21,26 +21,10 @@ class EmailSenderTest {
 
     // Minimal stub to avoid Spring context in unit tests
     private EmailSender smtpSender() {
-        JavaMailSender mailSender = mock(JavaMailSender.class);
-        WebClient webClient = mock(WebClient.class);
-
-        // Use a real MimeMessage stub
-        doAnswer(inv -> {
-            var msg = new org.springframework.mail.javamail.MimeMessagePreparator[0];
-            return null;
-        }).when(mailSender).send(any(jakarta.mail.internet.MimeMessage.class));
-
-        when(mailSender.createMimeMessage())
-                .thenReturn(new org.springframework.mock.web.MockMultipartFile("m", new byte[0]) {
-                    @Override public String getName() { return "mime"; }
-                }.getClass().cast(null)); // returns null — override below
-
-        // Use a simpler approach: spy on sendViaSmtp by passing a real mock
         return new EmailSender("smtp", "noreply@test.local", "Stash Test",
-                "", mailSender, webClient) {
+                "", mock(JavaMailSender.class), mock(WebClient.class)) {
             @Override
             public void send(EmailMessage message) {
-                // Skip actual SMTP in unit tests
                 LoggerFactory.getLogger(EmailSender.class)
                         .info("Email dispatched successfully via provider=smtp");
             }

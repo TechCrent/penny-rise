@@ -15,12 +15,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.List;
 
@@ -28,6 +33,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("RefreshTokenService")
@@ -50,6 +56,7 @@ class RefreshTokenServiceTest {
     @Autowired RefreshTokenService service;
     @Autowired RefreshTokenRepository tokenRepo;
     @Autowired UserRepository userRepo;
+    @Autowired JdbcTemplate jdbcTemplate;
     @MockBean  RabbitTemplate rabbitTemplate; // don't need a real broker for these tests
 
     private User savedUser;
@@ -150,12 +157,12 @@ class RefreshTokenServiceTest {
         @Test
         @DisplayName("throws RefreshTokenException for expired token")
         void throws_for_expired_token() {
-            // Directly insert an expired token
             var pair = service.issue(savedUser, "d1", "Phone", "127.0.0.1");
-            List<RefreshToken> tokens = tokenRepo.findAll();
-            RefreshToken token = tokens.get(0);
-            token.setExpiresAt(Instant.now().minusSeconds(60)); // force expiry
-            tokenRepo.save(token);
+            // expires_at is updatable=false on the entity — use SQL to force expiry
+            jdbcTemplate.update(
+                    "UPDATE auth.refresh_tokens SET expires_at = ? WHERE token_hash = ?",
+                    java.sql.Timestamp.from(Instant.now().minusSeconds(60)),
+                    sha256Hex(pair.rawRefreshToken()));
 
             assertThatExceptionOfType(RefreshTokenException.class)
                     .isThrownBy(() -> service.refresh(
@@ -263,6 +270,20 @@ class RefreshTokenServiceTest {
             }
 
             logger.detachAppender(appender);
+        }
+    }
+
+    private static String sha256Hex(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hashBytes.length * 2);
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
         }
     }
 }

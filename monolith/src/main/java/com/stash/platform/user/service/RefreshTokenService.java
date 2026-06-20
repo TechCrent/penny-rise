@@ -92,7 +92,7 @@ public class RefreshTokenService {
     public TokenPair issue(User user, String deviceId, String deviceLabel, String ipAddress) {
         byte[] rawBytes = generateRawToken();
         String rawToken = encodeToken(rawBytes);       // DO NOT log rawToken
-        String hash     = sha256Hex(rawBytes);         // DO NOT log hash
+        String hash     = sha256Hex(rawToken);         // hash of client-visible token string
 
         RefreshToken stored = new RefreshToken(
                 user.getId(),
@@ -128,11 +128,11 @@ public class RefreshTokenService {
      * @return a new token pair
      * @throws RefreshTokenException if the token is invalid, expired, or revoked
      */
-    @Transactional
+    @Transactional(noRollbackFor = RefreshTokenException.class)
     public TokenPair refresh(String rawRefreshToken, String deviceId,
                              String deviceLabel, String ipAddress) {
         // DO NOT log rawRefreshToken
-        String hash = sha256Hex(rawRefreshToken.getBytes(StandardCharsets.UTF_8));
+        String hash = sha256Hex(rawRefreshToken);
         RefreshToken existing = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
 
@@ -154,7 +154,7 @@ public class RefreshTokenService {
         // Issue new token
         byte[] newRawBytes  = generateRawToken();
         String newRawToken  = encodeToken(newRawBytes);
-        String newHash      = sha256Hex(newRawBytes);
+        String newHash      = sha256Hex(newRawToken);
 
         RefreshToken newToken = new RefreshToken(
                 user.getId(),
@@ -189,7 +189,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public void revoke(String rawRefreshToken) {
-        String hash = sha256Hex(rawRefreshToken.getBytes(StandardCharsets.UTF_8));
+        String hash = sha256Hex(rawRefreshToken);
         refreshTokenRepository.findByTokenHash(hash).ifPresent(token -> {
             if (!token.isRevoked()) {
                 token.revoke(REASON_USER_LOGOUT);
@@ -230,7 +230,7 @@ public class RefreshTokenService {
         log.warn("REPLAY ATTACK DETECTED: user={} replayedTokenId={}",
                 replayedToken.getUserId(), replayedToken.getId());
 
-        int revokedCount = revokeChainFrom(replayedToken.getId());
+        int revokedCount = revokeChainFrom(replayedToken);
 
         log.warn("Replay response complete: revoked {} descendant tokens for user={}",
                 revokedCount, replayedToken.getUserId());
@@ -240,23 +240,32 @@ public class RefreshTokenService {
     }
 
     /**
-     * Recursively walks the rotation chain starting from {@code parentId}
-     * and revokes every descendant with reason ROTATION_REPLAY.
+     * Walks the rotation chain forward from the replayed token's successor
+     * ({@code replaced_by_id}) and revokes every descendant with reason
+     * ROTATION_REPLAY.
      *
      * @return the number of tokens revoked
      */
-    private int revokeChainFrom(UUID parentId) {
-        List<RefreshToken> descendants = refreshTokenRepository.findByReplacedById(parentId);
+    private int revokeChainFrom(RefreshToken replayedToken) {
         int count = 0;
+        UUID nextId = replayedToken.getReplacedById();
 
-        for (RefreshToken descendant : descendants) {
+        while (nextId != null) {
+            RefreshToken descendant = refreshTokenRepository.findById(nextId).orElse(null);
+            if (descendant == null) {
+                break;
+            }
             if (!descendant.isRevoked()) {
                 descendant.revoke(REASON_ROTATION_REPLAY);
                 refreshTokenRepository.save(descendant);
                 count++;
+            } else if (!REASON_ROTATION_REPLAY.equals(descendant.getRevokedReason())) {
+                // Descendant was revoked by normal rotation — upgrade reason for audit trail
+                descendant.setRevokedReason(REASON_ROTATION_REPLAY);
+                refreshTokenRepository.save(descendant);
+                count++;
             }
-            // Walk deeper into the chain
-            count += revokeChainFrom(descendant.getId());
+            nextId = descendant.getReplacedById();
         }
 
         return count;

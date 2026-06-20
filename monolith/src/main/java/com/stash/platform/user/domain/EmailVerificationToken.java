@@ -1,5 +1,3 @@
-monolith/src/main/java/com/stash/platform/user/domain/EmailVerificationToken.java
-
 package com.stash.platform.user.domain;
 
 import com.stash.shared.uuidv7.UuidV7Generator;

@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("SignupService")
@@ -82,13 +84,14 @@ class SignupServiceTest {
     }
 
     @Test
-    @DisplayName("password is stored as a hash, not plaintext")
+    @DisplayName("password is stored as BCrypt hash, not plaintext")
     void password_stored_as_hash() {
         signupService.signup(new SignupRequest(
                 "carol@example.com", "Str0ng!Pass", "Carol", null));
 
         User user = userRepository.findByEmail("carol@example.com").orElseThrow();
         assertThat(user.getPasswordHash()).isNotEqualTo("Str0ng!Pass");
+        assertThat(user.getPasswordHash()).startsWith("$2a$");
     }
 
     @Test
@@ -160,5 +163,6 @@ class SignupServiceTest {
 
         String responseString = response.toString();
         assertThat(responseString).doesNotContain("Str0ng!Pass");
+        assertThat(responseString).doesNotContain("$2a$");
     }
 }

@@ -51,6 +51,24 @@ public enum ErrorCode {
     /** Email address has not been verified. */
     AUTH_EMAIL_NOT_VERIFIED,
 
+    /** Email address is already registered to an existing account. */
+    AUTH_EMAIL_ALREADY_REGISTERED,
+
+    /** Email verification token has expired. */
+    AUTH_VERIFICATION_TOKEN_EXPIRED,
+
+    /** Email verification token has already been used. */
+    AUTH_VERIFICATION_TOKEN_ALREADY_USED,
+
+    /** Email verification token not found or invalid. */
+    AUTH_VERIFICATION_TOKEN_INVALID,
+
+    /** Resend rate limit exceeded. */
+    AUTH_RESEND_RATE_LIMIT_EXCEEDED,
+
+    /** Email is already verified. */
+    AUTH_EMAIL_ALREADY_VERIFIED,
+
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

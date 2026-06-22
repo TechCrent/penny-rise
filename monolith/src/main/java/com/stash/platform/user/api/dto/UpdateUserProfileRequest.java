@@ -17,32 +17,20 @@ import jakarta.validation.constraints.Size;
  * {@code null} means "no change"; to clear phone in a future version,
  * a separate explicit mechanism would be needed (not in scope for v0.2).
  */
-
 public record UpdateUserProfileRequest(
-        @Size(max = 100, message = "Display name must not exceed 100 characters")
 
+        @Size(max = 100, message = "Display name must not exceed 100 characters")
         String displayName,
 
-/**
-
+        /**
          * Ghanaian mobile format: +233 followed by 9 digits, e.g. +233501234567.
-
          * Local format (0501234567) is also accepted and normalised server-side
-
          * — handled in the service layer, not here, since normalisation isn't
-
          * a validation concern.
-
          */
-
         @Pattern(
-
-                regexp = "^(\\+233[0-9]{9}|0[0-9]{9})$",
-
-                message = "Phone must be a valid Ghanaian mobile number (e.g. +233501234567 or 0501234567)"
-
+            regexp = "^(\\+233[0-9]{9}|0[0-9]{9})$",
+            message = "Phone must be a valid Ghanaian mobile number (e.g. +233501234567 or 0501234567)"
         )
-
         String phone
-
 ) {}

@@ -1,4 +1,4 @@
-﻿package com.stash.platform.user.service;
+package com.stash.platform.user.service;
 
 import com.stash.platform.notification.service.EmailSender;
 import com.stash.platform.user.api.dto.SignupRequest;
@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("ForgotPasswordService")
@@ -54,6 +56,7 @@ class ForgotPasswordServiceTest {
 
     @BeforeEach
     void setUp() {
+        reset(emailSender);
         resetTokenRepository.deleteAll();
         emailTokenRepository.deleteAll();
         userRepository.deleteAll();

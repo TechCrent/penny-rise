@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -23,8 +24,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.reset;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("DeletionRequestService")
@@ -55,6 +58,7 @@ class DeletionRequestServiceTest {
 
     @BeforeEach
     void setUp() {
+        reset(emailSender);
         deletionRequestRepository.deleteAll();
         tokenRepository.deleteAll();
         userRepository.deleteAll();

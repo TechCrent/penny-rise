@@ -39,11 +39,14 @@ public enum ErrorCode {
 
     // ── AUTH domain ────────────────────────────────────────────────────────
 
-    /** Email or password is incorrect. */
+    /** Credentials are incorrect (email not found or wrong password). */
     AUTH_INVALID_CREDENTIALS,
 
     /** Account is locked due to repeated failed login attempts. */
     AUTH_ACCOUNT_LOCKED,
+
+    /** Account has been suspended by an administrator. */
+    AUTH_ACCOUNT_SUSPENDED,
 
     /** The provided token (access or refresh) is missing, malformed, or expired. */
     AUTH_TOKEN_INVALID,
@@ -68,6 +71,21 @@ public enum ErrorCode {
 
     /** Email is already verified. */
     AUTH_EMAIL_ALREADY_VERIFIED,
+
+    /** Refresh token has expired. */
+    AUTH_REFRESH_TOKEN_EXPIRED,
+
+    /** Refresh token is invalid, revoked, or was part of a replay attack. */
+    AUTH_REFRESH_TOKEN_INVALID,
+
+    /** Password reset token has expired. */
+    AUTH_RESET_TOKEN_EXPIRED,
+
+    /** Password reset token has already been used. */
+    AUTH_RESET_TOKEN_ALREADY_USED,
+
+    /** Password reset token not found or invalid. */
+    AUTH_RESET_TOKEN_INVALID,
 
     // ── USER domain ───────────────────────────────────────────────────────
 

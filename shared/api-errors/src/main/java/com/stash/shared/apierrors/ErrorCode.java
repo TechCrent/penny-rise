@@ -106,4 +106,10 @@ public enum ErrorCode {
 
     /** Idempotency key was reused for a different request body. */
     IDEMPOTENCY_KEY_MISUSED,
+
+    /** Refresh token has expired. */
+    AUTH_REFRESH_TOKEN_EXPIRED,
+
+    /** Refresh token is invalid, revoked, or was part of a replay attack. */
+    AUTH_REFRESH_TOKEN_INVALID,
 }

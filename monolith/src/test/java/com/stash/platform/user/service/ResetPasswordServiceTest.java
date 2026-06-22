@@ -20,7 +20,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
@@ -87,7 +89,7 @@ class ResetPasswordServiceTest {
         byte[] bytes = new byte[32];
         new SecureRandom().nextBytes(bytes);
         String raw  = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        String hash = sha256Hex(bytes);
+        String hash = sha256Hex(raw);
         resetTokenRepository.save(new PasswordResetToken(u.getId(), hash));
         return raw;
     }
@@ -109,7 +111,7 @@ class ResetPasswordServiceTest {
     void happy_reset_marks_token_consumed() {
         resetPasswordService.resetPassword(validRawToken, NEW_PASSWORD);
 
-        String hash = sha256Hex(validRawToken.getBytes());
+        String hash = sha256Hex(validRawToken);
         PasswordResetToken token = resetTokenRepository.findByTokenHash(hash).orElseThrow();
         assertThat(token.isConsumed()).isTrue();
     }
@@ -166,7 +168,7 @@ class ResetPasswordServiceTest {
     @Test
     @DisplayName("expired token returns 410 AUTH_RESET_TOKEN_EXPIRED")
     void expired_token_returns_410() {
-        String hash = sha256Hex(validRawToken.getBytes());
+        String hash = sha256Hex(validRawToken);
         PasswordResetToken token = resetTokenRepository.findByTokenHash(hash).orElseThrow();
         token.setExpiresAt(Instant.now().minusSeconds(60));
         resetTokenRepository.save(token);
@@ -222,15 +224,15 @@ class ResetPasswordServiceTest {
 
     // ── Helper ────────────────────────────────────────────────────────────
 
-    private static String sha256Hex(byte[] input) {
+    private static String sha256Hex(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input);
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder(hash.length * 2);
             for (byte b : hash) sb.append(String.format("%02x", b));
             return sb.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
         }
     }
 }

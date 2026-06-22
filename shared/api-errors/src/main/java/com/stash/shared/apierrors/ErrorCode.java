@@ -51,6 +51,15 @@ public enum ErrorCode {
     /** Email address has not been verified. */
     AUTH_EMAIL_NOT_VERIFIED,
 
+    /** Password reset token has expired. */
+    AUTH_RESET_TOKEN_EXPIRED,
+
+    /** Password reset token has already been used. */
+    AUTH_RESET_TOKEN_ALREADY_USED,
+
+    /** Password reset token not found or invalid. */
+    AUTH_RESET_TOKEN_INVALID,
+
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

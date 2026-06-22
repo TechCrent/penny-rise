@@ -17,8 +17,11 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import jakarta.persistence.EntityManager;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,6 +33,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("TokenRefreshService")
@@ -57,6 +61,7 @@ class TokenRefreshServiceTest {
     @Autowired EmailVerificationTokenRepository tokenRepository;
     @Autowired RefreshTokenRepository refreshTokenRepository;
     @Autowired LoginAttemptTracker attemptTracker;
+    @Autowired EntityManager entityManager;
     @MockBean  EmailSender emailSender;
 
     private static final String EMAIL    = "refresh-test@example.com";
@@ -135,14 +140,21 @@ class TokenRefreshServiceTest {
     // ── Expired token ─────────────────────────────────────────────────────
 
     @Test
+    @Transactional
     @DisplayName("expired token returns 401 AUTH_REFRESH_TOKEN_EXPIRED")
     void expired_token_returns_401() {
-        // Force expiry on the DB record
         List<RefreshToken> tokens = refreshTokenRepository.findAll();
         assertThat(tokens).isNotEmpty();
         RefreshToken token = tokens.get(0);
-        token.setExpiresAt(Instant.now().minusSeconds(60));
-        refreshTokenRepository.save(token);
+
+        // expires_at is updatable=false on the entity — update via native SQL
+        entityManager.createNativeQuery(
+                "UPDATE auth.refresh_tokens SET expires_at = :expired WHERE token_hash = :hash")
+                .setParameter("expired", Instant.now().minusSeconds(60))
+                .setParameter("hash", token.getTokenHash())
+                .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
 
         assertThatExceptionOfType(StashApiException.class)
                 .isThrownBy(() -> tokenRefreshService.refresh(req(initialRefreshToken), IP))

@@ -37,3 +37,6 @@ admin-console/.env.local
 # OS
 .DS_Store
 Thumbs.db
+
+# Local PR notes (never commit unless explicitly requested)
+PRs/

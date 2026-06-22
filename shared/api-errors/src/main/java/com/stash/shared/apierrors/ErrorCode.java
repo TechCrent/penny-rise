@@ -51,6 +51,9 @@ public enum ErrorCode {
     /** Email address has not been verified. */
     AUTH_EMAIL_NOT_VERIFIED,
 
+    /** Email address is already registered to an existing account. */
+    AUTH_EMAIL_ALREADY_REGISTERED,
+    
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

@@ -69,6 +69,11 @@ public enum ErrorCode {
     /** Email is already verified. */
     AUTH_EMAIL_ALREADY_VERIFIED,
 
+    // ── USER domain ───────────────────────────────────────────────────────
+
+    /** A pending account deletion request already exists for this user. */
+    USER_DELETION_REQUEST_ALREADY_PENDING,
+
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

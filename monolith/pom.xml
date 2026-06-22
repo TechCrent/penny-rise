@@ -74,6 +74,13 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
+        <!-- Hibernate JSONB type mapping -->
+        <dependency>
+            <groupId>io.hypersistence</groupId>
+            <artifactId>hypersistence-utils-hibernate-63</artifactId>
+            <version>3.7.3</version>
+        </dependency>
+
         <!-- Spring Retry for exponential backoff -->
         <dependency>
             <groupId>org.springframework.retry</groupId>

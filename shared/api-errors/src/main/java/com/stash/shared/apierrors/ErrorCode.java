@@ -51,6 +51,12 @@ public enum ErrorCode {
     /** Email address has not been verified. */
     AUTH_EMAIL_NOT_VERIFIED,
 
+    /** Refresh token has expired. */
+    AUTH_REFRESH_TOKEN_EXPIRED,
+
+    /** Refresh token is invalid, revoked, or was part of a replay attack. */
+    AUTH_REFRESH_TOKEN_INVALID,
+
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

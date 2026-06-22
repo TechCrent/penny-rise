@@ -13,8 +13,11 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import jakarta.persistence.EntityManager;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -29,6 +32,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("EmailVerificationService")
@@ -52,6 +56,7 @@ class EmailVerificationServiceTest {
     @Autowired SignupService signupService;
     @Autowired UserRepository userRepository;
     @Autowired EmailVerificationTokenRepository tokenRepository;
+    @Autowired EntityManager entityManager;
     @MockBean  EmailSender emailSender;
 
     private String validRawToken;
@@ -59,6 +64,7 @@ class EmailVerificationServiceTest {
 
     @BeforeEach
     void setUp() {
+        reset(emailSender);
         tokenRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -68,8 +74,8 @@ class EmailVerificationServiceTest {
 
         registeredUser = userRepository.findByEmail("verify-test@example.com").orElseThrow();
 
-        // Capture the token hash from the DB and derive the raw token
-        // In a real test we'd capture the URL from the email mock; here we re-issue directly
+        // Replace signup token with a known test token (matches verify() lookup)
+        tokenRepository.deleteAll();
         validRawToken = issueTestToken(registeredUser);
     }
 
@@ -121,13 +127,18 @@ class EmailVerificationServiceTest {
     // ── Expired token ─────────────────────────────────────────────────────
 
     @Test
+    @Transactional
     @DisplayName("expired token returns 410 AUTH_VERIFICATION_TOKEN_EXPIRED")
     void expired_token_returns_410() {
-        // Directly manipulate the token to be expired
+        // expires_at is updatable=false on the entity — update via native SQL
         String hash = sha256Hex(validRawToken.getBytes(StandardCharsets.UTF_8));
-        EmailVerificationToken token = tokenRepository.findByTokenHash(hash).orElseThrow();
-        token.setExpiresAt(Instant.now().minusSeconds(60)); // expired
-        tokenRepository.save(token);
+        entityManager.createNativeQuery(
+                "UPDATE user_module.email_verification_tokens SET expires_at = :expired WHERE token_hash = :hash")
+                .setParameter("expired", Instant.now().minusSeconds(60))
+                .setParameter("hash", hash)
+                .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
 
         assertThatExceptionOfType(StashApiException.class)
                 .isThrownBy(() -> verificationService.verify(validRawToken))
@@ -201,6 +212,8 @@ class EmailVerificationServiceTest {
     @Test
     @DisplayName("resend rate limit: 4th request within an hour returns 429")
     void resend_rate_limit_exceeded() {
+        tokenRepository.deleteAll(); // start with no recent tokens for rate-limit counting
+
         // 3 resends are allowed
         verificationService.resend("verify-test@example.com");
         verificationService.resend("verify-test@example.com");
@@ -219,6 +232,8 @@ class EmailVerificationServiceTest {
     @Test
     @DisplayName("resend for unknown email is silent — no error, no email")
     void resend_unknown_email_silent() {
+        reset(emailSender);
+
         assertThatNoException()
                 .isThrownBy(() -> verificationService.resend("nobody@example.com"));
 

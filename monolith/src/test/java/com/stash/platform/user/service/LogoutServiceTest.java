@@ -1,4 +1,4 @@
-﻿package com.stash.platform.user.service;
+package com.stash.platform.user.service;
 
 import com.stash.platform.notification.service.EmailSender;
 import com.stash.platform.user.api.dto.LoginRequest;
@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -24,11 +25,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("LogoutService")
@@ -90,8 +91,6 @@ class LogoutServiceTest {
         tokenA = loginA.refreshToken();
     }
 
-    // ΓöÇΓöÇ Happy path ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-
     @Test
     @DisplayName("happy logout: revokes the supplied token")
     void happy_logout() {
@@ -118,14 +117,10 @@ class LogoutServiceTest {
                 .isInstanceOf(com.stash.platform.user.exception.RefreshTokenException.class);
     }
 
-    // ΓöÇΓöÇ all_devices ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-
     @Test
     @DisplayName("all_devices=true revokes every active token for the user")
     void all_devices_revokes_everything() {
-        // Issue a second session for user A
-        LoginResponse secondLogin = loginService.login(
-                new LoginRequest(EMAIL_A, PASSWORD, "d2", "Phone A2"), IP);
+        loginService.login(new LoginRequest(EMAIL_A, PASSWORD, "d2", "Phone A2"), IP);
 
         logoutService.logout(tokenA, true, userA.getId());
 
@@ -140,8 +135,7 @@ class LogoutServiceTest {
     @Test
     @DisplayName("all_devices=true does not affect another user's tokens")
     void all_devices_does_not_affect_other_users() {
-        LoginResponse loginB = loginService.login(
-                new LoginRequest(EMAIL_B, PASSWORD, "d3", "Phone B"), IP);
+        loginService.login(new LoginRequest(EMAIL_B, PASSWORD, "d3", "Phone B"), IP);
 
         logoutService.logout(tokenA, true, userA.getId());
 
@@ -152,8 +146,6 @@ class LogoutServiceTest {
         assertThat(userBTokens).hasSize(1);
         assertThat(userBTokens.get(0).isRevoked()).isFalse();
     }
-
-    // ΓöÇΓöÇ Ownership check ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     @Test
     @DisplayName("logging out with another user's token returns 403")
@@ -175,10 +167,8 @@ class LogoutServiceTest {
         assertThat(tokens).noneMatch(RefreshToken::isRevoked);
     }
 
-    // ΓöÇΓöÇ Idempotency ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-
     @Test
-    @DisplayName("logging out an already-revoked token does not throw ΓÇö idempotent")
+    @DisplayName("logging out an already-revoked token does not throw — idempotent")
     void already_revoked_token_idempotent() {
         logoutService.logout(tokenA, false, userA.getId());
 
@@ -187,14 +177,12 @@ class LogoutServiceTest {
     }
 
     @Test
-    @DisplayName("logging out an unknown token does not throw ΓÇö idempotent")
+    @DisplayName("logging out an unknown token does not throw — idempotent")
     void unknown_token_idempotent() {
         assertThatNoException()
                 .isThrownBy(() -> logoutService.logout(
                         "never-issued-token-value", false, userA.getId()));
     }
-
-    // ΓöÇΓöÇ Helper: access the RefreshTokenService bean ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     @Autowired
     private RefreshTokenService refreshTokenServiceField;

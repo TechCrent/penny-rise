@@ -39,17 +39,44 @@ public enum ErrorCode {
 
     // ── AUTH domain ────────────────────────────────────────────────────────
 
-    /** Email or password is incorrect. */
+    /** Credentials are incorrect (email not found or wrong password). */
     AUTH_INVALID_CREDENTIALS,
 
     /** Account is locked due to repeated failed login attempts. */
     AUTH_ACCOUNT_LOCKED,
+
+    /** Account has been suspended by an administrator. */
+    AUTH_ACCOUNT_SUSPENDED,
 
     /** The provided token (access or refresh) is missing, malformed, or expired. */
     AUTH_TOKEN_INVALID,
 
     /** Email address has not been verified. */
     AUTH_EMAIL_NOT_VERIFIED,
+
+    /** Email address is already registered to an existing account. */
+    AUTH_EMAIL_ALREADY_REGISTERED,
+
+    /** Email verification token has expired. */
+    AUTH_VERIFICATION_TOKEN_EXPIRED,
+
+    /** Email verification token has already been used. */
+    AUTH_VERIFICATION_TOKEN_ALREADY_USED,
+
+    /** Email verification token not found or invalid. */
+    AUTH_VERIFICATION_TOKEN_INVALID,
+
+    /** Resend rate limit exceeded. */
+    AUTH_RESEND_RATE_LIMIT_EXCEEDED,
+
+    /** Email is already verified. */
+    AUTH_EMAIL_ALREADY_VERIFIED,
+
+    /** Refresh token has expired. */
+    AUTH_REFRESH_TOKEN_EXPIRED,
+
+    /** Refresh token is invalid, revoked, or was part of a replay attack. */
+    AUTH_REFRESH_TOKEN_INVALID,
 
     // ── KYC domain ────────────────────────────────────────────────────────
 

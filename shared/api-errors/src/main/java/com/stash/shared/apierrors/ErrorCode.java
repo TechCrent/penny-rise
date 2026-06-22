@@ -39,11 +39,14 @@ public enum ErrorCode {
 
     // ── AUTH domain ────────────────────────────────────────────────────────
 
-    /** Email or password is incorrect. */
+    /** Credentials are incorrect (email not found or wrong password). */
     AUTH_INVALID_CREDENTIALS,
 
     /** Account is locked due to repeated failed login attempts. */
     AUTH_ACCOUNT_LOCKED,
+
+    /** Account has been suspended by an administrator. */
+    AUTH_ACCOUNT_SUSPENDED,
 
     /** The provided token (access or refresh) is missing, malformed, or expired. */
     AUTH_TOKEN_INVALID,

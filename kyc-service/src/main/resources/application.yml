@@ -123,3 +123,12 @@ springdoc:
     operations-sorter: alpha
 logging:
   config: classpath:logback-spring.xml
+
+stash:
+  kyc:
+    ghana-card-encryption-key: ${GHANA_CARD_ENCRYPTION_KEY}
+    base-url: ${STASH_KYC_BASE_URL:http://localhost:8082}
+    storage:
+      bucket: kyc-documents
+      provider: ${KYC_STORAGE_PROVIDER:local}
+      local-path: ${KYC_LOCAL_STORAGE_PATH:/tmp/stash-kyc-storage}

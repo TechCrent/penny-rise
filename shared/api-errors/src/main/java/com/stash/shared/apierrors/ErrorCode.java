@@ -106,6 +106,12 @@ public enum ErrorCode {
     /** KYC submission was rejected. */
     KYC_SUBMISSION_REJECTED,
 
+    /** User already has an active (pending or approved) KYC submission. */
+    KYC_SUBMISSION_ALREADY_ACTIVE,
+
+    /** Ghana Card number format is invalid. */
+    KYC_INVALID_GHANA_CARD_FORMAT,
+
     // ── VAULT domain ──────────────────────────────────────────────────────
 
     /** Vault not found or does not belong to this user. */

@@ -2,13 +2,16 @@ package com.stash.platform.user.api;
 
 import com.stash.platform.user.api.dto.LoginRequest;
 import com.stash.platform.user.api.dto.LoginResponse;
+import com.stash.platform.user.api.dto.LogoutRequest;
 import com.stash.platform.user.api.dto.RefreshRequest;
 import com.stash.platform.user.api.dto.RefreshResponse;
 import com.stash.platform.user.api.dto.ResendVerificationRequest;
 import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
+import com.stash.platform.user.security.AuthenticatedUser;
 import com.stash.platform.user.service.EmailVerificationService;
 import com.stash.platform.user.service.LoginService;
+import com.stash.platform.user.service.LogoutService;
 import com.stash.platform.user.service.SignupService;
 import com.stash.platform.user.service.TokenRefreshService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -33,15 +37,18 @@ public class AuthController {
     private final LoginService loginService;
     private final EmailVerificationService emailVerificationService;
     private final TokenRefreshService tokenRefreshService;
+    private final LogoutService logoutService;
 
     public AuthController(SignupService signupService,
                           LoginService loginService,
                           EmailVerificationService emailVerificationService,
-                          TokenRefreshService tokenRefreshService) {
+                          TokenRefreshService tokenRefreshService,
+                          LogoutService logoutService) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.emailVerificationService = emailVerificationService;
         this.tokenRefreshService = tokenRefreshService;
+        this.logoutService = logoutService;
     }
 
     @PostMapping("/signup")
@@ -113,6 +120,22 @@ public class AuthController {
     public ResponseEntity<Void> resendVerification(
             @Valid @RequestBody ResendVerificationRequest request) {
         emailVerificationService.resend(request.email());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/logout")
+    @Operation(
+        summary     = "Log out — revoke a refresh token",
+        description = "Revokes the supplied refresh token. With all_devices=true, "
+                    + "revokes every active session for the authenticated user. "
+                    + "Requires a valid access token.")
+    @ApiResponse(responseCode = "204", description = "Logged out successfully")
+    @ApiResponse(responseCode = "403", description = "Token belongs to a different user")
+    public ResponseEntity<Void> logout(
+            @Valid @RequestBody LogoutRequest request,
+            Authentication authentication) {
+        var authUser = (AuthenticatedUser) authentication;
+        logoutService.logout(request.refreshToken(), request.allDevices(), authUser.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

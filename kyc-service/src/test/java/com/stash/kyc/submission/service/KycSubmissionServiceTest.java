@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -27,6 +28,9 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("KycSubmissionService")
 class KycSubmissionServiceTest {
 
+    private static final byte[] TEST_AES_KEY =
+            "test-aes-256-key-32-bytes-long!!".getBytes();
+
     @Container
     static PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>("postgres:16")
@@ -40,13 +44,13 @@ class KycSubmissionServiceTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("stash.kyc.ghana-card-encryption-key",
-                () -> java.util.Base64.getEncoder().encodeToString(
-                        "test-aes-256-key-32-bytes-long!".getBytes()));
+                () -> java.util.Base64.getEncoder().encodeToString(TEST_AES_KEY));
     }
 
     @Autowired KycSubmissionService kycSubmissionService;
     @Autowired KycSubmissionRepository submissionRepository;
     @Autowired ObjectStorage objectStorage;
+    @Autowired JdbcTemplate jdbcTemplate;
 
     private static final UUID USER_ID = UUID.randomUUID();
 
@@ -103,8 +107,15 @@ class KycSubmissionServiceTest {
     @Test
     @DisplayName("ghana_card_number is stored as ciphertext, not plaintext, in raw column value")
     void ghana_card_number_stored_encrypted() {
-        kycSubmissionService.createSubmission(USER_ID, req());
-        assertThat(true).isTrue();
+        CreateSubmissionResponse response = kycSubmissionService.createSubmission(USER_ID, req());
+
+        String rawValue = jdbcTemplate.queryForObject(
+                "SELECT ghana_card_number FROM kyc.submissions WHERE id = ?",
+                String.class,
+                response.id());
+
+        assertThat(rawValue).isNotEqualTo("GHA-123456789-0");
+        assertThat(rawValue).isNotBlank();
     }
 
     @Test

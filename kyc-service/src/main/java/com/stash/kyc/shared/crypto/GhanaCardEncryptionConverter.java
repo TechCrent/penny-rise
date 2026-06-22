@@ -2,10 +2,6 @@ package com.stash.kyc.shared.crypto;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -18,47 +14,40 @@ import java.util.Base64;
 /**
  * JPA AttributeConverter — AES-256-GCM encryption for Ghana Card numbers.
  *
- * <p>Per System Design §10.2 ("Sensitive data at rest encrypted using
- * AES-256") and this issue's explicit requirement, ghana_card_number is
- * encrypted at the application layer in addition to the managed Postgres
- * provider's storage-level encryption — defence in depth. A compromised
- * database credential alone cannot decrypt the column; the application's
- * key (held in the secret manager, never the database) is also required.
+ * <p>Key material is loaded by {@link GhanaCardCryptoConfig} at startup
+ * because Hibernate instantiates converters outside Spring's DI container.
  *
  * <p>Format: base64(nonce[12 bytes] || ciphertext || authTag[16 bytes]).
- * A fresh random nonce is generated per encryption — required for GCM
- * security (nonce reuse with the same key breaks AES-GCM's guarantees).
- *
- * <p><strong>Security invariants:</strong>
- * <ul>
- *   <li>The encryption key is NEVER logged.</li>
- *   <li>Plaintext Ghana Card numbers are NEVER logged.</li>
- *   <li>Ciphertext IS safe to log/store — it's the whole point.</li>
- * </ul>
  */
 @Converter
-@Component
 public class GhanaCardEncryptionConverter implements AttributeConverter<String, String> {
-
-    private static final Logger log = LoggerFactory.getLogger(GhanaCardEncryptionConverter.class);
 
     private static final String ALGORITHM    = "AES/GCM/NoPadding";
     private static final int    GCM_TAG_BITS = 128;
     private static final int    NONCE_BYTES  = 12;
+    private static final int    KEY_BYTES    = 32;
 
     private static volatile SecretKey staticKey;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public GhanaCardEncryptionConverter(
-            @Value("${stash.kyc.ghana-card-encryption-key}") String base64Key) {
-        staticKey = new SecretKeySpec(
-                Base64.getDecoder().decode(base64Key), "AES");
-        log.info("GhanaCardEncryptionConverter initialised with AES-256-GCM");
+    /** Called once at startup by {@link GhanaCardCryptoConfig}. */
+    public static void initialize(String base64Key) {
+        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+        if (keyBytes.length != KEY_BYTES) {
+            throw new IllegalArgumentException(
+                    "stash.kyc.ghana-card-encryption-key must decode to exactly "
+                            + KEY_BYTES + " bytes for AES-256");
+        }
+        staticKey = new SecretKeySpec(keyBytes, "AES");
     }
+
+    /** No-arg constructor used by Hibernate. */
+    public GhanaCardEncryptionConverter() {}
 
     @Override
     public String convertToDatabaseColumn(String plaintext) {
         if (plaintext == null) return null;
+        requireKey();
 
         try {
             byte[] nonce = new byte[NONCE_BYTES];
@@ -83,6 +72,7 @@ public class GhanaCardEncryptionConverter implements AttributeConverter<String, 
     @Override
     public String convertToEntityAttribute(String encoded) {
         if (encoded == null) return null;
+        requireKey();
 
         try {
             byte[] combined = Base64.getDecoder().decode(encoded);
@@ -100,6 +90,14 @@ public class GhanaCardEncryptionConverter implements AttributeConverter<String, 
 
         } catch (Exception e) {
             throw new IllegalStateException("Failed to decrypt Ghana Card number", e);
+        }
+    }
+
+    private static void requireKey() {
+        if (staticKey == null) {
+            throw new IllegalStateException(
+                    "GhanaCardEncryptionConverter not initialised — "
+                            + "stash.kyc.ghana-card-encryption-key must be set");
         }
     }
 }

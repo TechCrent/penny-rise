@@ -87,6 +87,11 @@ public enum ErrorCode {
     /** Password reset token not found or invalid. */
     AUTH_RESET_TOKEN_INVALID,
 
+    // ── USER domain ───────────────────────────────────────────────────────
+
+    /** A pending account deletion request already exists for this user. */
+    USER_DELETION_REQUEST_ALREADY_PENDING,
+
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

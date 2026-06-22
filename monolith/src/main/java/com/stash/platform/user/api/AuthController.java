@@ -2,12 +2,15 @@ package com.stash.platform.user.api;
 
 import com.stash.platform.user.api.dto.LoginRequest;
 import com.stash.platform.user.api.dto.LoginResponse;
+import com.stash.platform.user.api.dto.RefreshRequest;
+import com.stash.platform.user.api.dto.RefreshResponse;
 import com.stash.platform.user.api.dto.ResendVerificationRequest;
 import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
 import com.stash.platform.user.service.EmailVerificationService;
 import com.stash.platform.user.service.LoginService;
 import com.stash.platform.user.service.SignupService;
+import com.stash.platform.user.service.TokenRefreshService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,13 +32,16 @@ public class AuthController {
     private final SignupService signupService;
     private final LoginService loginService;
     private final EmailVerificationService emailVerificationService;
+    private final TokenRefreshService tokenRefreshService;
 
     public AuthController(SignupService signupService,
                           LoginService loginService,
-                          EmailVerificationService emailVerificationService) {
+                          EmailVerificationService emailVerificationService,
+                          TokenRefreshService tokenRefreshService) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.emailVerificationService = emailVerificationService;
+        this.tokenRefreshService = tokenRefreshService;
     }
 
     @PostMapping("/signup")
@@ -66,6 +72,20 @@ public class AuthController {
         String ipAddress = httpRequest.getRemoteAddr();
         LoginResponse response = loginService.login(request, ipAddress);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    @Operation(
+        summary     = "Exchange a refresh token for a new token pair",
+        description = "Rotates the refresh token on every call. " +
+                      "Replay detection revokes the entire token chain on a replay attack.")
+    @ApiResponse(responseCode = "200", description = "New token pair issued")
+    @ApiResponse(responseCode = "401", description = "Token expired or invalid")
+    public ResponseEntity<RefreshResponse> refresh(
+            @Valid @RequestBody RefreshRequest request,
+            HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        return ResponseEntity.ok(tokenRefreshService.refresh(request, ip));
     }
 
     @GetMapping("/verify-email")

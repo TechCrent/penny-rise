@@ -1,3 +1,9 @@
 spring:
   jpa:
     show-sql: true
+
+stash:
+  kyc:
+    ghana-card-encryption-key: dGVzdC1raMtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXMh
+    storage:
+      provider: local

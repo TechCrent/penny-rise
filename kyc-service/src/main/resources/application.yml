@@ -132,3 +132,8 @@ stash:
       bucket: kyc-documents
       provider: ${KYC_STORAGE_PROVIDER:local}
       local-path: ${KYC_LOCAL_STORAGE_PATH:/tmp/stash-kyc-storage}
+  stub-provider:
+  # Comma-separated Ghana Card numbers that auto-approve in the stub provider.
+  # Per Issue Plan §0.1: team-controlled stub, real provider deferred to
+  # Public Launch Readiness.
+  test-approve-numbers: ${KYC_STUB_TEST_APPROVE_NUMBERS:GHA-000000001-1,GHA-000000002-2,GHA-000000003-3}

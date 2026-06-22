@@ -8,6 +8,7 @@ import com.stash.platform.user.api.dto.LogoutRequest;
 import com.stash.platform.user.api.dto.RefreshRequest;
 import com.stash.platform.user.api.dto.RefreshResponse;
 import com.stash.platform.user.api.dto.ResendVerificationRequest;
+import com.stash.platform.user.api.dto.ResetPasswordRequest;
 import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
 import com.stash.platform.user.security.AuthenticatedUser;
@@ -15,6 +16,7 @@ import com.stash.platform.user.service.EmailVerificationService;
 import com.stash.platform.user.service.ForgotPasswordService;
 import com.stash.platform.user.service.LoginService;
 import com.stash.platform.user.service.LogoutService;
+import com.stash.platform.user.service.ResetPasswordService;
 import com.stash.platform.user.service.SignupService;
 import com.stash.platform.user.service.TokenRefreshService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,19 +44,22 @@ public class AuthController {
     private final TokenRefreshService tokenRefreshService;
     private final LogoutService logoutService;
     private final ForgotPasswordService forgotPasswordService;
+    private final ResetPasswordService resetPasswordService;
 
     public AuthController(SignupService signupService,
                           LoginService loginService,
                           EmailVerificationService emailVerificationService,
                           TokenRefreshService tokenRefreshService,
                           LogoutService logoutService,
-                          ForgotPasswordService forgotPasswordService) {
+                          ForgotPasswordService forgotPasswordService,
+                          ResetPasswordService resetPasswordService) {
         this.signupService = signupService;
         this.loginService = loginService;
         this.emailVerificationService = emailVerificationService;
         this.tokenRefreshService = tokenRefreshService;
         this.logoutService = logoutService;
         this.forgotPasswordService = forgotPasswordService;
+        this.resetPasswordService = resetPasswordService;
     }
 
     @PostMapping("/signup")
@@ -157,5 +162,21 @@ public class AuthController {
         return ResponseEntity.ok(new ForgotPasswordResponse(
                 "If an account with that email exists, a password reset link has been sent."
         ));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(
+        summary     = "Complete a password reset",
+        description = "Validates the token, sets the new password, and revokes " +
+                      "all active sessions for the user as a security measure.")
+    @ApiResponse(responseCode = "204", description = "Password reset successfully")
+    @ApiResponse(responseCode = "404", description = "Token not found")
+    @ApiResponse(responseCode = "409", description = "Token already used")
+    @ApiResponse(responseCode = "410", description = "Token expired")
+    @ApiResponse(responseCode = "422", description = "New password fails strength validation")
+    public ResponseEntity<Void> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        resetPasswordService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -78,6 +78,15 @@ public enum ErrorCode {
     /** Refresh token is invalid, revoked, or was part of a replay attack. */
     AUTH_REFRESH_TOKEN_INVALID,
 
+    /** Password reset token has expired. */
+    AUTH_RESET_TOKEN_EXPIRED,
+
+    /** Password reset token has already been used. */
+    AUTH_RESET_TOKEN_ALREADY_USED,
+
+    /** Password reset token not found or invalid. */
+    AUTH_RESET_TOKEN_INVALID,
+
     // ── KYC domain ────────────────────────────────────────────────────────
 
     /** KYC submission not found. */

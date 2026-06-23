@@ -9,6 +9,9 @@ import EmailVerificationPendingScreen from '../screens/EmailVerificationPendingS
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import KycCardDetailsScreen from '../screens/KycCardDetailsScreen';
+import KycDocumentUploadScreen from '../screens/KycDocumentUploadScreen';
+import KycSubmissionPendingScreen from '../screens/KycSubmissionPendingScreen';
 
 export type RootStackParamList = {
   Register: undefined;
@@ -18,6 +21,16 @@ export type RootStackParamList = {
   EmailVerificationPending: { email: string };
   Home: undefined;
   KycFlow: undefined;
+  KycCardDetails: undefined;
+  KycDocumentUpload: {
+    submissionId: string;
+    uploadUrls: {
+      FRONT_OF_CARD: string;
+      BACK_OF_CARD: string;
+      SELFIE: string;
+    };
+  };
+  KycSubmissionPending: { submissionId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -48,7 +61,12 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="KycCardDetails" component={KycCardDetailsScreen} />
+          <Stack.Screen name="KycDocumentUpload" component={KycDocumentUploadScreen} />
+          <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
+        </>
       ) : (
         <>
           <Stack.Screen name="Login" component={LoginScreen} />

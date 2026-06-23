@@ -45,8 +45,8 @@ public class KycAdminController {
     @ApiResponse(responseCode = "200", description = "Queue page returned")
     @ApiResponse(responseCode = "403", description = "Not an authenticated admin")
     public ResponseEntity<AdminQueuePageResponse> getQueue(
-            @RequestParam(required = false) String cursor,
-            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(value = "cursor", required = false) String cursor,
+            @RequestParam(value = "pageSize", defaultValue = "20") int pageSize,
             HttpServletRequest request) {
         requireAdmin(request);
         return ResponseEntity.ok(reviewService.getQueue(cursor, pageSize));
@@ -94,7 +94,7 @@ public class KycAdminController {
     @ApiResponse(responseCode = "422", description = "Missing reason on REJECT")
     public ResponseEntity<Void> decide(
             @PathVariable UUID id,
-            @RequestParam String action,
+            @RequestParam("action") String action,
             @RequestBody(required = false) AdminDecisionRequest request,
             HttpServletRequest httpRequest) {
         UUID adminId = requireAdmin(httpRequest);

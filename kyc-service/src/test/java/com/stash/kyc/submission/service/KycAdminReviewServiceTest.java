@@ -8,6 +8,7 @@ import com.stash.kyc.submission.domain.ManualReviewQueueEntry;
 import com.stash.kyc.submission.repository.KycSubmissionRepository;
 import com.stash.kyc.submission.repository.ManualReviewQueueRepository;
 import com.stash.kyc.submission.repository.ProviderDecisionRecordRepository;
+import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.shared.apierrors.StashApiException;
 import org.junit.jupiter.api.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -42,12 +43,7 @@ class KycAdminReviewServiceTest {
 
     @DynamicPropertySource
     static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",      postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("stash.kyc.ghana-card-encryption-key",
-                () -> java.util.Base64.getEncoder().encodeToString(
-                        "test-aes-256-key-32-bytes-long!".getBytes()));
+        KycIntegrationTestSupport.registerPostgres(registry, postgres);
     }
 
     @Autowired KycAdminReviewService adminReviewService;

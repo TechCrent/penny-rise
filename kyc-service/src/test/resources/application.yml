@@ -1,4 +1,5 @@
-# Shared defaults for @SpringBootTest — DynamicPropertySource overrides DB and AES key.
+# Shared defaults for @SpringBootTest — override DB/AES via
+# KycIntegrationTestSupport.registerPostgres() in integration tests.
 spring:
   rabbitmq:
     listener:

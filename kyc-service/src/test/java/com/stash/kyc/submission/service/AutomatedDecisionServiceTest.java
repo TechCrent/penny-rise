@@ -2,6 +2,7 @@ package com.stash.kyc.submission.service;
 
 import com.stash.kyc.document.domain.KycSubmissionDocument;
 import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
+import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.kyc.provider.GhanaCardProviderClient;
 import com.stash.kyc.provider.StubGhanaCardProviderClient;
 import com.stash.kyc.submission.domain.KycSubmission;
@@ -29,9 +30,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("AutomatedDecisionService")
 class AutomatedDecisionServiceTest {
 
-    private static final byte[] TEST_AES_KEY =
-            "test-aes-256-key-32-bytes-long!!".getBytes();
-
     @Container
     static PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>("postgres:16")
@@ -41,11 +39,7 @@ class AutomatedDecisionServiceTest {
 
     @DynamicPropertySource
     static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",      postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("stash.kyc.ghana-card-encryption-key",
-                () -> java.util.Base64.getEncoder().encodeToString(TEST_AES_KEY));
+        KycIntegrationTestSupport.registerPostgres(registry, postgres);
         registry.add("stash.kyc.stub-provider.test-approve-numbers",
                 () -> "GHA-111111111-1");
     }

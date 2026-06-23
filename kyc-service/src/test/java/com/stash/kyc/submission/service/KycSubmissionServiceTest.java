@@ -1,6 +1,7 @@
 package com.stash.kyc.submission.service;
 
 import com.stash.kyc.storage.ObjectStorage;
+import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.kyc.submission.api.dto.CreateSubmissionRequest;
 import com.stash.kyc.submission.api.dto.CreateSubmissionResponse;
 import com.stash.kyc.submission.domain.KycSubmission;
@@ -28,9 +29,6 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("KycSubmissionService")
 class KycSubmissionServiceTest {
 
-    private static final byte[] TEST_AES_KEY =
-            "test-aes-256-key-32-bytes-long!!".getBytes();
-
     @Container
     static PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>("postgres:16")
@@ -40,11 +38,7 @@ class KycSubmissionServiceTest {
 
     @DynamicPropertySource
     static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",      postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("stash.kyc.ghana-card-encryption-key",
-                () -> java.util.Base64.getEncoder().encodeToString(TEST_AES_KEY));
+        KycIntegrationTestSupport.registerPostgres(registry, postgres);
     }
 
     @Autowired KycSubmissionService kycSubmissionService;

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 
+import AuthenticatedBootstrapScreen from '../screens/AuthenticatedBootstrapScreen';
 import HomeScreen from '../screens/HomeScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import EmailVerificationPendingScreen from '../screens/EmailVerificationPendingScreen';
@@ -18,7 +19,8 @@ export type RootStackParamList = {
   Login: { successBanner?: string } | undefined;
   ForgotPassword: undefined;
   ResetPassword: { token: string };
-  EmailVerificationPending: { email: string };
+  EmailVerificationPending: { email?: string; token?: string };
+  AuthenticatedBootstrap: undefined;
   Home: undefined;
   KycFlow: undefined;
   KycCardDetails: undefined;
@@ -40,7 +42,10 @@ const linking = {
   config: {
     screens: {
       ResetPassword: { path: 'reset-password', parse: { token: String } },
-      EmailVerificationPending: { path: 'verify-email', parse: { email: String } },
+      EmailVerificationPending: {
+        path: 'verify-email',
+        parse: { email: String, token: String },
+      },
     },
   },
 };
@@ -62,6 +67,7 @@ export default function RootNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
         <>
+          <Stack.Screen name="AuthenticatedBootstrap" component={AuthenticatedBootstrapScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="KycCardDetails" component={KycCardDetailsScreen} />
           <Stack.Screen name="KycDocumentUpload" component={KycDocumentUploadScreen} />

@@ -5,7 +5,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { resendVerification } from '../api/auth';
+import { resendVerification, verifyEmail } from '../api/auth';
+import { extractApiError } from '../api/client';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EmailVerificationPending'>;
 type Route = RouteProp<RootStackParamList, 'EmailVerificationPending'>;
@@ -15,11 +16,15 @@ const RESEND_COOLDOWN_SECONDS = 60;
 export default function EmailVerificationPendingScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { email } = route.params;
+  const email = route.params?.email ?? '';
+  const verifyToken = route.params?.token;
 
+  const [verifyState, setVerifyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [resendState, setResendState] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [cooldownRemaining, setCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const verifyAttemptedRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -27,6 +32,33 @@ export default function EmailVerificationPendingScreen() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (!verifyToken || verifyAttemptedRef.current) return;
+    verifyAttemptedRef.current = true;
+
+    (async () => {
+      setVerifyState('loading');
+      setVerifyError(null);
+      try {
+        await verifyEmail(verifyToken);
+        setVerifyState('success');
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Login',
+              params: { successBanner: 'Email verified! You can sign in now.' },
+            },
+          ],
+        });
+      } catch (error) {
+        const apiError = extractApiError(error);
+        setVerifyState('error');
+        setVerifyError(apiError?.message ?? 'Verification link is invalid or has expired.');
+      }
+    })();
+  }, [verifyToken, navigation]);
 
   const startCooldown = () => {
     setCooldown(RESEND_COOLDOWN_SECONDS);
@@ -42,7 +74,7 @@ export default function EmailVerificationPendingScreen() {
   };
 
   const handleResend = async () => {
-    if (resendState === 'loading' || cooldownRemaining > 0) return;
+    if (!email || resendState === 'loading' || cooldownRemaining > 0) return;
     setResendState('loading');
     try {
       await resendVerification(email);
@@ -53,7 +85,18 @@ export default function EmailVerificationPendingScreen() {
     }
   };
 
-  const canResend = resendState !== 'loading' && cooldownRemaining === 0;
+  const canResend = !!email && resendState !== 'loading' && cooldownRemaining === 0;
+
+  if (verifyState === 'loading') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={[styles.container, styles.centered]}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.verifyingText}>Verifying your email…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -61,9 +104,20 @@ export default function EmailVerificationPendingScreen() {
         <Text style={styles.emoji}>✉️</Text>
         <Text style={styles.heading}>Check your inbox</Text>
         <Text style={styles.body}>
-          We sent a verification link to <Text style={styles.email}>{email}</Text>.{'\n\n'}
+          {email ? (
+            <>
+              We sent a verification link to <Text style={styles.email}>{email}</Text>.
+            </>
+          ) : (
+            <>We sent a verification link to your email address.</>
+          )}
+          {'\n\n'}
           Click the link in the email to activate your account. It expires in 24 hours.
         </Text>
+
+        {verifyState === 'error' && verifyError ? (
+          <Text style={styles.errorText}>{verifyError}</Text>
+        ) : null}
 
         {resendState === 'sent' ? (
           <Text style={styles.sentText}>Verification email resent!</Text>
@@ -100,6 +154,8 @@ export default function EmailVerificationPendingScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 80, alignItems: 'center' },
+  centered: { justifyContent: 'center' },
+  verifyingText: { marginTop: 16, fontSize: 16, color: '#6B7280' },
   emoji: { fontSize: 56, marginBottom: 24 },
   heading: {
     fontSize: 26,

@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoginScreen from '../src/screens/LoginScreen';
 import * as authApi from '../src/api/auth';
+import * as postAuthNav from '../src/navigation/resolvePostAuthNavigation';
 import { AuthProvider } from '../src/auth/AuthContext';
 import type { RootStackParamList } from '../src/navigation/RootNavigator';
 
@@ -48,15 +49,42 @@ describe('LoginScreen', () => {
       access_token: 'at',
       refresh_token: 'rt',
       expires_in: 900,
-      user: { id: '1', email: 'a@b.com', display_name: 'A', kyc_status: 'VERIFIED' },
+      user: { id: '1', email: 'a@b.com', display_name: 'A', kyc_status: 'APPROVED' },
     });
+    jest.spyOn(postAuthNav, 'resolvePostAuthNavigation').mockResolvedValue({ name: 'Home' });
 
     const utils = render(<LoginScreen />, { wrapper });
     fireEvent.changeText(utils.getByPlaceholderText('you@example.com'), 'a@b.com');
     fireEvent.changeText(utils.getByPlaceholderText('Your password'), 'Pass@123');
     fireEvent.press(utils.getByText('Sign in'));
 
-    await waitFor(() => expect(mockReset).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: 'Home' }] }),
+    );
+  });
+
+  it('routes PENDING users to KYC after login', async () => {
+    jest.spyOn(authApi, 'login').mockResolvedValue({
+      access_token: 'at',
+      refresh_token: 'rt',
+      expires_in: 900,
+      user: { id: '1', email: 'a@b.com', display_name: 'A', kyc_status: 'PENDING' },
+    });
+    jest
+      .spyOn(postAuthNav, 'resolvePostAuthNavigation')
+      .mockResolvedValue({ name: 'KycCardDetails' });
+
+    const utils = render(<LoginScreen />, { wrapper });
+    fireEvent.changeText(utils.getByPlaceholderText('you@example.com'), 'a@b.com');
+    fireEvent.changeText(utils.getByPlaceholderText('Your password'), 'Pass@123');
+    fireEvent.press(utils.getByText('Sign in'));
+
+    await waitFor(() =>
+      expect(mockReset).toHaveBeenCalledWith({
+        index: 0,
+        routes: [{ name: 'KycCardDetails' }],
+      }),
+    );
   });
 
   it('wrong password: shows inline field error', async () => {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { clearSession, loadSession, persistSession, setSessionListener } from './authSession';
 
 interface AuthState {
   accessToken: string | null;
@@ -15,10 +15,6 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const ACCESS_TOKEN_KEY = 'stash_access_token';
-const REFRESH_TOKEN_KEY = 'stash_refresh_token';
-const KYC_STATUS_KEY = 'stash_kyc_status';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     accessToken: null,
@@ -28,36 +24,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    Promise.all([
-      SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
-      SecureStore.getItemAsync(KYC_STATUS_KEY),
-    ]).then(([token, kyc]) => {
-      setState({
-        accessToken: token,
-        kycStatus: kyc,
-        isLoading: false,
-        isAuthenticated: !!token,
-      });
+    loadSession().then(session => {
+      if (session) {
+        setState({
+          accessToken: session.accessToken,
+          kycStatus: session.kycStatus,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+      } else {
+        setState({
+          accessToken: null,
+          kycStatus: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+      }
     });
   }, []);
 
+  useEffect(() => {
+    setSessionListener(session => {
+      if (session) {
+        setState({
+          accessToken: session.accessToken,
+          kycStatus: session.kycStatus,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+      } else {
+        setState({
+          accessToken: null,
+          kycStatus: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+      }
+    });
+
+    return () => setSessionListener(null);
+  }, []);
+
   const setTokens = async (accessToken: string, refreshToken: string, kycStatus: string) => {
-    await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken);
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
-    await SecureStore.setItemAsync(KYC_STATUS_KEY, kycStatus);
-    setState({ accessToken, kycStatus, isLoading: false, isAuthenticated: true });
+    await persistSession({ accessToken, refreshToken, kycStatus });
   };
 
   const clearTokens = async () => {
-    await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(KYC_STATUS_KEY);
-    setState({
-      accessToken: null,
-      kycStatus: null,
-      isLoading: false,
-      isAuthenticated: false,
-    });
+    await clearSession();
   };
 
   return (

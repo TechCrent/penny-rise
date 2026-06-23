@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -60,6 +60,25 @@ export default function KycDocumentUploadScreen() {
     BACK_OF_CARD: INITIAL_DOC_STATE,
     SELFIE: INITIAL_DOC_STATE,
   });
+
+  useEffect(() => {
+    loadKycSubmission().then(stored => {
+      if (!stored?.uploadedTypes.length) return;
+
+      setDocStates(prev => {
+        const next = { ...prev };
+        for (const type of stored.uploadedTypes) {
+          next[type] = {
+            state: 'success',
+            progress: 1,
+            previewUri: undefined,
+            error: undefined,
+          };
+        }
+        return next;
+      });
+    });
+  }, []);
 
   const allUploaded = Object.values(docStates).every(d => d.state === 'success');
 

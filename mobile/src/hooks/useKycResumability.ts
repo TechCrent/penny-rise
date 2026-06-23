@@ -7,10 +7,17 @@ import { loadKycSubmission } from '../storage/kycStorage';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-export function useKycResumability() {
+interface UseKycResumabilityOptions {
+  enabled?: boolean;
+}
+
+export function useKycResumability(options?: UseKycResumabilityOptions) {
   const navigation = useNavigation<Nav>();
+  const enabled = options?.enabled ?? true;
 
   useEffect(() => {
+    if (!enabled) return;
+
     async function check() {
       const stored = await loadKycSubmission();
       if (stored) {
@@ -28,5 +35,5 @@ export function useKycResumability() {
     }
 
     check();
-  }, [navigation]);
+  }, [navigation, enabled]);
 }

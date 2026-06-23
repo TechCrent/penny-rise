@@ -36,4 +36,12 @@ public interface ObjectStorage {
      * Returns the bucket/container name documents are stored in.
      */
     String getBucketName();
+
+    /**
+     * Permanently deletes a document from storage.
+     *
+     * @param key the storage path/key of the document to delete
+     * @throws com.stash.kyc.document.exception.DocumentDeletionStorageException if deletion fails
+     */
+    void delete(String key);
 }

@@ -33,15 +33,31 @@ public interface KycSubmissionDocumentRepository extends JpaRepository<KycSubmis
      */
 
     @Modifying
-    @org.springframework.data.jpa.repository.Query("""
-UPDATE KycSubmissionDocument d
-SET d.deletionStatus = 'PENDING_DELETION',
-d.deletionScheduledAt = :scheduledAt
-WHERE d.submissionId = :submissionId
-AND d.deletionStatus = 'RETAINED'
-""")
+    @Query("""
+            UPDATE KycSubmissionDocument d
+            SET d.deletionStatus = 'PENDING_DELETION',
+                d.deletionScheduledAt = :scheduledAt
+            WHERE d.submissionId = :submissionId
+            AND d.deletionStatus = 'RETAINED'
+            """)
 
-    int scheduleDeletionForSubmission(@org.springframework.data.repository.query.Param("submissionId") java.util.UUID submissionId,
-                                      @org.springframework.data.repository.query.Param("scheduledAt") Instant scheduledAt);
+    int scheduleDeletionForSubmission(@Param("submissionId") UUID submissionId,
+                                      @Param("scheduledAt") Instant scheduledAt);
+
+    /**
+     * Selects documents due for deletion, locked against concurrent workers.
+     * Uses native SQL for SELECT FOR UPDATE SKIP LOCKED — JPQL has no syntax for this.
+     *
+     * <p>Called inside a transaction — the lock is held until the transaction commits.
+     */
+    @Query(value = """
+            SELECT * FROM kyc.submission_documents
+            WHERE deletion_status IN ('PENDING_DELETION', 'DELETE_FAILED')
+              AND deletion_scheduled_at <= NOW()
+            ORDER BY deletion_scheduled_at ASC
+            LIMIT :batchSize
+            FOR UPDATE SKIP LOCKED
+            """, nativeQuery = true)
+    List<KycSubmissionDocument> findDueForDeletion(@Param("batchSize") int batchSize);
 
 }

@@ -39,7 +39,7 @@ public class KycSubmissionDocument {
     @Column(name = "storage_provider", nullable = false, length = 50)
     private String storageProvider;
 
-    @Column(name = "storage_key", nullable = false, length = 500)
+    @Column(name = "storage_key", length = 500)
     private String storageKey;
 
     @Column(name = "content_type", nullable = false, length = 100)

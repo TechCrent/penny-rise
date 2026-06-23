@@ -90,16 +90,16 @@ class AutomatedDecisionServiceTest {
     }
 
     @Test
-    @DisplayName("approval schedules document deletion")
-    void approval_schedules_deletion() {
+    @DisplayName("approval does not schedule document deletion inline — event consumer handles it")
+    void approval_does_not_schedule_deletion_inline() {
         KycSubmission submission = submissionInReviewing("GHA-111111111-1");
         var doc = new KycSubmissionDocument(submission.getId(), "FRONT_OF_CARD", "LOCAL",
                 "key1", "image/jpeg", 1000L, "hash1");
         documentRepository.save(doc);
         decisionService.processSubmission(submission.getId(), "corr-1");
         var reloadedDoc = documentRepository.findById(doc.getId()).orElseThrow();
-        assertThat(reloadedDoc.getDeletionStatus()).isEqualTo("PENDING_DELETION");
-        assertThat(reloadedDoc.getDeletionScheduledAt()).isNotNull();
+        assertThat(reloadedDoc.getDeletionStatus()).isEqualTo("RETAINED");
+        assertThat(reloadedDoc.getDeletionScheduledAt()).isNull();
     }
 
     @Test
@@ -162,7 +162,7 @@ class AutomatedDecisionServiceTest {
         when(failingProvider.verify(any(), any(), any()))
                 .thenThrow(new RuntimeException("Simulated transient provider failure"));
         AutomatedDecisionService serviceWithFailingProvider = new AutomatedDecisionService(
-                submissionRepository, documentRepository, decisionRecordRepository,
+                submissionRepository, decisionRecordRepository,
                 manualReviewQueueRepository, failingProvider, rabbitTemplate);
         KycSubmission submission = submissionInReviewing("GHA-111111111-1");
         serviceWithFailingProvider.processSubmission(submission.getId(), "corr-1");

@@ -1,7 +1,6 @@
 package com.stash.kyc.submission.service;
 
 import com.stash.kyc.config.KycMessagingConfig;
-import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
 import com.stash.kyc.provider.GhanaCardProviderClient;
 import com.stash.kyc.submission.domain.KycSubmission;
 import com.stash.kyc.submission.domain.ManualReviewQueueEntry;
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /**
@@ -52,21 +50,17 @@ import java.util.UUID;
 public class AutomatedDecisionService {
     private static final Logger log = LoggerFactory.getLogger(AutomatedDecisionService.class);
     private static final String PROVIDER_NAME = "stub-ghana-card-provider";
-    private static final int    DELETION_GRACE_HOURS = 24;
     private final KycSubmissionRepository submissionRepository;
-    private final KycSubmissionDocumentRepository documentRepository;
     private final ProviderDecisionRecordRepository decisionRecordRepository;
     private final ManualReviewQueueRepository manualReviewQueueRepository;
     private final GhanaCardProviderClient providerClient;
     private final RabbitTemplate rabbitTemplate;
     public AutomatedDecisionService(KycSubmissionRepository submissionRepository,
-                                    KycSubmissionDocumentRepository documentRepository,
                                     ProviderDecisionRecordRepository decisionRecordRepository,
                                     ManualReviewQueueRepository manualReviewQueueRepository,
                                     GhanaCardProviderClient providerClient,
                                     RabbitTemplate rabbitTemplate) {
         this.submissionRepository         = submissionRepository;
-        this.documentRepository           = documentRepository;
         this.decisionRecordRepository      = decisionRecordRepository;
         this.manualReviewQueueRepository    = manualReviewQueueRepository;
         this.providerClient                  = providerClient;
@@ -171,10 +165,6 @@ public class AutomatedDecisionService {
                 decision.providerReference(), "AUTO");
         submissionRepository.save(submission);
 
-// Schedule document deletion: decided_at + 24h grace (Schema doc §8.2)
-        Instant deletionScheduledAt = submission.getDecidedAt().plus(DELETION_GRACE_HOURS, ChronoUnit.HOURS);
-        documentRepository.scheduleDeletionForSubmission(submission.getId(), deletionScheduledAt);
-
         publishApprovedEvent(submission, correlationId);
         log.info("Submission APPROVED via AUTO path submissionId={}", submission.getId());
     }
@@ -206,10 +196,6 @@ public class AutomatedDecisionService {
         submission.setDecisionReason("Automated verification failed.");
         submissionRepository.save(submission);
 
-// Schedule document deletion even on rejection — Schema doc §8.2 applies
-// regardless of outcome.
-        Instant deletionScheduledAt = submission.getDecidedAt().plus(DELETION_GRACE_HOURS, ChronoUnit.HOURS);
-        documentRepository.scheduleDeletionForSubmission(submission.getId(), deletionScheduledAt);
         ManualReviewQueueEntry queueEntry = new ManualReviewQueueEntry(
                 submission.getId(), "Automated rejection — flagged for human review");
         manualReviewQueueRepository.save(queueEntry);

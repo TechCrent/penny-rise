@@ -134,15 +134,16 @@ class KycAdminReviewServiceTest {
     }
 
     @Test
-    @DisplayName("approve schedules document deletion")
-    void approve_schedules_deletion() {
+    @DisplayName("approve does not schedule document deletion inline — event consumer handles it")
+    void approve_does_not_schedule_deletion_inline() {
         KycSubmission submission = escalatedSubmission();
         var doc = documentRepository.findBySubmissionId(submission.getId()).get(0);
 
         adminReviewService.decide(submission.getId(), KycAdminReviewService.DECIDE_APPROVE, null, ADMIN_ID);
 
         var reloaded = documentRepository.findById(doc.getId()).orElseThrow();
-        assertThat(reloaded.getDeletionStatus()).isEqualTo("PENDING_DELETION");
+        assertThat(reloaded.getDeletionStatus()).isEqualTo("RETAINED");
+        assertThat(reloaded.getDeletionScheduledAt()).isNull();
     }
 
     @Test

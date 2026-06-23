@@ -27,9 +27,9 @@ public interface KycSubmissionDocumentRepository extends JpaRepository<KycSubmis
 
     /**
 
-     * Schedules deletion for all documents belonging to a submission.
-     * Called when a submission reaches a terminal decision (APPROVED/REJECTED).
-     * Per Schema doc §8.2: deletion_scheduled_at = decided_at + 24h.
+     * Schedules deletion for all RETAINED documents belonging to a submission.
+     * Grace windows (24h approved, 72h rejected) are applied by
+     * {@link com.stash.kyc.document.service.DocumentDeletionSchedulerService}.
      */
 
     @Modifying

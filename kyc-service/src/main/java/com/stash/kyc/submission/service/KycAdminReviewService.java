@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,7 +51,6 @@ public class KycAdminReviewService {
     private static final Logger log = LoggerFactory.getLogger(KycAdminReviewService.class);
 
     private static final Duration VIEW_URL_EXPIRY = Duration.ofMinutes(15);
-    private static final int DELETION_GRACE_HOURS = 24;
 
     public static final String DECIDE_APPROVE = "APPROVE";
     public static final String DECIDE_REJECT  = "REJECT";
@@ -204,7 +202,6 @@ public class KycAdminReviewService {
             submission.finalizeManualDecision(KycSubmission.DECISION_APPROVED, null, reviewerAdminId);
             submissionRepository.save(submission);
 
-            scheduleDeletion(submission);
             publishApprovedEvent(submission, correlationId);
 
             log.info("Submission APPROVED via MANUAL review submissionId={} reviewerAdminId={}",
@@ -214,7 +211,6 @@ public class KycAdminReviewService {
             submission.finalizeManualDecision(KycSubmission.DECISION_REJECTED, reason, reviewerAdminId);
             submissionRepository.save(submission);
 
-            scheduleDeletion(submission);
             publishRejectedEvent(submission, reason, correlationId);
 
             log.info("Submission REJECTED via MANUAL review submissionId={} reviewerAdminId={}",
@@ -223,11 +219,6 @@ public class KycAdminReviewService {
     }
 
     // ── Private helpers ──────────────────────────────────────────────────
-
-    private void scheduleDeletion(KycSubmission submission) {
-        Instant deletionScheduledAt = submission.getDecidedAt().plus(DELETION_GRACE_HOURS, ChronoUnit.HOURS);
-        documentRepository.scheduleDeletionForSubmission(submission.getId(), deletionScheduledAt);
-    }
 
     private void publishApprovedEvent(KycSubmission submission, String correlationId) {
         var event = new KycApprovedEvent(

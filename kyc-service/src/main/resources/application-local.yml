@@ -6,5 +6,6 @@ stash:
   kyc:
     # Base64 of exactly 32 bytes: "test-kyc-encryption-key-32-bytes!"
     ghana-card-encryption-key: dGVzdC1reWMtZW5jcnlwdGlvbi1rZXktMzItYnl0ZXMh
+    placeholder-admin-token: local-dev-admin-token-not-for-production
     storage:
       provider: local

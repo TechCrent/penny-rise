@@ -128,6 +128,9 @@ stash:
   kyc:
     ghana-card-encryption-key: ${GHANA_CARD_ENCRYPTION_KEY}
     base-url: ${STASH_KYC_BASE_URL:http://localhost:8082}
+    # ⚠️ PLACEHOLDER admin auth — shared secret only, no real RBAC.
+    # Replaced entirely by the v0.5 admin auth system.
+    placeholder-admin-token: ${KYC_PLACEHOLDER_ADMIN_TOKEN}
     storage:
       bucket: kyc-documents
       provider: ${KYC_STORAGE_PROVIDER:local}

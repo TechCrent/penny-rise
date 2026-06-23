@@ -1,6 +1,7 @@
 package com.stash.kyc.document.service;
 
 import com.stash.kyc.document.api.dto.DocumentUploadConfirmationRequest;
+import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.kyc.document.domain.KycSubmissionDocument;
 import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
 import com.stash.kyc.document.repository.ProcessedDocumentEventRepository;
@@ -34,9 +35,6 @@ import static org.mockito.Mockito.verify;
 @DisplayName("DocumentUploadConfirmationService")
 class DocumentUploadConfirmationServiceTest {
 
-    private static final byte[] TEST_AES_KEY =
-            "test-aes-256-key-32-bytes-long!!".getBytes();
-
     @Container
     static PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>("postgres:16")
@@ -46,11 +44,7 @@ class DocumentUploadConfirmationServiceTest {
 
     @DynamicPropertySource
     static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",      postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("stash.kyc.ghana-card-encryption-key",
-                () -> java.util.Base64.getEncoder().encodeToString(TEST_AES_KEY));
+        KycIntegrationTestSupport.registerPostgres(registry, postgres);
     }
 
     @Autowired DocumentUploadConfirmationService confirmationService;

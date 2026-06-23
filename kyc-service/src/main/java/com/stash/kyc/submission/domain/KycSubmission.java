@@ -121,4 +121,13 @@ public class KycSubmission {
         this.decidedAt           = java.time.Instant.now();
 
     }
+
+    public void finalizeManualDecision(String decision, String reason, UUID reviewerAdminId) {
+        this.decision         = decision;
+        this.status           = decision;
+        this.decisionReason   = reason;
+        this.reviewerAdminId  = reviewerAdminId;
+        this.reviewPath       = "MANUAL";
+        this.decidedAt        = Instant.now();
+    }
 }

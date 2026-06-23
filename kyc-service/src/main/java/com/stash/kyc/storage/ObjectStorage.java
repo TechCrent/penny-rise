@@ -22,6 +22,17 @@ public interface ObjectStorage {
     String generateSignedUploadUrl(String key, String contentType, Duration expiry);
 
     /**
+     * Generates a signed, time-limited URL for VIEWING (downloading) an
+     * already-uploaded document. Used by admin review endpoints to render
+     * document images without exposing the bucket publicly.
+     *
+     * @param key    the storage path/key of the document
+     * @param expiry how long the signed URL remains valid
+     * @return a signed URL the admin console can fetch the image from
+     */
+    String generateSignedDownloadUrl(String key, Duration expiry);
+
+    /**
      * Returns the bucket/container name documents are stored in.
      */
     String getBucketName();

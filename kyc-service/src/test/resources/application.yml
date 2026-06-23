@@ -1,4 +1,5 @@
-# Shared defaults for @SpringBootTest — DynamicPropertySource overrides DB and AES key.
+# Shared defaults for @SpringBootTest — override DB/AES via
+# KycIntegrationTestSupport.registerPostgres() in integration tests.
 spring:
   rabbitmq:
     listener:
@@ -9,6 +10,7 @@ stash:
   kyc:
     base-url: http://localhost:8082
     ghana-card-encryption-key: dGVzdC1hZXMtMjU2LWtleS0zMi1ieXRlcy1sb25nISE=
+    placeholder-admin-token: local-dev-admin-token-not-for-production
     storage:
       bucket: kyc-documents
       provider: local

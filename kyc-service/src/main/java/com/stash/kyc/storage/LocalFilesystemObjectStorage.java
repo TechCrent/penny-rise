@@ -35,6 +35,12 @@ public class LocalFilesystemObjectStorage implements ObjectStorage {
     }
 
     @Override
+    public String generateSignedDownloadUrl(String key, Duration expiry) {
+        long expiresAtEpoch = System.currentTimeMillis() / 1000 + expiry.toSeconds();
+        return baseUrl + "/internal/local-storage/view/" + key + "?expires=" + expiresAtEpoch;
+    }
+
+    @Override
     public String getBucketName() {
         return bucketName;
     }

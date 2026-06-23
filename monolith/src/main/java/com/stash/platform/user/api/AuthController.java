@@ -68,7 +68,7 @@ public class AuthController {
         description = "Creates a new account. Email verification is required before login.")
     @ApiResponse(responseCode = "201", description = "Account created; verification email sent")
     @ApiResponse(responseCode = "409", description = "Email already registered")
-    @ApiResponse(responseCode = "422", description = "Validation error")
+    @ApiResponse(responseCode = "400", description = "Validation error")
     public ResponseEntity<SignupResponse> signup(
             @Valid @RequestBody SignupRequest request) {
         SignupResponse response = signupService.signup(request);
@@ -173,7 +173,7 @@ public class AuthController {
     @ApiResponse(responseCode = "404", description = "Token not found")
     @ApiResponse(responseCode = "409", description = "Token already used")
     @ApiResponse(responseCode = "410", description = "Token expired")
-    @ApiResponse(responseCode = "422", description = "New password fails strength validation")
+    @ApiResponse(responseCode = "400", description = "New password fails strength validation")
     public ResponseEntity<Void> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
         resetPasswordService.resetPassword(request.token(), request.newPassword());

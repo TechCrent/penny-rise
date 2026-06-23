@@ -57,7 +57,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Profile updated")
     @ApiResponse(responseCode = "401", description = "Not authenticated")
     @ApiResponse(responseCode = "409", description = "Phone already set (v0.2 limitation)")
-    @ApiResponse(responseCode = "422", description = "Validation error (e.g. malformed phone)")
+    @ApiResponse(responseCode = "400", description = "Validation error (e.g. malformed phone)")
     public ResponseEntity<UserProfileResponse> updateMe(
             @Valid @RequestBody UpdateUserProfileRequest request,
             Authentication authentication) {

@@ -50,7 +50,7 @@ public class KycSubmissionController {
     @ApiResponse(responseCode = "201", description = "Submission created")
     @ApiResponse(responseCode = "401", description = "Missing authenticated user header")
     @ApiResponse(responseCode = "409", description = "User already has an active submission")
-    @ApiResponse(responseCode = "422", description = "Invalid Ghana Card format")
+    @ApiResponse(responseCode = "400", description = "Invalid Ghana Card format")
     public ResponseEntity<CreateSubmissionResponse> createSubmission(
             @Valid @RequestBody CreateSubmissionRequest request,
             @RequestHeader(USER_ID_HEADER) UUID userId) {
@@ -74,8 +74,10 @@ public class KycSubmissionController {
 
     @GetMapping("/{id}")
     @Operation(
-        summary     = "Poll KYC submission status",
+        summary     = "Poll KYC submission status by ID",
         description = "Returns status, timestamps, and rejection reason if applicable. " +
+                      "Prefer GET /me when the caller does not already hold a submission ID " +
+                      "(mobile resumability and post-login routing use /me). " +
                       "Never returns ghana_card_number or document storage paths. " +
                       "A caller may only fetch their own submission — cross-user " +
                       "access returns 404, not 403, to avoid confirming the submission's existence.")

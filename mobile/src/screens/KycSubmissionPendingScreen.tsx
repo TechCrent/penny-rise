@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getSubmissionStatus } from '../api/kyc';
 import { clearKycSubmission } from '../storage/kycStorage';
+import { supportMailtoUrl } from '../constants/support';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycSubmissionPending'>;
 type Route = RouteProp<RootStackParamList, 'KycSubmissionPending'>;
@@ -82,6 +83,10 @@ export default function KycSubmissionPendingScreen() {
     return stopPolling;
   }, [poll, stopPolling]);
 
+  const openSupportEmail = () => {
+    Linking.openURL(supportMailtoUrl('KYC verification help'));
+  };
+
   if (screenState.kind === 'loading') {
     return (
       <SafeAreaView style={styles.safe}>
@@ -97,9 +102,9 @@ export default function KycSubmissionPendingScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <Text style={styles.successEmoji}>Verified</Text>
-          <Text style={styles.heading}>Identity verified!</Text>
-          <Text style={styles.body}>Your account is fully verified. Taking you to Stash…</Text>
+          <Text style={styles.successEmoji}>Approved</Text>
+          <Text style={styles.heading}>Identity approved!</Text>
+          <Text style={styles.body}>Your KYC is approved. Taking you to Stash…</Text>
         </View>
       </SafeAreaView>
     );
@@ -120,7 +125,7 @@ export default function KycSubmissionPendingScreen() {
           <Text style={styles.body}>
             If you believe this is a mistake or need help, please contact our support team.
           </Text>
-          <TouchableOpacity style={styles.supportButton} onPress={() => undefined}>
+          <TouchableOpacity style={styles.supportButton} onPress={openSupportEmail}>
             <Text style={styles.supportButtonText}>Contact support</Text>
           </TouchableOpacity>
           <TouchableOpacity

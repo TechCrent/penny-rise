@@ -65,7 +65,7 @@ PRs adding endpoints without these annotations will be sent back in review.
 
 ## Local Development
 
-See **`docs/v0.2-known-limits.md`** for v0.2 accepted stubs, Tier 3 close-out checklist, and port reference.
+See **`docs/v0.2-known-limits.md`** for v0.2 accepted stubs, Tier 3 close-out checklist, and port reference. Schema/Issue Plan mapping: **`docs/v0.2-schema-reconciliation.md`**.
 
 Quick notes:
 

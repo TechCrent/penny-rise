@@ -85,11 +85,7 @@ function TimeInQueue({ submittedAt }: { submittedAt: string }) {
   const hours = differenceInHours(submitted, new Date());
 
   const color =
-    hours <= -24
-      ? 'text-red-600 font-semibold'
-      : hours <= -4
-        ? 'text-amber-600'
-        : 'text-slate-600';
+    hours <= -24 ? 'text-red-600 font-semibold' : hours <= -4 ? 'text-amber-600' : 'text-slate-600';
 
   return <span className={color}>{distance}</span>;
 }

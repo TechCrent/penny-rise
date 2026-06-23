@@ -1,17 +1,44 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import LoginPage from '@/routes/login';
+import { StrictMode, type ReactNode } from 'react';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AdminAuthProvider, useAdminAuth } from './auth/AdminAuthContext';
+import LoginPage from './routes/login';
+import KycQueuePage from './routes/kyc-queue/KycQueuePage';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 30_000 },
+  },
+});
+
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAdminAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 const router = createBrowserRouter([
+  { path: '/', element: <Navigate to="/kyc-queue" replace /> },
+  { path: '/login', element: <LoginPage /> },
   {
-    path: '/',
-    element: <LoginPage />,
-  },
-  {
-    path: '/login',
-    element: <LoginPage />,
+    path: '/kyc-queue',
+    element: (
+      <ProtectedRoute>
+        <KycQueuePage />
+      </ProtectedRoute>
+    ),
   },
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AdminAuthProvider>
+          <RouterProvider router={router} />
+        </AdminAuthProvider>
+      </QueryClientProvider>
+    </StrictMode>
+  );
 }

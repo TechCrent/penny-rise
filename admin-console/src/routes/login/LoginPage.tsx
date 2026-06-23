@@ -1,34 +1,62 @@
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAdminAuth } from '../../auth/AdminAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-/**
- * Placeholder login page.
- * No authentication logic yet — wired in v0.2.
- */
+const PLACEHOLDER_TOKEN =
+  import.meta.env.VITE_PLACEHOLDER_ADMIN_TOKEN ?? 'local-dev-admin-token-not-for-production';
+
 export default function LoginPage() {
+  const { login } = useAdminAuth();
+  const navigate = useNavigate();
+  const [token, setToken] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!token.trim()) {
+      setError('Admin token is required.');
+      return;
+    }
+    if (token.trim() !== PLACEHOLDER_TOKEN) {
+      setError('Invalid admin token.');
+      return;
+    }
+    login(token.trim());
+    navigate('/kyc-queue', { replace: true });
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Stash Admin</CardTitle>
-          <CardDescription>Sign in to access the admin console</CardDescription>
+          <CardDescription>
+            Placeholder auth — for local dev and staging only. Real admin auth ships in v0.5.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="admin@stash.com" disabled />
+              <Label htmlFor="token">Admin Token</Label>
+              <Input
+                id="token"
+                type="password"
+                placeholder="Paste your admin token"
+                value={token}
+                onChange={(e) => {
+                  setToken(e.target.value);
+                  setError('');
+                }}
+              />
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" disabled />
-            </div>
-            <Button type="submit" className="w-full" disabled>
+            <Button type="submit" className="w-full">
               Sign In
             </Button>
-            <p className="text-center text-sm text-slate-500">Platform v0.1 — Scaffold</p>
           </form>
         </CardContent>
       </Card>

@@ -2,6 +2,7 @@ package com.stash.kyc;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.retry.annotation.EnableRetry;
 
 @SpringBootApplication(
         scanBasePackages = {
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
                 org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
         }
 )
+@EnableRetry
 public class KycServiceApplication {
 
     public static void main(String[] args) {

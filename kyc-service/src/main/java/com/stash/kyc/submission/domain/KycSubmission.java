@@ -100,4 +100,25 @@ public class KycSubmission {
             || STATUS_REVIEWING.equals(status)
             || STATUS_APPROVED.equals(status);
     }
+
+    public static final String DECISION_APPROVED = "APPROVED";
+    public static final String DECISION_REJECTED = "REJECTED";
+
+    /**
+     * Finalizes the submission with a terminal decision.
+     * decided_at is set here; deletion scheduling is handled separately
+     * by the caller (KycSubmissionDocumentRepository.scheduleDeletionForSubmission)
+     * since it touches a different table.
+     */
+
+    public void finalizeDecision(String decision, String providerDecision,
+                                 String providerReference, String reviewPath) {
+        this.decision            = decision;
+        this.status              = decision; // status mirrors decision at the terminal state
+        this.providerDecision    = providerDecision;
+        this.providerReference   = providerReference;
+        this.reviewPath          = reviewPath;
+        this.decidedAt           = java.time.Instant.now();
+
+    }
 }

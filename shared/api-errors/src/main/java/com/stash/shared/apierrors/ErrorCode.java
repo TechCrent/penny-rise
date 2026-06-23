@@ -153,4 +153,7 @@ public enum ErrorCode {
 
     /** Idempotency key was reused for a different request body. */
     IDEMPOTENCY_KEY_MISUSED,
+
+    /** KYC provider call failed after all retry attempts. */
+    KYC_PROVIDER_UNAVAILABLE,
 }

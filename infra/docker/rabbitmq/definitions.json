@@ -34,6 +34,13 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "kyc.provider.ready_for_review.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -63,7 +70,25 @@
       "auto_delete": false,
       "internal": false,
       "arguments": {}
+    },
+    {
+      "name": "kyc.events",
+      "vhost": "stash",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
     }
   ],
-  "bindings": []
+  "bindings": [
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "kyc.provider.ready_for_review.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.submission.ready_for_review",
+      "arguments": {}
+    }
+  ]
 }

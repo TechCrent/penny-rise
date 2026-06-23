@@ -112,6 +112,9 @@ public enum ErrorCode {
     /** Ghana Card number format is invalid. */
     KYC_INVALID_GHANA_CARD_FORMAT,
 
+    /** A reason is required to reject a KYC submission. */
+    KYC_REJECTION_REASON_REQUIRED,
+
     // ── VAULT domain ──────────────────────────────────────────────────────
 
     /** Vault not found or does not belong to this user. */

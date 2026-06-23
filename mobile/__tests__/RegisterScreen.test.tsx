@@ -119,7 +119,10 @@ describe('RegisterScreen', () => {
   it('loading state: button shows loading indicator while submitting', async () => {
     let resolveSignup!: (v: authApi.SignupResponse) => void;
     jest.spyOn(authApi, 'signup').mockImplementation(
-      () => new Promise(res => { resolveSignup = res; }),
+      () =>
+        new Promise(res => {
+          resolveSignup = res;
+        }),
     );
 
     const utils = render(<RegisterScreen />, { wrapper });
@@ -143,7 +146,10 @@ describe('RegisterScreen', () => {
   it('double-submission prevention: second press while loading is ignored', async () => {
     let resolveSignup!: (v: authApi.SignupResponse) => void;
     const mockSignup = jest.spyOn(authApi, 'signup').mockImplementation(
-      () => new Promise(res => { resolveSignup = res; }),
+      () =>
+        new Promise(res => {
+          resolveSignup = res;
+        }),
     );
 
     const utils = render(<RegisterScreen />, { wrapper });

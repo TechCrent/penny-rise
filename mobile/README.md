@@ -51,13 +51,35 @@ If the phone cannot reach your PC over Wi‑Fi, use the tunnel:
 pnpm run start:tunnel
 ```
 
-## Linting and type checking
+## Linting, formatting, and tests
+
+CI runs these in order (see `.github/workflows/mobile-ci.yml`). **Run all of them before pushing** — not just `pnpm test`:
 
 ```bash
+pnpm format        # fix Prettier (src + __tests__)
+pnpm format:check  # verify formatting (CI gate)
 pnpm lint          # ESLint
-pnpm format:check  # Prettier
 pnpm typecheck     # TypeScript
+pnpm test          # Jest unit tests
+
+# or run the full CI sequence locally:
+pnpm verify
 ```
+
+### Common CI failures (mobile)
+
+| Failure | Cause | Fix |
+|---------|-------|-----|
+| `format:check` | Prettier not run on new/edited files | `pnpm format` before push |
+| ESLint `no-inline-styles` | Inline `style={{...}}` in JSX | Extract to `StyleSheet.create` |
+| Jest transform / module not found | Missing or wrong `babel.config.js` / `jest-expo` | Use `babel-preset-expo` ~54, `jest` ~29, `jest-expo` ~54; `jest.config.js` preset only — do not override `transformIgnorePatterns` |
+| Tests render empty tree | Missing `SafeAreaProvider` metrics in test wrapper | Pass `initialMetrics` in test helper |
+| `screen.getBy*` not found | `@testing-library/react-native` v14 API | Stay on v12; use `render()` return queries |
+| 409 error test fails | Plain object mock | Use real `axios.AxiosError` for `extractApiError` |
+| Double-submit test fails | Async `useState` guard only | Add synchronous `useRef` guard |
+| Loading test fails | Button text still visible while loading | Assert `ActivityIndicator` via `UNSAFE_getAllByType` |
+
+New screen tests: mock `expo-secure-store`; wrap with `SafeAreaProvider` + navigation test harness.
 
 ## Folder structure
 

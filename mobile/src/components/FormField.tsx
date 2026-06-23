@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, TextInputProps, StyleSheet } from 'react-native';
 
 interface FormFieldProps extends TextInputProps {
   label: string;

@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -36,18 +30,14 @@ export default function EmailVerificationPendingScreen() {
         <Text style={styles.emoji}>✉️</Text>
         <Text style={styles.heading}>Check your inbox</Text>
         <Text style={styles.body}>
-          We sent a verification link to{' '}
-          <Text style={styles.email}>{email}</Text>.
-          {'\n\n'}
+          We sent a verification link to <Text style={styles.email}>{email}</Text>.{'\n\n'}
           Click the link in the email to activate your account.
         </Text>
 
         {resendState === 'sent' ? (
           <Text style={styles.sentText}>Resent! Check your inbox again.</Text>
         ) : resendState === 'error' ? (
-          <Text style={styles.errorText}>
-            Couldn&apos;t resend right now. Please try again.
-          </Text>
+          <Text style={styles.errorText}>Couldn&apos;t resend right now. Please try again.</Text>
         ) : (
           <TouchableOpacity
             onPress={handleResend}

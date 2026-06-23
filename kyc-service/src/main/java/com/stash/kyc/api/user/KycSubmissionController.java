@@ -2,7 +2,9 @@ package com.stash.kyc.api.user;
 
 import com.stash.kyc.submission.api.dto.CreateSubmissionRequest;
 import com.stash.kyc.submission.api.dto.CreateSubmissionResponse;
+import com.stash.kyc.submission.api.dto.SubmissionStatusResponse;
 import com.stash.kyc.submission.service.KycSubmissionService;
+import com.stash.kyc.submission.service.KycSubmissionStatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,9 +34,12 @@ public class KycSubmissionController {
     private static final String USER_ID_HEADER = "X-Authenticated-User-Id";
 
     private final KycSubmissionService kycSubmissionService;
+    private final KycSubmissionStatusService statusService;
 
-    public KycSubmissionController(KycSubmissionService kycSubmissionService) {
+    public KycSubmissionController(KycSubmissionService kycSubmissionService,
+                                   KycSubmissionStatusService statusService) {
         this.kycSubmissionService = kycSubmissionService;
+        this.statusService = statusService;
     }
 
     @PostMapping
@@ -52,5 +57,34 @@ public class KycSubmissionController {
 
         CreateSubmissionResponse response = kycSubmissionService.createSubmission(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/me")
+    @Operation(
+        summary     = "Poll the authenticated user's most recent KYC submission",
+        description = "Convenience route — no submission ID required. Returns the " +
+                      "user's most recent submission regardless of its status.")
+    @ApiResponse(responseCode = "200", description = "Submission status returned")
+    @ApiResponse(responseCode = "401", description = "Missing authenticated user header")
+    @ApiResponse(responseCode = "404", description = "User has no KYC submission")
+    public ResponseEntity<SubmissionStatusResponse> getMyStatus(
+            @RequestHeader(USER_ID_HEADER) UUID userId) {
+        return ResponseEntity.ok(statusService.getMyStatus(userId));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(
+        summary     = "Poll KYC submission status",
+        description = "Returns status, timestamps, and rejection reason if applicable. " +
+                      "Never returns ghana_card_number or document storage paths. " +
+                      "A caller may only fetch their own submission — cross-user " +
+                      "access returns 404, not 403, to avoid confirming the submission's existence.")
+    @ApiResponse(responseCode = "200", description = "Submission status returned")
+    @ApiResponse(responseCode = "401", description = "Missing authenticated user header")
+    @ApiResponse(responseCode = "404", description = "Submission not found or not owned by caller")
+    public ResponseEntity<SubmissionStatusResponse> getStatus(
+            @PathVariable UUID id,
+            @RequestHeader(USER_ID_HEADER) UUID userId) {
+        return ResponseEntity.ok(statusService.getStatus(id, userId));
     }
 }

@@ -174,7 +174,7 @@ public class EmailVerificationService {
         byte[] rawBytes  = new byte[TOKEN_BYTES];
         secureRandom.nextBytes(rawBytes);
         String rawToken  = Base64.getUrlEncoder().withoutPadding().encodeToString(rawBytes);
-        String tokenHash = sha256Hex(rawBytes);
+        String tokenHash = sha256Hex(rawToken);
 
         EmailVerificationToken newToken =
                 new EmailVerificationToken(user.getId(), tokenHash);

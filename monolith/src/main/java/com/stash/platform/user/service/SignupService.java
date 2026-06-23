@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -72,7 +73,7 @@ public class SignupService {
         byte[] rawBytes = new byte[VERIFICATION_TOKEN_BYTES];
         secureRandom.nextBytes(rawBytes);
         String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(rawBytes);
-        String tokenHash = sha256Hex(rawBytes);
+        String tokenHash = sha256Hex(rawToken.getBytes(StandardCharsets.UTF_8));
 
         EmailVerificationToken verificationToken = new EmailVerificationToken(user.getId(), tokenHash);
         tokenRepository.save(verificationToken);

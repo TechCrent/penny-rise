@@ -67,6 +67,12 @@ public class KycUserSyncService {
             return;
         }
 
+        if (KycStatus.APPROVED.equals(user.getKycStatus())) {
+            log.debug("KycRejected idempotent skip: user already APPROVED userId={} submissionId={}",
+                    userId, submissionId);
+            return;
+        }
+
         if (KycStatus.REJECTED.equals(user.getKycStatus())) {
             log.debug("KycRejected idempotent skip: user already REJECTED userId={} submissionId={}",
                     userId, submissionId);

@@ -57,3 +57,7 @@ jobs:
       - name: TypeScript compile check
         working-directory: mobile
         run: pnpm typecheck
+
+      - name: Run tests
+        working-directory: mobile
+        run: pnpm test

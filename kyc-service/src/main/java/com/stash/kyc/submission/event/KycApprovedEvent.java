@@ -6,10 +6,10 @@ import java.util.UUID;
 /**
  * Emitted when a KYC submission is approved (AUTO or MANUAL path).
  *
- * <p>Consumed by the monolith (v0.2-026) to set users.kyc_status = VERIFIED
+ * <p>Consumed by the monolith to set users.kyc_status = APPROVED
  * and users.ghana_card_number — note the terminal status NAME differs
  * between databases: this service's kyc.submissions.status = APPROVED,
- * while the monolith's users.kyc_status = VERIFIED (System Design Decision 6).
+ * while the monolith's users.kyc_status = APPROVED (Schema doc §1.2).
  * The event payload carries the raw ghanaCardNumber so the monolith can
  * populate its own copy of the field — KYC and monolith are separate
  * databases with no shared storage.

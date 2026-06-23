@@ -55,6 +55,20 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "monolith.kyc.approved.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "monolith.kyc.rejected.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -116,6 +130,22 @@
       "source": "kyc.events",
       "vhost": "stash",
       "destination": "kyc.deletion_scheduler.rejected.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.rejected",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "monolith.kyc.approved.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.approved",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "monolith.kyc.rejected.queue",
       "destination_type": "queue",
       "routing_key": "kyc.rejected",
       "arguments": {}

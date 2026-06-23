@@ -5,3 +5,11 @@ stash:
       signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItdGVzdHMtb25seS0zMi1jaGFycw==
       verification-keys: ""
       access-token-expiry-minutes: 15
+  kyc:
+    service-url: http://localhost:8082
+
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false

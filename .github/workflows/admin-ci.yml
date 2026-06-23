@@ -58,6 +58,10 @@ jobs:
         working-directory: admin-console
         run: pnpm typecheck
 
+      - name: Run tests
+        working-directory: admin-console
+        run: pnpm test
+
       - name: Build
         working-directory: admin-console
         run: pnpm build

@@ -84,12 +84,14 @@ class KycSubmissionStatusServiceTest {
     @DisplayName("APPROVED status returned correctly, no rejection_reason")
     void approved_status() {
         KycSubmission s = save(USER_A, KycSubmission.STATUS_APPROVED);
+        // Compare against DB round-trip — Postgres truncates Instant to microseconds.
+        KycSubmission persisted = submissionRepository.findById(s.getId()).orElseThrow();
 
         SubmissionStatusResponse response = statusService.getStatus(s.getId(), USER_A);
 
         assertThat(response.status()).isEqualTo(KycSubmission.STATUS_APPROVED);
         assertThat(response.rejectionReason()).isNull();
-        assertThat(response.updatedAt()).isEqualTo(s.getDecidedAt());
+        assertThat(response.updatedAt()).isEqualTo(persisted.getDecidedAt());
     }
 
     @Test

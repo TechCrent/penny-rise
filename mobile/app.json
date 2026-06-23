@@ -6,16 +6,26 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "stash",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.stash.mobile"
+      "bundleIdentifier": "com.stash.mobile",
+      "associatedDomains": ["applinks:stash.app"]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.stash.mobile"
+      "package": "com.stash.mobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "stash.app" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"

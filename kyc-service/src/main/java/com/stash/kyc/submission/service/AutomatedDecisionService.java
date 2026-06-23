@@ -24,6 +24,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -121,7 +122,10 @@ public class AutomatedDecisionService {
 // Record the decision — append-only, regardless of outcome
         ProviderDecisionRecord record = new ProviderDecisionRecord(
                 submissionId, PROVIDER_NAME, decision.providerReference(),
-                decision.decision(), decision.confidenceScore());
+                decision.decision(),
+                decision.confidenceScore() == null
+                        ? null
+                        : BigDecimal.valueOf(decision.confidenceScore()));
         decisionRecordRepository.save(record);
 
         if (decision.isApproved()) {

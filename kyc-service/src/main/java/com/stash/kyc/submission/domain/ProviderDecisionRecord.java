@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -37,8 +38,8 @@ public class ProviderDecisionRecord {
     @Column(name = "decision", nullable = false, length = 50)
     private String decision;
 
-    @Column(name = "confidence_score")
-    private Double confidenceScore;
+    @Column(name = "confidence_score", precision = 5, scale = 4)
+    private BigDecimal confidenceScore;
 
     @Column(name = "requested_at", nullable = false, updatable = false)
     private Instant requestedAt;
@@ -46,7 +47,7 @@ public class ProviderDecisionRecord {
     @Column(name = "responded_at")
     private Instant respondedAt;
     public ProviderDecisionRecord(UUID submissionId, String providerName, String providerReference,
-                                  String decision, Double confidenceScore) {
+                                  String decision, BigDecimal confidenceScore) {
         this.id                  = UuidV7Generator.generate();
         this.submissionId        = submissionId;
         this.providerName        = providerName;

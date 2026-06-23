@@ -28,6 +28,10 @@ import static org.mockito.Mockito.*;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("AutomatedDecisionService")
 class AutomatedDecisionServiceTest {
+
+    private static final byte[] TEST_AES_KEY =
+            "test-aes-256-key-32-bytes-long!!".getBytes();
+
     @Container
     static PostgreSQLContainer<?> postgres =
             new PostgreSQLContainer<>("postgres:16")
@@ -41,8 +45,7 @@ class AutomatedDecisionServiceTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("stash.kyc.ghana-card-encryption-key",
-                () -> java.util.Base64.getEncoder().encodeToString(
-                        "test-aes-256-key-32-bytes-long!".getBytes()));
+                () -> java.util.Base64.getEncoder().encodeToString(TEST_AES_KEY));
         registry.add("stash.kyc.stub-provider.test-approve-numbers",
                 () -> "GHA-111111111-1");
     }

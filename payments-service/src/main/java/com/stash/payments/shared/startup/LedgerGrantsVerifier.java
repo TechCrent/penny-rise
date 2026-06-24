@@ -8,50 +8,49 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Set;
 
 /**
- * Startup guard that verifies Postgres-level append-only grants on the
- * tables that require them. Fails fast on boot if UPDATE or DELETE are
- * discoverable by the application role — a condition that indicates the
- * migration was never applied or was manually rolled back.
+ * Startup guard that verifies Postgres-level append-only grants.
+ * Fails fast on boot if the expected grant configuration is missing or
+ * has been manually relaxed.
  *
- * <p>Runs after the application context is fully loaded (ApplicationReadyEvent)
- * so the datasource and connection pool are ready.
- *
- * <p>Tables checked:
+ * <p>Two check types:
  * <ul>
- *   <li>{@code ledger.ledger_entries} — INSERT/SELECT only (v0.3-003)</li>
- *   <li>{@code outbox.outbox_events} — INSERT/SELECT + restricted UPDATE
- *       (v0.3-006 extends this class)</li>
+ *   <li>{@code FULL_REVOKE} — table must have no UPDATE or DELETE grants
+ *       at either the table or column level. Used for {@code ledger.ledger_entries}.</li>
+ *   <li>{@code COLUMN_RESTRICTED_UPDATE} — table must have no table-level UPDATE,
+ *       but must have column-level UPDATE on exactly the specified columns.
+ *       Used for {@code outbox.outbox_events}.</li>
  * </ul>
  *
- * <p>How the check works: the application role connects and attempts a
- * targeted privilege query against {@code information_schema.role_table_grants}.
- * If UPDATE or DELETE appear for a table that must be append-only, the
- * service throws {@link IllegalStateException} and refuses to finish starting.
- *
- * @see <a href="https://www.postgresql.org/docs/current/infoschema-role-table-grants.html">
- *     PostgreSQL role_table_grants</a>
+ * @see <a href="https://www.postgresql.org/docs/current/infoschema-role-table-grants.html">role_table_grants</a>
+ * @see <a href="https://www.postgresql.org/docs/current/infoschema-role-column-grants.html">role_column_grants</a>
  */
 @Component
 public class LedgerGrantsVerifier {
 
     private static final Logger log = LoggerFactory.getLogger(LedgerGrantsVerifier.class);
 
-    /**
-     * The Postgres application role name, matching the role created in v0.1-006.
-     * If your environment uses a different role, update this constant and the
-     * migration REVOKE statement together.
-     */
     static final String APP_ROLE = "stash_payments";
 
     /**
-     * Tables that must never allow UPDATE or DELETE from the application role.
-     * Add entries here when v0.3-006 (outbox) enforces the same.
+     * Tables whose UPDATE and DELETE are fully revoked at the table level.
+     * No column-level UPDATE either.
      */
-    private static final List<TableSpec> APPEND_ONLY_TABLES = List.of(
+    private static final List<TableSpec> FULL_REVOKE_TABLES = List.of(
             new TableSpec("ledger", "ledger_entries")
-            // v0.3-006 will add: new TableSpec("outbox", "outbox_events")
+    );
+
+    /**
+     * Tables where table-level UPDATE is revoked, but column-level UPDATE
+     * is granted on a specific restricted set of columns.
+     */
+    private static final List<ColumnRestrictedSpec> COLUMN_RESTRICTED_TABLES = List.of(
+            new ColumnRestrictedSpec(
+                    "outbox", "outbox_events",
+                    Set.of("status", "attempts", "sent_at", "last_attempted_at")
+            )
     );
 
     private final JdbcTemplate jdbc;
@@ -62,16 +61,23 @@ public class LedgerGrantsVerifier {
 
     @EventListener(ApplicationReadyEvent.class)
     public void verifyOnStartup() {
-        log.info("LedgerGrantsVerifier: checking append-only grants for role '{}'", APP_ROLE);
+        log.info("LedgerGrantsVerifier: verifying append-only grants for role '{}'", APP_ROLE);
 
-        for (TableSpec table : APPEND_ONLY_TABLES) {
-            checkNoMutatingGrants(table);
+        for (TableSpec table : FULL_REVOKE_TABLES) {
+            checkNoTableLevelMutatingGrants(table.schema(), table.name());
+        }
+
+        for (ColumnRestrictedSpec spec : COLUMN_RESTRICTED_TABLES) {
+            checkNoTableLevelMutatingGrants(spec.schema(), spec.name());
+            checkColumnLevelUpdateGrants(spec);
         }
 
         log.info("LedgerGrantsVerifier: all append-only grant checks passed.");
     }
 
-    private void checkNoMutatingGrants(TableSpec table) {
+    // ── Check 1: no table-level UPDATE or DELETE ──────────────────────────
+
+    private void checkNoTableLevelMutatingGrants(String schema, String table) {
         String sql = """
                 SELECT privilege_type
                 FROM information_schema.role_table_grants
@@ -81,26 +87,76 @@ public class LedgerGrantsVerifier {
                   AND privilege_type IN ('UPDATE', 'DELETE')
                 """;
 
-        List<String> forbidden = jdbc.queryForList(
-                sql,
-                String.class,
-                APP_ROLE, table.schema(), table.name()
-        );
+        List<String> forbidden = jdbc.queryForList(sql, String.class,
+                APP_ROLE, schema, table);
 
         if (!forbidden.isEmpty()) {
-            String msg = String.format(
-                    "FATAL: Append-only violation on %s.%s — role '%s' has %s privileges. " +
-                    "The migration REVOKE was not applied or was manually undone. " +
-                    "Refusing to start to protect ledger integrity.",
-                    table.schema(), table.name(), APP_ROLE, forbidden
-            );
-            log.error(msg);
-            throw new IllegalStateException(msg);
+            fail(String.format(
+                    "Table-level append-only violation on %s.%s — role '%s' has %s. " +
+                    "The migration REVOKE was not applied or was manually undone.",
+                    schema, table, APP_ROLE, forbidden));
         }
 
-        log.info("LedgerGrantsVerifier: {}.{} — OK (no UPDATE/DELETE for '{}')",
-                table.schema(), table.name(), APP_ROLE);
+        log.info("LedgerGrantsVerifier: {}.{} table-level — OK", schema, table);
     }
 
+    // ── Check 2: column-level UPDATE on exactly the expected set ─────────
+
+    private void checkColumnLevelUpdateGrants(ColumnRestrictedSpec spec) {
+        String sql = """
+                SELECT column_name
+                FROM information_schema.role_column_grants
+                WHERE grantee        = ?
+                  AND table_schema   = ?
+                  AND table_name     = ?
+                  AND privilege_type = 'UPDATE'
+                """;
+
+        List<String> grantedColumns = jdbc.queryForList(sql, String.class,
+                APP_ROLE, spec.schema(), spec.name());
+
+        Set<String> granted = Set.copyOf(grantedColumns);
+        Set<String> expected = spec.allowedUpdateColumns();
+
+        // Columns that were granted but should not have been
+        Set<String> unexpected = new java.util.HashSet<>(granted);
+        unexpected.removeAll(expected);
+
+        // Columns that should be granted but weren't
+        Set<String> missing = new java.util.HashSet<>(expected);
+        missing.removeAll(granted);
+
+        if (!unexpected.isEmpty()) {
+            fail(String.format(
+                    "Column-level UPDATE granted on unexpected columns of %s.%s: %s. " +
+                    "These columns should be append-only.",
+                    spec.schema(), spec.name(), unexpected));
+        }
+
+        if (!missing.isEmpty()) {
+            fail(String.format(
+                    "Column-level UPDATE missing on expected columns of %s.%s: %s. " +
+                    "The relay worker will not be able to update these columns.",
+                    spec.schema(), spec.name(), missing));
+        }
+
+        log.info("LedgerGrantsVerifier: {}.{} column-level UPDATE — OK ({})",
+                spec.schema(), spec.name(), granted);
+    }
+
+    private void fail(String message) {
+        String full = "FATAL: " + message + " Refusing to start.";
+        log.error(full);
+        throw new IllegalStateException(full);
+    }
+
+    // ── Specs ─────────────────────────────────────────────────────────────
+
     record TableSpec(String schema, String name) {}
+
+    record ColumnRestrictedSpec(
+            String schema,
+            String name,
+            Set<String> allowedUpdateColumns
+    ) {}
 }

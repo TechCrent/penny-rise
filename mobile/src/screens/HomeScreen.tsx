@@ -1,11 +1,16 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useAuth } from '../auth/AuthContext';
+import { useKycResumability } from '../hooks/useKycResumability';
 
 /**
  * Placeholder home screen.
  * Business logic and real UI will be added in later milestones.
  */
 export default function HomeScreen() {
+  const { kycStatus } = useAuth();
+  useKycResumability({ enabled: kycStatus !== 'APPROVED' });
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Stash</Text>

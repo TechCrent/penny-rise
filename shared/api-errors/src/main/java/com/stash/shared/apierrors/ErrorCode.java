@@ -39,17 +39,58 @@ public enum ErrorCode {
 
     // ── AUTH domain ────────────────────────────────────────────────────────
 
-    /** Email or password is incorrect. */
+    /** Credentials are incorrect (email not found or wrong password). */
     AUTH_INVALID_CREDENTIALS,
 
     /** Account is locked due to repeated failed login attempts. */
     AUTH_ACCOUNT_LOCKED,
+
+    /** Account has been suspended by an administrator. */
+    AUTH_ACCOUNT_SUSPENDED,
 
     /** The provided token (access or refresh) is missing, malformed, or expired. */
     AUTH_TOKEN_INVALID,
 
     /** Email address has not been verified. */
     AUTH_EMAIL_NOT_VERIFIED,
+
+    /** Email address is already registered to an existing account. */
+    AUTH_EMAIL_ALREADY_REGISTERED,
+
+    /** Email verification token has expired. */
+    AUTH_VERIFICATION_TOKEN_EXPIRED,
+
+    /** Email verification token has already been used. */
+    AUTH_VERIFICATION_TOKEN_ALREADY_USED,
+
+    /** Email verification token not found or invalid. */
+    AUTH_VERIFICATION_TOKEN_INVALID,
+
+    /** Resend rate limit exceeded. */
+    AUTH_RESEND_RATE_LIMIT_EXCEEDED,
+
+    /** Email is already verified. */
+    AUTH_EMAIL_ALREADY_VERIFIED,
+
+    /** Refresh token has expired. */
+    AUTH_REFRESH_TOKEN_EXPIRED,
+
+    /** Refresh token is invalid, revoked, or was part of a replay attack. */
+    AUTH_REFRESH_TOKEN_INVALID,
+
+    /** Password reset token has expired. */
+    AUTH_RESET_TOKEN_EXPIRED,
+
+    /** Password reset token has already been used. */
+    AUTH_RESET_TOKEN_ALREADY_USED,
+
+    /** Password reset token not found or invalid. */
+    AUTH_RESET_TOKEN_INVALID,
+
+    // ── USER domain ───────────────────────────────────────────────────────
+
+    /** A pending account deletion request already exists for this user. */
+    USER_DELETION_REQUEST_ALREADY_PENDING,
 
     // ── KYC domain ────────────────────────────────────────────────────────
 
@@ -64,6 +105,15 @@ public enum ErrorCode {
 
     /** KYC submission was rejected. */
     KYC_SUBMISSION_REJECTED,
+
+    /** User already has an active (pending or approved) KYC submission. */
+    KYC_SUBMISSION_ALREADY_ACTIVE,
+
+    /** Ghana Card number format is invalid. */
+    KYC_INVALID_GHANA_CARD_FORMAT,
+
+    /** A reason is required to reject a KYC submission. */
+    KYC_REJECTION_REASON_REQUIRED,
 
     // ── VAULT domain ──────────────────────────────────────────────────────
 
@@ -106,4 +156,7 @@ public enum ErrorCode {
 
     /** Idempotency key was reused for a different request body. */
     IDEMPOTENCY_KEY_MISUSED,
+
+    /** KYC provider call failed after all retry attempts. */
+    KYC_PROVIDER_UNAVAILABLE,
 }

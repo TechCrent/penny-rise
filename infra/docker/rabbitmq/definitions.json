@@ -34,6 +34,41 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "kyc.provider.ready_for_review.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "kyc.deletion_scheduler.approved.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "kyc.deletion_scheduler.rejected.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "monolith.kyc.approved.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "monolith.kyc.rejected.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -63,7 +98,57 @@
       "auto_delete": false,
       "internal": false,
       "arguments": {}
+    },
+    {
+      "name": "kyc.events",
+      "vhost": "stash",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
     }
   ],
-  "bindings": []
+  "bindings": [
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "kyc.provider.ready_for_review.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.submission.ready_for_review",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "kyc.deletion_scheduler.approved.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.approved",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "kyc.deletion_scheduler.rejected.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.rejected",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "monolith.kyc.approved.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.approved",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "monolith.kyc.rejected.queue",
+      "destination_type": "queue",
+      "routing_key": "kyc.rejected",
+      "arguments": {}
+    }
+  ]
 }

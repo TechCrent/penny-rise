@@ -1,0 +1,41 @@
+---
+description: Pre-push CI checklist and test patterns for mobile (Expo/React Native)
+globs: mobile/**/*
+alwaysApply: false
+---
+
+# Mobile CI checklist
+
+Before pushing mobile changes (and **before** running `pnpm test` on new features), run the full CI sequence:
+
+```bash
+cd mobile
+pnpm format && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
+# or: pnpm verify
+```
+
+CI order matches `.github/workflows/mobile-ci.yml`: lint → format:check → typecheck → test.
+
+## Formatting (most common CI miss)
+
+- `format:check` covers `src/**` and `__tests__/**`. Always run `pnpm format` after editing TS/TSX.
+- Do not push after only running tests — Prettier failures block the PR before tests run.
+
+## Jest / Expo test setup
+
+- `babel.config.js` with `babel-preset-expo` (~54 for Expo SDK 54).
+- Pin: `jest@~29.7`, `jest-expo@~54`, `@types/jest@^29`.
+- `jest.config.js`: `preset: 'jest-expo'` only — **do not** override `transformIgnorePatterns` (breaks pnpm layout).
+
+## Test patterns
+
+- `@testing-library/react-native@12.x` — use queries from `render()` return value, not `screen` (v14 needs extra setup).
+- Wrap tests with `SafeAreaProvider` + `initialMetrics` or children may not render.
+- Mock `expo-secure-store` in tests.
+- API error tests: use real `axios.AxiosError`, not `{ isAxiosError: true }`.
+- Double-submit: `useRef` guard in addition to `useState` loading flag.
+- Loading state: assert `ActivityIndicator` via `UNSAFE_getAllByType`, not absence of button text.
+
+## ESLint
+
+- No inline styles — use `StyleSheet.create` (`react-native/no-inline-styles`).

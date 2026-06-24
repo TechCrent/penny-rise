@@ -1,0 +1,29 @@
+---
+description: Pre-push CI checklist and integration-test patterns for kyc-service
+globs: kyc-service/**/*
+alwaysApply: false
+---
+
+# kyc-service CI checklist
+
+Before pushing kyc-service changes, run scoped tests first; use full verify when touching shared config or migrations.
+
+## Integration test support
+
+- Use `KycIntegrationTestSupport` for `@SpringBootTest` — registers Postgres Testcontainer and shared test properties.
+- AES test key must be **32 bytes**: `"test-aes-256-key-32-bytes-long!!"` (31-byte variant fails crypto init).
+
+## Common CI failures
+
+| Failure | Fix |
+|---------|-----|
+| MockMvc 500 on controller params | Explicit `@RequestParam(value = "...")`; parent `pom.xml` has `<parameters>true</parameters>` |
+| Instant assertion mismatch | Re-fetch entity from repository after save — Postgres truncates microsecond precision |
+| RabbitMQ listener startup in tests | Declare queues in `KycMessagingConfig`; set `spring.rabbitmq.listener.simple.auto-startup: false` in test YAML; mock `RabbitTemplate` where needed |
+| Flyway migration conflict | Check existing `V*__*.sql` versions before adding (e.g. V1.3 taken → use V1.4) |
+| JPA type mismatch | Flyway `NUMERIC` columns → `BigDecimal`, not `Double` |
+| Scheduler deadlock | Do not hold `@Transactional` + `FOR UPDATE` across worker calls; split fetch into short `REQUIRES_NEW` transaction |
+
+## Messaging / infra
+
+- New RabbitMQ queues: add to `KycMessagingConfig` **and** `infra/docker/rabbitmq/definitions.json`.

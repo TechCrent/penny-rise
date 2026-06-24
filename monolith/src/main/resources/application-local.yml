@@ -5,3 +5,16 @@
 spring:
   jpa:
     show-sql: true
+
+stash:
+  email:
+    provider: smtp
+    from-address: noreply@stash.local
+    from-name: Stash (Local)
+    base-url: http://localhost:8080
+  security:
+    jwt:
+      signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItbG9jYWwtZGV2LW9ubHktMzItY2hhcg==
+      verification-keys: ""
+      access-token-expiry-minutes: 15
+    bcrypt-cost: 12

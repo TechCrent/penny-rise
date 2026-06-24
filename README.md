@@ -63,6 +63,16 @@ public ResponseEntity<VaultResponse> createVault(
 This is a Definition of Done item for every endpoint issue from v0.2 onward —
 PRs adding endpoints without these annotations will be sent back in review.
 
+## Local Development
+
+See **`docs/v0.2-known-limits.md`** for v0.2 accepted stubs, Tier 3 close-out checklist, and port reference. Schema/Issue Plan mapping: **`docs/v0.2-schema-reconciliation.md`**.
+
+Quick notes:
+
+- **RabbitMQ topology changes** require `docker compose down -v && docker compose up --build -d` so `definitions.json` is reapplied.
+- **Payments DB** is exposed on host port **15433** (see `infra/compose/databases.yml`). On Windows, if bind fails with “access permissions”, the port may fall in a Hyper-V excluded range — pick an alternate host port in compose + `payments-service/application.yml`.
+- **Mobile** talks to the monolith at `:8080` (includes KYC proxy). **Admin console** talks to kyc-service at `:8082` directly.
+
 ## Reference
 - Folder Structure: `docs/architecture/Stash_Folder_Structure_v3.docx`
 - Git Workflow: `docs/architecture/Stash_Git_Workflow_v3.docx`

@@ -37,6 +37,7 @@ spring:
       - classpath:db/migration/outbox
       - classpath:db/migration/webhook
       - classpath:db/migration/idempotency
+      - classpath:db/migration/paystack
     baseline-on-migrate: true
     baseline-version: 0
     out-of-order: false

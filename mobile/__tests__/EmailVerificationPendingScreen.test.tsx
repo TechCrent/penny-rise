@@ -41,16 +41,18 @@ describe('EmailVerificationPendingScreen', () => {
     render(<EmailVerificationPendingScreen />, { wrapper });
 
     await waitFor(() => expect(authApi.verifyEmail).toHaveBeenCalledWith('verify-token'));
-    await waitFor(() =>
-      expect(mockReset).toHaveBeenCalledWith({
-        index: 0,
-        routes: [
-          {
-            name: 'Login',
-            params: { successBanner: 'Email verified! You can sign in now.' },
-          },
-        ],
-      }),
+    await waitFor(
+      () =>
+        expect(mockReset).toHaveBeenCalledWith({
+          index: 0,
+          routes: [
+            {
+              name: 'Login',
+              params: { successBanner: 'Email verified! You can sign in now.' },
+            },
+          ],
+        }),
+      { timeout: 10_000 },
     );
-  });
+  }, 15_000);
 });

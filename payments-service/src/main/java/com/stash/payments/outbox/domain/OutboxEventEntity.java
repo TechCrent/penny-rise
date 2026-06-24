@@ -83,6 +83,7 @@ public class OutboxEventEntity {
                       String aggregateType, UUID aggregateId,
                       String payload, String routingKey,
                       String correlationId, Instant createdAt) {
+        this.id            = UUID.randomUUID();
         this.eventType     = eventType;
         this.schemaVersion = schemaVersion;
         this.aggregateType = aggregateType;

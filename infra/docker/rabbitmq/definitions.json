@@ -86,6 +86,24 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "payments.paystack.subaccount.provision.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "payments.paystack.subaccount.provision.dlq",
+        "x-message-ttl": 60000
+      }
+    },
+    {
+      "name": "payments.paystack.subaccount.provision.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -182,6 +200,14 @@
       "destination": "payments.user.created.queue",
       "destination_type": "queue",
       "routing_key": "user.created",
+      "arguments": {}
+    },
+    {
+      "source": "payments.events",
+      "vhost": "stash",
+      "destination": "payments.paystack.subaccount.provision.queue",
+      "destination_type": "queue",
+      "routing_key": "paystack.subaccount.provision.requested",
       "arguments": {}
     }
   ]

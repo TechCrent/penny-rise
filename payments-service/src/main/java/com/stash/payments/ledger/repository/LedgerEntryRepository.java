@@ -137,6 +137,20 @@ public interface LedgerEntryRepository
                                               @Param("to")   Instant to);
 
     /**
+     * Counts POSTED ledger transactions in a time window.
+     * Used by the integrity job to report how many transactions were verified.
+     */
+    @Query(value = """
+            SELECT COUNT(DISTINCT lt.id)
+            FROM ledger.ledger_transactions lt
+            WHERE lt.status    = 'POSTED'
+              AND lt.created_at >= :from
+              AND lt.created_at <  :to
+            """, nativeQuery = true)
+    long countPostedTransactionsInWindow(@Param("from") Instant from,
+                                          @Param("to")   Instant to);
+
+    /**
      * Computes the balance of an account in a single query:
      * SUM of CREDITs minus SUM of DEBITs.
      *

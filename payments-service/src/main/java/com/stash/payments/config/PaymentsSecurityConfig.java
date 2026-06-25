@@ -30,6 +30,7 @@ public class PaymentsSecurityConfig {
             .formLogin(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/webhooks/paystack").permitAll()
+                .requestMatchers("/internal/**").permitAll()
                 .anyRequest().permitAll()
             );
         return http.build();

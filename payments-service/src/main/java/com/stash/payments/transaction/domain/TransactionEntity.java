@@ -110,6 +110,32 @@ public class TransactionEntity {
         return t;
     }
 
+    // Factory: creates a COMPLETED internal transfer transaction (no PENDING state)
+    public static TransactionEntity completedTransfer(String reference,
+                                                       UUID initiatingUserId,
+                                                       UUID counterpartyUserId,
+                                                       long amount,
+                                                       UUID ledgerTransactionId,
+                                                       String correlationId,
+                                                       String idempotencyKey,
+                                                       Instant now) {
+        TransactionEntity t = new TransactionEntity();
+        t.reference              = reference;
+        t.transactionType        = "TRANSFER";
+        t.initiatingUserId       = initiatingUserId;
+        t.counterpartyUserId     = counterpartyUserId;
+        t.grossAmount            = amount;
+        t.feeAmount              = 0L;
+        t.netAmount              = amount;
+        t.status                 = "COMPLETED";
+        t.ledgerTransactionId    = ledgerTransactionId;
+        t.correlationId          = correlationId;
+        t.idempotencyKey         = idempotencyKey;
+        t.createdAt              = now;
+        t.completedAt            = now;
+        return t;
+    }
+
     // Called by the webhook handler when Paystack confirms
     public void markCompleted(UUID ledgerTransactionId, Instant now) {
         this.status               = "COMPLETED";

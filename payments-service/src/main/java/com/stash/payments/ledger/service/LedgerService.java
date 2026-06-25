@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Single entry point for all ledger writes on the Payments Service.
@@ -53,6 +54,16 @@ public class LedgerService {
         this.entryRepo       = entryRepo;
         this.outboxPublisher = outboxPublisher;
         this.clock           = clock;
+    }
+
+    /**
+     * Fetches all ledger entries for a transaction, with each entry's account type.
+     * Exposed here (not on the repository) so callers outside this package can read
+     * transaction entries without violating the repository access constraint.
+     */
+    @Transactional(readOnly = true)
+    public List<Object[]> getEntriesForTransaction(UUID ledgerTransactionId) {
+        return entryRepo.findEntriesWithAccountType(ledgerTransactionId);
     }
 
     /**

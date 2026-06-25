@@ -151,18 +151,21 @@ public class TransactionEntity {
     public void setExternalReference(String ref) { this.externalReference = ref; }
 
     // Getters
-    public UUID   getId()                  { return id; }
-    public String getReference()           { return reference; }
-    public String getTransactionType()     { return transactionType; }
-    public UUID   getInitiatingUserId()    { return initiatingUserId; }
-    public long   getGrossAmount()         { return grossAmount; }
-    public long   getFeeAmount()           { return feeAmount; }
-    public long   getNetAmount()           { return netAmount; }
-    public String getStatus()              { return status; }
-    public String getExternalReference()   { return externalReference; }
-    public UUID   getLedgerTransactionId()    { return ledgerTransactionId; }
+    public UUID   getId()                    { return id; }
+    public String getReference()             { return reference; }
+    public String getTransactionType()       { return transactionType; }
+    public UUID   getInitiatingUserId()      { return initiatingUserId; }
+    public UUID   getCounterpartyUserId()    { return counterpartyUserId; }
+    public long   getGrossAmount()           { return grossAmount; }
+    public long   getFeeAmount()             { return feeAmount; }
+    public long   getNetAmount()             { return netAmount; }
+    public String getStatus()                { return status; }
+    public String getExternalProvider()      { return externalProvider; }
+    public String getExternalReference()     { return externalReference; }
+    public UUID   getLedgerTransactionId()   { return ledgerTransactionId; }
     public UUID   getSourceLedgerAccountId() { return sourceLedgerAccountId; }
     public String getCorrelationId()         { return correlationId; }
-    public String getIdempotencyKey()      { return idempotencyKey; }
-    public Instant getCreatedAt()          { return createdAt; }
+    public String getIdempotencyKey()        { return idempotencyKey; }
+    public Instant getCreatedAt()            { return createdAt; }
+    public Instant getCompletedAt()          { return completedAt; }
 }

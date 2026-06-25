@@ -93,6 +93,28 @@ public interface LedgerEntryRepository
                                 @Param("afterTimestamp") Instant afterTimestamp);
 
     /**
+     * Fetches all entries for a ledger transaction, joining with the account
+     * table to include account_type for display purposes.
+     *
+     * <p>Columns (index-based): 0=account_id, 1=direction, 2=amount,
+     * 3=account_type, 4=narrative.
+     */
+    @Query(value = """
+            SELECT
+                e.account_id,
+                e.direction,
+                e.amount,
+                a.account_type,
+                e.narrative
+            FROM ledger.ledger_entries e
+            JOIN ledger.ledger_accounts a ON a.id = e.account_id
+            WHERE e.ledger_transaction_id = :ledgerTransactionId
+            ORDER BY e.direction
+            """, nativeQuery = true)
+    List<Object[]> findEntriesWithAccountType(
+            @Param("ledgerTransactionId") UUID ledgerTransactionId);
+
+    /**
      * Used by the nightly integrity job to verify the double-entry invariant
      * for all POSTED transactions created on a given day.
      */

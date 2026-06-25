@@ -63,7 +63,7 @@ public class UserCreatedEventConsumer {
             throw new IllegalArgumentException("user.created event missing userId");
         }
 
-        provisioningService.provisionWallet(event.userId(),
+        provisioningService.provisionWallet(event.userId(), event.email(),
                 correlationId != null ? correlationId : event.correlationId());
 
         log.info("user.created processed: userId={} correlation={}", event.userId(), correlationId);

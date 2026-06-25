@@ -38,14 +38,14 @@ class UserCreatedEventConsumerTest {
 
         consumer.onUserCreated(message);
 
-        verify(provisioningService).provisionWallet(eq(userId), any());
+        verify(provisioningService).provisionWallet(eq(userId), any(), any());
     }
 
     @Test
     @DisplayName("idempotent duplicate event acknowledges without exception")
     void idempotent_duplicate_acknowledges_cleanly() {
         UUID userId = UUID.randomUUID();
-        when(provisioningService.provisionWallet(any(), any())).thenReturn(null);
+        when(provisioningService.provisionWallet(any(), any(), any())).thenReturn(null);
 
         Message message = messageWith(
                 """

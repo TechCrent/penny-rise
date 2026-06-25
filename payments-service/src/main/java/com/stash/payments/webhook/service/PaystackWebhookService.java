@@ -2,6 +2,7 @@ package com.stash.payments.webhook.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stash.payments.transaction.service.WithdrawalService;
 import com.stash.payments.webhook.domain.ProcessedWebhookEventEntity;
 import com.stash.payments.webhook.repository.ProcessedWebhookEventRepository;
 import org.slf4j.Logger;
@@ -37,17 +38,20 @@ public class PaystackWebhookService {
     private final PaystackWebhookVerifier         verifier;
     private final ProcessedWebhookEventRepository webhookEventRepo;
     private final ChargeSuccessHandler            chargeSuccessHandler;
+    private final WithdrawalService               withdrawalService;
     private final ObjectMapper                    objectMapper;
     private final Clock                           clock;
 
     public PaystackWebhookService(PaystackWebhookVerifier verifier,
                                   ProcessedWebhookEventRepository webhookEventRepo,
                                   ChargeSuccessHandler chargeSuccessHandler,
+                                  WithdrawalService withdrawalService,
                                   ObjectMapper objectMapper,
                                   Clock clock) {
         this.verifier             = verifier;
         this.webhookEventRepo     = webhookEventRepo;
         this.chargeSuccessHandler = chargeSuccessHandler;
+        this.withdrawalService    = withdrawalService;
         this.objectMapper         = objectMapper;
         this.clock                = clock;
     }
@@ -106,10 +110,15 @@ public class PaystackWebhookService {
     private UUID route(String eventType, Map<String, Object> data, String correlationId) {
         return switch (eventType) {
             case "charge.success" -> chargeSuccessHandler.handle(data, correlationId);
-            case "transfer.success", "transfer.failed" -> {
-                log.info("Webhook event type={} acknowledged but not yet handled. correlationId={}",
-                        eventType, correlationId);
-                yield null;
+            case "transfer.success" -> {
+                String transferCode = (String) data.get("transfer_code");
+                long   amount       = toLong(data.get("amount"));
+                yield withdrawalService.handleTransferSuccess(transferCode, amount, correlationId);
+            }
+            case "transfer.failed" -> {
+                String transferCode   = (String) data.get("transfer_code");
+                String failureReason  = (String) data.getOrDefault("gateway_response", "Unknown failure");
+                yield withdrawalService.handleTransferFailed(transferCode, failureReason, correlationId);
             }
             default -> {
                 log.info("Unknown webhook event type={} — ignoring. correlationId={}",
@@ -117,6 +126,11 @@ public class PaystackWebhookService {
                 yield null;
             }
         };
+    }
+
+    private static long toLong(Object value) {
+        if (value instanceof Number n) return n.longValue();
+        return Long.parseLong(String.valueOf(value));
     }
 
     private static String sha256hex(byte[] data) {

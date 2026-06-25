@@ -1,7 +1,0 @@
-# Test defaults for @SpringBootTest contexts in payments-service.
-# A dummy Paystack key in valid sk_test_ format so PaystackClient's
-# startup key-format validation passes without a real secret. Tests that
-# exercise the client against WireMock construct it directly and do not
-# rely on this value.
-paystack:
-  secret-key: sk_test_dummytestkey0000000000000000

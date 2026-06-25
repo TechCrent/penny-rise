@@ -5,6 +5,7 @@ import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
 import com.stash.platform.user.domain.EmailVerificationToken;
 import com.stash.platform.user.domain.User;
+import com.stash.platform.user.event.UserCreatedApplicationEvent;
 import com.stash.platform.user.repository.EmailVerificationTokenRepository;
 import com.stash.platform.user.repository.UserRepository;
 import com.stash.shared.apierrors.ErrorCode;
@@ -12,6 +13,7 @@ import com.stash.shared.apierrors.StashApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class SignupService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final PasswordHasher passwordHasher;
     private final EmailSender emailSender;
+    private final ApplicationEventPublisher eventPublisher;
     private final SecureRandom secureRandom;
     private final String baseUrl;
 
@@ -39,11 +42,13 @@ public class SignupService {
                          EmailVerificationTokenRepository tokenRepository,
                          PasswordHasher passwordHasher,
                          EmailSender emailSender,
+                         ApplicationEventPublisher eventPublisher,
                          @Value("${stash.email.base-url:http://localhost:8080}") String baseUrl) {
         this.userRepository  = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordHasher  = passwordHasher;
         this.emailSender     = emailSender;
+        this.eventPublisher  = eventPublisher;
         this.secureRandom    = new SecureRandom();
         this.baseUrl         = baseUrl;
     }
@@ -69,6 +74,10 @@ public class SignupService {
         }
 
         userRepository.save(user);
+
+        // Fires AFTER_COMMIT via UserCreatedEventPublisher — never inside this tx
+        eventPublisher.publishEvent(
+                new UserCreatedApplicationEvent(this, user.getId(), user.getEmail(), null));
 
         byte[] rawBytes = new byte[VERIFICATION_TOKEN_BYTES];
         secureRandom.nextBytes(rawBytes);

@@ -41,6 +41,8 @@ class OutboxRelayTest {
     void setUp() {
         when(outboxRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(dlRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // Default: no pending rows → lag = 0
+        when(outboxRepo.findOldestPendingCreatedAt()).thenReturn(null);
     }
 
     // ── Happy path ────────────────────────────────────────────────────────
@@ -146,6 +148,32 @@ class OutboxRelayTest {
         relay.relay();
 
         verify(metrics).updatePendingCount(1);
+    }
+
+    // ── Lag metric ────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("relay lag metric updated from oldest PENDING row age")
+    void relay_lag_metric_updated() {
+        OutboxEventEntity event = pendingEvent("payments.deposit.completed");
+        when(outboxRepo.findPendingBatch(OutboxRelay.BATCH_SIZE)).thenReturn(List.of(event));
+        when(outboxRepo.findOldestPendingCreatedAt())
+                .thenReturn(Instant.parse("2026-06-24T09:59:30Z")); // 30 seconds before FIXED_CLOCK
+
+        relay.relay();
+
+        verify(metrics).updateRelayLagSeconds(30L);
+    }
+
+    @Test
+    @DisplayName("relay lag is zero when no PENDING rows exist")
+    void relay_lag_zero_when_empty() {
+        when(outboxRepo.findPendingBatch(OutboxRelay.BATCH_SIZE)).thenReturn(List.of());
+        when(outboxRepo.findOldestPendingCreatedAt()).thenReturn(null);
+
+        relay.relay();
+
+        verify(metrics).updateRelayLagSeconds(0L);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

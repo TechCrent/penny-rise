@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -74,9 +75,15 @@ public class OutboxRelay {
         List<OutboxEventEntity> batch = outboxRepo.findPendingBatch(BATCH_SIZE);
         metrics.updatePendingCount(batch.size());
 
+        Instant oldest = outboxRepo.findOldestPendingCreatedAt();
+        long lagSecs = (oldest != null)
+                ? Duration.between(oldest, Instant.now(clock)).toSeconds()
+                : 0L;
+        metrics.updateRelayLagSeconds(lagSecs);
+
         if (batch.isEmpty()) return;
 
-        log.debug("OutboxRelay: processing batch of {} events", batch.size());
+        log.debug("OutboxRelay: processing batch of {} events (lag={}s)", batch.size(), lagSecs);
 
         for (OutboxEventEntity event : batch) {
             processOne(event);

@@ -121,12 +121,17 @@ logging:
 paystack:
   base-url: https://api.paystack.co
   secret-key: ${PAYSTACK_SECRET_KEY}   # sk_test_... for test mode; sk_live_... for live
+  webhook-secret: ${PAYSTACK_WEBHOOK_SECRET}
   timeout-seconds: 30
   retry:
     max-attempts: 3
     initial-interval-ms: 500
     multiplier: 2.0
     max-interval-ms: 4000
+
+stash:
+  ledger:
+    paystack-settlement-account-id: ${PAYSTACK_SETTLEMENT_ACCOUNT_ID}
 
 resilience4j:
   circuitbreaker:

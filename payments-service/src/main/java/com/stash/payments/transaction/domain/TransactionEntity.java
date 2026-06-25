@@ -47,6 +47,9 @@ public class TransactionEntity {
     @Column(name = "ledger_transaction_id")
     private UUID ledgerTransactionId;     // NULL until webhook confirms
 
+    @Column(name = "source_ledger_account_id")
+    private UUID sourceLedgerAccountId;
+
     @Column(name = "correlation_id",         length = 255)
     private String correlationId;
 
@@ -83,6 +86,30 @@ public class TransactionEntity {
         return t;
     }
 
+    // Factory: creates a PENDING withdrawal transaction
+    public static TransactionEntity pendingWithdrawal(String reference,
+                                                       UUID userId,
+                                                       UUID sourceLedgerAccountId,
+                                                       long grossAmount,
+                                                       String correlationId,
+                                                       String idempotencyKey,
+                                                       Instant now) {
+        TransactionEntity t = new TransactionEntity();
+        t.reference                = reference;
+        t.transactionType          = "WITHDRAWAL";
+        t.initiatingUserId         = userId;
+        t.sourceLedgerAccountId    = sourceLedgerAccountId;
+        t.grossAmount              = grossAmount;
+        t.feeAmount                = 0L;
+        t.netAmount                = grossAmount;
+        t.status                   = "PENDING";
+        t.externalProvider         = "PAYSTACK";
+        t.correlationId            = correlationId;
+        t.idempotencyKey           = idempotencyKey;
+        t.createdAt                = now;
+        return t;
+    }
+
     // Called by the webhook handler when Paystack confirms
     public void markCompleted(UUID ledgerTransactionId, Instant now) {
         this.status               = "COMPLETED";
@@ -107,8 +134,9 @@ public class TransactionEntity {
     public long   getNetAmount()           { return netAmount; }
     public String getStatus()              { return status; }
     public String getExternalReference()   { return externalReference; }
-    public UUID   getLedgerTransactionId() { return ledgerTransactionId; }
-    public String getCorrelationId()       { return correlationId; }
+    public UUID   getLedgerTransactionId()    { return ledgerTransactionId; }
+    public UUID   getSourceLedgerAccountId() { return sourceLedgerAccountId; }
+    public String getCorrelationId()         { return correlationId; }
     public String getIdempotencyKey()      { return idempotencyKey; }
     public Instant getCreatedAt()          { return createdAt; }
 }

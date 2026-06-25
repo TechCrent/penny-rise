@@ -16,6 +16,30 @@ public interface LedgerEntryRepository
     List<LedgerEntryEntity> findByLedgerTransactionId(UUID ledgerTransactionId);
 
     /**
+     * Acquires a SELECT FOR UPDATE row-level lock on the ledger account row.
+     * Called by BalanceService before computing balance for a withdrawal
+     * to serialise concurrent withdrawals against the same account.
+     */
+    @Query(value = """
+            SELECT id FROM ledger.ledger_accounts
+            WHERE id = :accountId
+            FOR UPDATE
+            """, nativeQuery = true)
+    UUID lockAccount(@Param("accountId") UUID accountId);
+
+    /**
+     * Sums entry amounts by account and direction.
+     * Returns NULL when no entries exist (caller must treat as 0).
+     */
+    @Query(value = """
+            SELECT SUM(amount) FROM ledger.ledger_entries
+            WHERE account_id = :accountId
+              AND direction  = :direction
+            """, nativeQuery = true)
+    Long sumByAccountIdAndDirection(@Param("accountId") UUID accountId,
+                                    @Param("direction") String direction);
+
+    /**
      * Used by the nightly integrity job to verify the double-entry invariant
      * for all POSTED transactions created on a given day.
      */

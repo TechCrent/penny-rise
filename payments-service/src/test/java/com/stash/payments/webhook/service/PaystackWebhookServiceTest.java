@@ -1,6 +1,7 @@
 package com.stash.payments.webhook.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stash.payments.transaction.service.WithdrawalService;
 import com.stash.payments.webhook.repository.ProcessedWebhookEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,8 +34,9 @@ class PaystackWebhookServiceTest {
 
     @Mock private ProcessedWebhookEventRepository webhookEventRepo;
     @Mock private ChargeSuccessHandler            chargeSuccessHandler;
+    @Mock private WithdrawalService               withdrawalService;
 
-    private final PaystackWebhookVerifier verifier = (rawBody, sig) -> VALID_SIG.equals(sig);
+    private final PaystackWebhookVerifier verifier     = (rawBody, sig) -> VALID_SIG.equals(sig);
     private final ObjectMapper            objectMapper = new ObjectMapper();
 
     private PaystackWebhookService service;
@@ -42,7 +44,8 @@ class PaystackWebhookServiceTest {
     @BeforeEach
     void setUp() {
         service = new PaystackWebhookService(
-                verifier, webhookEventRepo, chargeSuccessHandler, objectMapper, FIXED_CLOCK);
+                verifier, webhookEventRepo, chargeSuccessHandler, withdrawalService,
+                objectMapper, FIXED_CLOCK);
         when(webhookEventRepo.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
         when(webhookEventRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -101,18 +104,30 @@ class PaystackWebhookServiceTest {
     }
 
     @Test
-    void transferSuccess_acknowledgedAndReturnsTrue() {
-        byte[] body = eventBody("transfer.success", "tr_success_001");
+    void transferSuccess_routesToWithdrawalServiceAndReturnsTrue() {
+        UUID txnId = UUID.randomUUID();
+        when(withdrawalService.handleTransferSuccess(eq("TRF_success_001"), anyLong(), eq(CORRELATION)))
+                .thenReturn(txnId);
+
+        byte[] body = eventBodyWithTransferCode("transfer.success", "TRF_success_001");
         boolean result = service.process(body, VALID_SIG, CORRELATION);
+
         assertThat(result).isTrue();
+        verify(withdrawalService).handleTransferSuccess(eq("TRF_success_001"), anyLong(), eq(CORRELATION));
         verifyNoInteractions(chargeSuccessHandler);
     }
 
     @Test
-    void transferFailed_acknowledgedAndReturnsTrue() {
-        byte[] body = eventBody("transfer.failed", "tr_failed_001");
+    void transferFailed_routesToWithdrawalServiceAndReturnsTrue() {
+        UUID txnId = UUID.randomUUID();
+        when(withdrawalService.handleTransferFailed(eq("TRF_failed_001"), any(), eq(CORRELATION)))
+                .thenReturn(txnId);
+
+        byte[] body = eventBodyWithTransferCode("transfer.failed", "TRF_failed_001");
         boolean result = service.process(body, VALID_SIG, CORRELATION);
+
         assertThat(result).isTrue();
+        verify(withdrawalService).handleTransferFailed(eq("TRF_failed_001"), any(), eq(CORRELATION));
         verifyNoInteractions(chargeSuccessHandler);
     }
 
@@ -136,5 +151,11 @@ class PaystackWebhookServiceTest {
         return """
                 {"id":"evt-456","event":"%s","data":{"id":100,"reference":"%s","amount":2000}}
                 """.formatted(eventType, reference).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] eventBodyWithTransferCode(String eventType, String transferCode) {
+        return """
+                {"id":"evt-789","event":"%s","data":{"id":101,"transfer_code":"%s","amount":2000,"gateway_response":"success"}}
+                """.formatted(eventType, transferCode).getBytes(StandardCharsets.UTF_8);
     }
 }

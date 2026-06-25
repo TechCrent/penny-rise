@@ -174,6 +174,15 @@ public class PaystackClient {
         return callIdempotent(() -> post("/subaccount", request, SubaccountCreateResponse.class));
     }
 
+    public TransferRecipientCreateResponse createTransferRecipient(
+            TransferRecipientCreateRequest request) {
+        log.debug("Paystack.createTransferRecipient: type={} bank={}",
+                request.type(), request.bankCode());
+
+        return callIdempotent(() ->
+                post("/transferrecipient", request, TransferRecipientCreateResponse.class));
+    }
+
     public TransferInitiateResponse initiateTransfer(TransferInitiateRequest request) {
         log.debug("Paystack.initiateTransfer: reference={} amount={}p",
                 request.reference(), request.amount());

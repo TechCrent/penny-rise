@@ -130,6 +130,8 @@ paystack:
     max-interval-ms: 4000
 
 stash:
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN}
   ledger:
     paystack-settlement-account-id: ${PAYSTACK_SETTLEMENT_ACCOUNT_ID}
 

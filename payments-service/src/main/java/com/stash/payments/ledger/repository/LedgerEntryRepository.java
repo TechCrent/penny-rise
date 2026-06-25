@@ -40,6 +40,59 @@ public interface LedgerEntryRepository
                                     @Param("direction") String direction);
 
     /**
+     * Fetches a page of statement entries for cursor-based pagination.
+     *
+     * <p>Uses the {@code (account_id, created_at DESC)} index. The cursor filters on
+     * {@code (created_at < cursorCreatedAt) OR (created_at = cursorCreatedAt AND id < cursorEntryId)}
+     * to handle ties correctly.
+     *
+     * <p>Columns (index-based): 0=entry_id, 1=direction, 2=amount,
+     * 3=narrative, 4=created_at, 5=transaction_reference, 6=transaction_type.
+     */
+    @Query(value = """
+            SELECT
+                le.id                        AS entry_id,
+                le.direction,
+                le.amount,
+                le.narrative,
+                le.created_at,
+                lt.transaction_reference,
+                lt.transaction_type
+            FROM ledger.ledger_entries le
+            JOIN ledger.ledger_transactions lt ON lt.id = le.ledger_transaction_id
+            WHERE le.account_id = :accountId
+              AND (:fromDate IS NULL OR le.created_at >= :fromDate)
+              AND (:toDate   IS NULL OR le.created_at <= :toDate)
+              AND (
+                    :cursorCreatedAt IS NULL
+                    OR le.created_at < :cursorCreatedAt
+                    OR (le.created_at = :cursorCreatedAt AND le.id < :cursorEntryId)
+                  )
+            ORDER BY le.created_at DESC, le.id DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Object[]> findStatementPage(
+            @Param("accountId")       UUID    accountId,
+            @Param("fromDate")        Instant fromDate,
+            @Param("toDate")          Instant toDate,
+            @Param("cursorCreatedAt") Instant cursorCreatedAt,
+            @Param("cursorEntryId")   UUID    cursorEntryId,
+            @Param("limit")           int     limit);
+
+    /**
+     * Sums the signed amounts of all entries for an account after a given instant.
+     * Used to anchor the running balance for cursor-paginated statements.
+     */
+    @Query(value = """
+            SELECT COALESCE(SUM(CASE WHEN direction = 'CREDIT' THEN amount ELSE -amount END), 0)
+            FROM ledger.ledger_entries
+            WHERE account_id      = :accountId
+              AND created_at      > :afterTimestamp
+            """, nativeQuery = true)
+    long sumSignedAmountsAfter(@Param("accountId")      UUID    accountId,
+                                @Param("afterTimestamp") Instant afterTimestamp);
+
+    /**
      * Used by the nightly integrity job to verify the double-entry invariant
      * for all POSTED transactions created on a given day.
      */

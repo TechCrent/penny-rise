@@ -60,4 +60,22 @@ public interface LedgerEntryRepository
             """, nativeQuery = true)
     List<Object[]> findImbalancedTransactions(@Param("from") Instant from,
                                               @Param("to")   Instant to);
+
+    /**
+     * Computes the balance of an account in a single query:
+     * SUM of CREDITs minus SUM of DEBITs.
+     *
+     * <p>Faster than calling sumByAccountIdAndDirection twice because it
+     * avoids two round-trips. Used by the balance endpoint where latency matters.
+     *
+     * <p>Returns 0 if no entries exist (COALESCE handles the NULL case).
+     */
+    @Query(value = """
+            SELECT
+                COALESCE(SUM(CASE WHEN direction = 'CREDIT' THEN amount ELSE 0 END), 0)
+              - COALESCE(SUM(CASE WHEN direction = 'DEBIT'  THEN amount ELSE 0 END), 0)
+            FROM ledger.ledger_entries
+            WHERE account_id = :accountId
+            """, nativeQuery = true)
+    long computeNetBalance(@Param("accountId") UUID accountId);
 }

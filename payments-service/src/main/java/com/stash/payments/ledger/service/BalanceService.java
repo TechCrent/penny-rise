@@ -35,6 +35,18 @@ public class BalanceService {
     }
 
     /**
+     * Computes the account balance in a single query without acquiring a lock.
+     * Used by the balance endpoint (read-only; high frequency).
+     *
+     * @param accountId the ledger account to query
+     * @return net balance in pesewas; 0 if no entries exist (new account)
+     */
+    @Transactional(readOnly = true)
+    public long computeBalanceFast(UUID accountId) {
+        return entryRepository.computeNetBalance(accountId);
+    }
+
+    /**
      * Computes the account balance inside the caller's transaction,
      * acquiring a SELECT FOR UPDATE lock on the account row.
      *

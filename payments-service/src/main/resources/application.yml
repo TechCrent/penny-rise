@@ -117,3 +117,35 @@ springdoc:
     operations-sorter: alpha
 logging:
   config: classpath:logback-spring.xml
+
+paystack:
+  base-url: https://api.paystack.co
+  secret-key: ${PAYSTACK_SECRET_KEY}   # sk_test_... for test mode; sk_live_... for live
+  timeout-seconds: 30
+  retry:
+    max-attempts: 3
+    initial-interval-ms: 500
+    multiplier: 2.0
+    max-interval-ms: 4000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paystack:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50          # open at 50% failure in sliding window
+        minimum-number-of-calls: 5          # need at least 5 calls before evaluating
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+  retry:
+    instances:
+      paystack-idempotent:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - java.util.concurrent.TimeoutException
+          - com.stash.payments.paystack.exception.PaystackServerException

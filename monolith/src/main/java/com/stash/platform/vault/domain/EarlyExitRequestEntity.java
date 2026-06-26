@@ -44,6 +44,12 @@ public class EarlyExitRequestEntity {
     @Column(name = "resolved_at")
     private Instant resolvedAt;
 
+    @Column(name = "attempts",              nullable = false)
+    private int attempts;
+
+    @Column(name = "last_attempted_at")
+    private Instant lastAttemptedAt;
+
     protected EarlyExitRequestEntity() {}
 
     public static EarlyExitRequestEntity create(UUID vaultId, UUID userId,
@@ -76,6 +82,11 @@ public class EarlyExitRequestEntity {
         this.resolvedAt = now;
     }
 
+    public void recordAttempt(Instant now) {
+        this.attempts        += 1;
+        this.lastAttemptedAt  = now;
+    }
+
     // Getters
     public UUID    getId()                  { return id; }
     public UUID    getVaultId()             { return vaultId; }
@@ -88,4 +99,6 @@ public class EarlyExitRequestEntity {
     public String  getStatus()              { return status; }
     public Instant getCreatedAt()           { return createdAt; }
     public Instant getResolvedAt()          { return resolvedAt; }
+    public int     getAttempts()            { return attempts; }
+    public Instant getLastAttemptedAt()     { return lastAttemptedAt; }
 }

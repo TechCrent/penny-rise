@@ -131,6 +131,10 @@ stash:
   payments:
     # Internal Payments Service base URL (server-to-server, same Docker network)
     internal-base-url: ${PAYMENTS_INTERNAL_BASE_URL:http://payments-service:8081}
+  ledger:
+    # FEE_REVENUE system ledger account (seeded in payments-service ledger V5).
+    # Fixed UUID so config references it by value without a lookup query.
+    fee-revenue-account-id: ${FEE_REVENUE_ACCOUNT_ID:00000000-0000-0000-0000-000000000002}
   internal:
     # Shared service token for /internal/** calls. Empty default keeps local/test
     # contexts bootable; production must set INTERNAL_SERVICE_TOKEN.

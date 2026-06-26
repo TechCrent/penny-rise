@@ -12,10 +12,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import axios from 'axios';
 import { useCreateVault } from '../../api/hooks/useCreateVault';
 import { useVaults } from '../../api/hooks/useVaults';
 import { extractApiError } from '../../api/client';
+import { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultTypeCard } from './components/VaultTypeCard';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'CreateVault'>;
 
 const FREE_TIER_MAX_STANDARD = 2;
 const FREE_TIER_MAX_LOCKED   = 1;
@@ -41,7 +46,7 @@ function generateIdempotencyKey(): string {
 }
 
 export default function CreateVaultScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<Nav>();
   const { mutateAsync, isPending } = useCreateVault();
   const { data: vaultData }        = useVaults();
 
@@ -130,17 +135,19 @@ export default function CreateVaultScreen() {
       });
     } catch (err: unknown) {
       const apiError = extractApiError(err);
-      const status   = (err as any)?.response?.status as number | undefined;
+      const status   = axios.isAxiosError(err) ? err.response?.status : undefined;
 
       if (status === 422 && apiError?.code === 'VAULT_FREE_TIER_LIMIT_REACHED') {
-        setServerError('You’ve reached the free-tier limit for this vault type. Upgrade to Premium to create more.');
+        setServerError("You've reached the free-tier limit for this vault type. Upgrade to Premium to create more.");
       } else if (status === 403) {
         setServerError('Your KYC verification must be approved before creating a vault.');
       } else if (apiError?.message) {
         setServerError(apiError.message);
       } else {
-        const fallbackMessage = (err as any)?.response?.data?.message as string | undefined;
-        setServerError(fallbackMessage ?? 'Something went wrong. Your vault wasn’t created — please try again.');
+        const fallbackMessage = axios.isAxiosError(err)
+          ? (err.response?.data as { message?: string } | undefined)?.message
+          : undefined;
+        setServerError(fallbackMessage ?? "Something went wrong. Your vault wasn't created — please try again.");
       }
     }
   }
@@ -159,7 +166,7 @@ export default function CreateVaultScreen() {
 
         <Text style={styles.stepTitle}>Set unlock conditions</Text>
         <Text style={styles.stepSubtitle}>
-          Choose at least one condition. When it’s met, your vault unlocks and you can
+          Choose at least one condition. When it&apos;s met, your vault unlocks and you can
           withdraw freely with no penalty.
         </Text>
 
@@ -191,7 +198,7 @@ export default function CreateVaultScreen() {
           <Text style={styles.errorText}>{fieldErrors.unlockDate}</Text>
         )}
 
-        <Text style={[styles.fieldLabel, { marginTop: 16 }]}>
+        <Text style={[styles.fieldLabel, styles.fieldLabelMt16]}>
           Target amount (GHS) <Text style={styles.optional}>(optional)</Text>
         </Text>
         <TextInput
@@ -288,7 +295,7 @@ export default function CreateVaultScreen() {
               )}
               <Text style={styles.charCount}>{name.length}/100</Text>
 
-              <Text style={[styles.fieldLabel, { marginTop: 24, marginBottom: 12 }]}>
+              <Text style={[styles.fieldLabel, styles.fieldLabelVaultType]}>
                 Vault type
               </Text>
 
@@ -319,7 +326,7 @@ export default function CreateVaultScreen() {
           {step === 1 && selectedLimited && (
             <View style={styles.upgradeBanner}>
               <Text style={styles.upgradeText}>
-                You’ve used your free {vaultType === 'STANDARD' ? 'standard' : 'locked'} vault
+                You&apos;ve used your free {vaultType === 'STANDARD' ? 'standard' : 'locked'} vault
                 allowance. Upgrade to Premium for unlimited vaults.
               </Text>
             </View>
@@ -407,7 +414,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  optional:  { fontWeight: '400', color: MUTED, textTransform: 'none' },
+  optional:           { fontWeight: '400', color: MUTED, textTransform: 'none' },
+  fieldLabelMt16:     { marginTop: 16 },
+  fieldLabelVaultType: { marginTop: 24, marginBottom: 12 },
   charCount: { fontSize: 12, color: '#9CA3AF', textAlign: 'right', marginTop: 4 },
 
   input: {

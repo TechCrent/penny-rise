@@ -13,7 +13,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 const { useCreateVault } = require('../../../src/api/hooks/useCreateVault');
-const { useVaults }      = require('../../../src/api/hooks/useVaults');
+const { useVaults } = require('../../../src/api/hooks/useVaults');
 
 const mockMutateAsync = jest.fn();
 
@@ -200,16 +200,18 @@ describe('CreateVaultScreen', () => {
   // ── Free-tier limit ────────────────────────────────────────────────────
 
   it('disables CTA when STANDARD vault limit is reached', () => {
-    useVaults.mockReturnValue(defaultVaultHook({
-      data: {
-        vaults: [
-          { vault_type: 'STANDARD', status: 'ACTIVE' },
-          { vault_type: 'STANDARD', status: 'ACTIVE' },
-        ],
-        total_count: 2,
-        balance_unavailable_count: 0,
-      },
-    }));
+    useVaults.mockReturnValue(
+      defaultVaultHook({
+        data: {
+          vaults: [
+            { vault_type: 'STANDARD', status: 'ACTIVE' },
+            { vault_type: 'STANDARD', status: 'ACTIVE' },
+          ],
+          total_count: 2,
+          balance_unavailable_count: 0,
+        },
+      }),
+    );
 
     renderCreate();
     const cta = screen.getByRole('button', { name: /Create vault/ });
@@ -218,13 +220,15 @@ describe('CreateVaultScreen', () => {
   });
 
   it('shows limit banner on LOCKED card when locked limit reached', () => {
-    useVaults.mockReturnValue(defaultVaultHook({
-      data: {
-        vaults: [{ vault_type: 'LOCKED', status: 'ACTIVE' }],
-        total_count: 1,
-        balance_unavailable_count: 0,
-      },
-    }));
+    useVaults.mockReturnValue(
+      defaultVaultHook({
+        data: {
+          vaults: [{ vault_type: 'LOCKED', status: 'ACTIVE' }],
+          total_count: 1,
+          balance_unavailable_count: 0,
+        },
+      }),
+    );
 
     renderCreate();
     expect(screen.getByText(/Free plan: 1 locked vault maximum/)).toBeTruthy();
@@ -236,7 +240,9 @@ describe('CreateVaultScreen', () => {
     mockMutateAsync.mockRejectedValue(
       new axios.AxiosError('Internal Server Error', '500', undefined, undefined, {
         status: 500,
-        data: { error: { code: 'INTERNAL_ERROR', message: 'Internal server error — please retry.' } },
+        data: {
+          error: { code: 'INTERNAL_ERROR', message: 'Internal server error — please retry.' },
+        },
       } as AxiosResponse),
     );
 

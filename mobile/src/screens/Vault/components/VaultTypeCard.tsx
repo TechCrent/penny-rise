@@ -26,16 +26,18 @@ const TYPE_META = {
   },
 } as const;
 
-export function VaultTypeCard({ type, selected, onSelect, disabled, limitReached }: VaultTypeCardProps) {
+export function VaultTypeCard({
+  type,
+  selected,
+  onSelect,
+  disabled,
+  limitReached,
+}: VaultTypeCardProps) {
   const meta = TYPE_META[type];
 
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        selected && styles.cardSelected,
-        disabled && styles.cardDisabled,
-      ]}
+      style={[styles.card, selected && styles.cardSelected, disabled && styles.cardDisabled]}
       onPress={onSelect}
       disabled={disabled}
       activeOpacity={0.82}
@@ -45,9 +47,7 @@ export function VaultTypeCard({ type, selected, onSelect, disabled, limitReached
     >
       <View style={styles.topRow}>
         <Text style={styles.icon}>{meta.icon}</Text>
-        <View style={styles.radioOuter}>
-          {selected && <View style={styles.radioInner} />}
-        </View>
+        <View style={styles.radioOuter}>{selected && <View style={styles.radioInner} />}</View>
       </View>
 
       <Text style={[styles.title, disabled && styles.textDisabled]}>{meta.title}</Text>
@@ -74,9 +74,9 @@ export function VaultTypeCard({ type, selected, onSelect, disabled, limitReached
 }
 
 const INDIGO = '#4F46E5';
-const DARK   = '#1A1A2E';
-const MUTED  = '#6B7280';
-const AMBER  = '#D97706';
+const DARK = '#1A1A2E';
+const MUTED = '#6B7280';
+const AMBER = '#D97706';
 
 const styles = StyleSheet.create({
   card: {

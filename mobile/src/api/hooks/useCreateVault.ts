@@ -24,13 +24,15 @@ export interface CreateVaultResponse {
 export function useCreateVault() {
   const queryClient = useQueryClient();
 
-  return useMutation<CreateVaultResponse, Error, { payload: CreateVaultPayload; idempotencyKey: string }>({
+  return useMutation<
+    CreateVaultResponse,
+    Error,
+    { payload: CreateVaultPayload; idempotencyKey: string }
+  >({
     mutationFn: async ({ payload, idempotencyKey }) => {
-      const { data } = await apiClient.post<CreateVaultResponse>(
-        '/api/v1/vaults',
-        payload,
-        { headers: { 'Idempotency-Key': idempotencyKey } },
-      );
+      const { data } = await apiClient.post<CreateVaultResponse>('/api/v1/vaults', payload, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      });
       return data;
     },
     onSuccess: () => {

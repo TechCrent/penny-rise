@@ -23,7 +23,7 @@ import { VaultTypeCard } from './components/VaultTypeCard';
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CreateVault'>;
 
 const FREE_TIER_MAX_STANDARD = 2;
-const FREE_TIER_MAX_LOCKED   = 1;
+const FREE_TIER_MAX_LOCKED = 1;
 
 type Step = 1 | 2;
 type VaultType = 'STANDARD' | 'LOCKED';
@@ -40,32 +40,34 @@ function toISODateString(input: string): string | null {
 
 function generateIdempotencyKey(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
 
 export default function CreateVaultScreen() {
   const navigation = useNavigation<Nav>();
   const { mutateAsync, isPending } = useCreateVault();
-  const { data: vaultData }        = useVaults();
+  const { data: vaultData } = useVaults();
 
   const idempotencyKeyRef = useRef<string>(generateIdempotencyKey());
 
-  const [step,         setStep]         = useState<Step>(1);
-  const [name,         setName]         = useState('');
-  const [vaultType,    setVaultType]    = useState<VaultType>('STANDARD');
-  const [unlockDate,   setUnlockDate]   = useState('');
+  const [step, setStep] = useState<Step>(1);
+  const [name, setName] = useState('');
+  const [vaultType, setVaultType] = useState<VaultType>('STANDARD');
+  const [unlockDate, setUnlockDate] = useState('');
   const [unlockAmount, setUnlockAmount] = useState('');
-  const [condLogic,    setCondLogic]    = useState<'AND' | 'OR'>('AND');
-  const [serverError,  setServerError]  = useState<string | null>(null);
-  const [fieldErrors,  setFieldErrors]  = useState<Record<string, string>>({});
+  const [condLogic, setCondLogic] = useState<'AND' | 'OR'>('AND');
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const vaults          = vaultData?.vaults ?? [];
-  const standardCount   = vaults.filter(v => v.vault_type === 'STANDARD' && v.status !== 'CLOSED').length;
-  const lockedCount     = vaults.filter(v => v.vault_type === 'LOCKED'   && v.status !== 'CLOSED').length;
+  const vaults = vaultData?.vaults ?? [];
+  const standardCount = vaults.filter(
+    v => v.vault_type === 'STANDARD' && v.status !== 'CLOSED',
+  ).length;
+  const lockedCount = vaults.filter(v => v.vault_type === 'LOCKED' && v.status !== 'CLOSED').length;
   const standardLimited = standardCount >= FREE_TIER_MAX_STANDARD;
-  const lockedLimited   = lockedCount   >= FREE_TIER_MAX_LOCKED;
+  const lockedLimited = lockedCount >= FREE_TIER_MAX_LOCKED;
   const selectedLimited = vaultType === 'STANDARD' ? standardLimited : lockedLimited;
 
   function validateStep1(): boolean {
@@ -78,7 +80,7 @@ export default function CreateVaultScreen() {
 
   function validateStep2(): boolean {
     const errs: Record<string, string> = {};
-    const hasDate   = unlockDate.trim().length > 0;
+    const hasDate = unlockDate.trim().length > 0;
     const hasAmount = unlockAmount.trim().length > 0;
 
     if (!hasDate && !hasAmount) {
@@ -110,16 +112,16 @@ export default function CreateVaultScreen() {
     if (vaultType === 'LOCKED' && !validateStep2()) return;
     setServerError(null);
 
-    const hasDate   = unlockDate.trim().length > 0;
+    const hasDate = unlockDate.trim().length > 0;
     const hasAmount = unlockAmount.trim().length > 0;
 
     const payload = {
       name: name.trim(),
       vault_type: vaultType,
       ...(vaultType === 'LOCKED' && {
-        unlock_at:               hasDate   ? toISODateString(unlockDate) : null,
-        unlock_amount:           hasAmount ? Math.round(parseFloat(unlockAmount) * 100) : null,
-        unlock_condition_logic:  (hasDate && hasAmount) ? condLogic : null,
+        unlock_at: hasDate ? toISODateString(unlockDate) : null,
+        unlock_amount: hasAmount ? Math.round(parseFloat(unlockAmount) * 100) : null,
+        unlock_condition_logic: hasDate && hasAmount ? condLogic : null,
       }),
     };
 
@@ -135,10 +137,12 @@ export default function CreateVaultScreen() {
       });
     } catch (err: unknown) {
       const apiError = extractApiError(err);
-      const status   = axios.isAxiosError(err) ? err.response?.status : undefined;
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
 
       if (status === 422 && apiError?.code === 'VAULT_FREE_TIER_LIMIT_REACHED') {
-        setServerError("You've reached the free-tier limit for this vault type. Upgrade to Premium to create more.");
+        setServerError(
+          "You've reached the free-tier limit for this vault type. Upgrade to Premium to create more.",
+        );
       } else if (status === 403) {
         setServerError('Your KYC verification must be approved before creating a vault.');
       } else if (apiError?.message) {
@@ -147,13 +151,15 @@ export default function CreateVaultScreen() {
         const fallbackMessage = axios.isAxiosError(err)
           ? (err.response?.data as { message?: string } | undefined)?.message
           : undefined;
-        setServerError(fallbackMessage ?? "Something went wrong. Your vault wasn't created — please try again.");
+        setServerError(
+          fallbackMessage ?? "Something went wrong. Your vault wasn't created — please try again.",
+        );
       }
     }
   }
 
   function renderStep2() {
-    const hasDate   = unlockDate.trim().length > 0;
+    const hasDate = unlockDate.trim().length > 0;
     const hasAmount = unlockAmount.trim().length > 0;
 
     return (
@@ -166,8 +172,8 @@ export default function CreateVaultScreen() {
 
         <Text style={styles.stepTitle}>Set unlock conditions</Text>
         <Text style={styles.stepSubtitle}>
-          Choose at least one condition. When it&apos;s met, your vault unlocks and you can
-          withdraw freely with no penalty.
+          Choose at least one condition. When it&apos;s met, your vault unlocks and you can withdraw
+          freely with no penalty.
         </Text>
 
         <View style={styles.warningBox}>
@@ -176,8 +182,8 @@ export default function CreateVaultScreen() {
             <Text style={styles.warningTitle}>Early exit penalty</Text>
             <Text style={styles.warningDesc}>
               Breaking the lock before conditions are met incurs a{' '}
-              <Text style={styles.warningBold}>5% penalty</Text> on the vault balance at
-              the time of exit.
+              <Text style={styles.warningBold}>5% penalty</Text> on the vault balance at the time of
+              exit.
             </Text>
           </View>
         </View>
@@ -189,14 +195,15 @@ export default function CreateVaultScreen() {
           style={[styles.input, fieldErrors.unlockDate ? styles.inputError : null]}
           placeholder="dd/mm/yyyy"
           value={unlockDate}
-          onChangeText={t => { setUnlockDate(t); setFieldErrors(e => ({ ...e, unlockDate: '' })); }}
+          onChangeText={t => {
+            setUnlockDate(t);
+            setFieldErrors(e => ({ ...e, unlockDate: '' }));
+          }}
           keyboardType="numbers-and-punctuation"
           returnKeyType="done"
           accessibilityLabel="Unlock date"
         />
-        {!!fieldErrors.unlockDate && (
-          <Text style={styles.errorText}>{fieldErrors.unlockDate}</Text>
-        )}
+        {!!fieldErrors.unlockDate && <Text style={styles.errorText}>{fieldErrors.unlockDate}</Text>}
 
         <Text style={[styles.fieldLabel, styles.fieldLabelMt16]}>
           Target amount (GHS) <Text style={styles.optional}>(optional)</Text>
@@ -205,7 +212,10 @@ export default function CreateVaultScreen() {
           style={[styles.input, fieldErrors.unlockAmount ? styles.inputError : null]}
           placeholder="e.g. 5000.00"
           value={unlockAmount}
-          onChangeText={t => { setUnlockAmount(t); setFieldErrors(e => ({ ...e, unlockAmount: '' })); }}
+          onChangeText={t => {
+            setUnlockAmount(t);
+            setFieldErrors(e => ({ ...e, unlockAmount: '' }));
+          }}
           keyboardType="decimal-pad"
           returnKeyType="done"
           accessibilityLabel="Target savings amount in Ghana cedis"
@@ -226,7 +236,12 @@ export default function CreateVaultScreen() {
                   accessibilityRole="radio"
                   accessibilityState={{ selected: condLogic === opt }}
                 >
-                  <Text style={[styles.logicOptionText, condLogic === opt && styles.logicOptionTextActive]}>
+                  <Text
+                    style={[
+                      styles.logicOptionText,
+                      condLogic === opt && styles.logicOptionTextActive,
+                    ]}
+                  >
                     {opt === 'AND' ? 'Both conditions' : 'Either condition'}
                   </Text>
                 </TouchableOpacity>
@@ -252,7 +267,7 @@ export default function CreateVaultScreen() {
       >
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => step === 2 ? setStep(1) : navigation.goBack()}
+            onPress={() => (step === 2 ? setStep(1) : navigation.goBack())}
             accessibilityLabel={step === 2 ? 'Back to step 1' : 'Cancel'}
             style={styles.backButton}
           >
@@ -284,25 +299,27 @@ export default function CreateVaultScreen() {
                 style={[styles.input, fieldErrors.name ? styles.inputError : null]}
                 placeholder="e.g. Emergency fund, School fees"
                 value={name}
-                onChangeText={t => { setName(t); setFieldErrors(e => ({ ...e, name: '' })); }}
+                onChangeText={t => {
+                  setName(t);
+                  setFieldErrors(e => ({ ...e, name: '' }));
+                }}
                 maxLength={100}
                 returnKeyType="done"
                 autoFocus
                 accessibilityLabel="Vault name"
               />
-              {!!fieldErrors.name && (
-                <Text style={styles.errorText}>{fieldErrors.name}</Text>
-              )}
+              {!!fieldErrors.name && <Text style={styles.errorText}>{fieldErrors.name}</Text>}
               <Text style={styles.charCount}>{name.length}/100</Text>
 
-              <Text style={[styles.fieldLabel, styles.fieldLabelVaultType]}>
-                Vault type
-              </Text>
+              <Text style={[styles.fieldLabel, styles.fieldLabelVaultType]}>Vault type</Text>
 
               <VaultTypeCard
                 type="STANDARD"
                 selected={vaultType === 'STANDARD'}
-                onSelect={() => { setVaultType('STANDARD'); setServerError(null); }}
+                onSelect={() => {
+                  setVaultType('STANDARD');
+                  setServerError(null);
+                }}
                 disabled={standardLimited && vaultType !== 'STANDARD'}
                 limitReached={standardLimited}
               />
@@ -310,12 +327,17 @@ export default function CreateVaultScreen() {
               <VaultTypeCard
                 type="LOCKED"
                 selected={vaultType === 'LOCKED'}
-                onSelect={() => { setVaultType('LOCKED'); setServerError(null); }}
+                onSelect={() => {
+                  setVaultType('LOCKED');
+                  setServerError(null);
+                }}
                 disabled={lockedLimited && vaultType !== 'LOCKED'}
                 limitReached={lockedLimited}
               />
             </>
-          ) : renderStep2()}
+          ) : (
+            renderStep2()
+          )}
 
           {!!serverError && (
             <View style={styles.serverErrorBox}>
@@ -347,7 +369,9 @@ export default function CreateVaultScreen() {
             }}
             accessibilityLabel={
               step === 1
-                ? vaultType === 'LOCKED' ? 'Next — set unlock conditions' : 'Create standard vault'
+                ? vaultType === 'LOCKED'
+                  ? 'Next — set unlock conditions'
+                  : 'Create standard vault'
                 : 'Create locked vault'
             }
           >
@@ -355,9 +379,7 @@ export default function CreateVaultScreen() {
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <Text style={styles.ctaText}>
-                {step === 1
-                  ? vaultType === 'LOCKED' ? 'Next' : 'Create vault'
-                  : 'Create vault'}
+                {step === 1 ? (vaultType === 'LOCKED' ? 'Next' : 'Create vault') : 'Create vault'}
               </Text>
             )}
           </TouchableOpacity>
@@ -367,16 +389,16 @@ export default function CreateVaultScreen() {
   );
 }
 
-const INDIGO     = '#4F46E5';
-const DARK       = '#1A1A2E';
-const MUTED      = '#6B7280';
+const INDIGO = '#4F46E5';
+const DARK = '#1A1A2E';
+const MUTED = '#6B7280';
 const BACKGROUND = '#F8F9FF';
-const AMBER      = '#D97706';
+const AMBER = '#D97706';
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: BACKGROUND },
-  flex:    { flex: 1 },
-  scroll:  { flex: 1 },
+  safe: { flex: 1, backgroundColor: BACKGROUND },
+  flex: { flex: 1 },
+  scroll: { flex: 1 },
   content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 60 },
 
   header: {
@@ -389,8 +411,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EDEDF0',
     backgroundColor: BACKGROUND,
   },
-  backButton:  { width: 40, height: 40, justifyContent: 'center' },
-  backIcon:    { fontSize: 22, color: DARK },
+  backButton: { width: 40, height: 40, justifyContent: 'center' },
+  backIcon: { fontSize: 22, color: DARK },
   headerTitle: { fontSize: 17, fontWeight: '700', color: DARK, letterSpacing: -0.2 },
 
   stepIndicator: {
@@ -399,12 +421,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 4,
   },
-  stepDot:       { width: 10, height: 10, borderRadius: 5, backgroundColor: '#D1D5DB' },
+  stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#D1D5DB' },
   stepDotActive: { backgroundColor: INDIGO, width: 12, height: 12, borderRadius: 6 },
-  stepDotDone:   { backgroundColor: '#10B981' },
-  stepLine:      { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 8 },
+  stepDotDone: { backgroundColor: '#10B981' },
+  stepLine: { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 8 },
 
-  stepTitle:    { fontSize: 20, fontWeight: '700', color: DARK, marginBottom: 4, letterSpacing: -0.3 },
+  stepTitle: { fontSize: 20, fontWeight: '700', color: DARK, marginBottom: 4, letterSpacing: -0.3 },
   stepSubtitle: { fontSize: 14, color: MUTED, lineHeight: 20, marginBottom: 20 },
   fieldLabel: {
     fontSize: 13,
@@ -414,8 +436,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  optional:           { fontWeight: '400', color: MUTED, textTransform: 'none' },
-  fieldLabelMt16:     { marginTop: 16 },
+  optional: { fontWeight: '400', color: MUTED, textTransform: 'none' },
+  fieldLabelMt16: { marginTop: 16 },
   fieldLabelVaultType: { marginTop: 24, marginBottom: 12 },
   charCount: { fontSize: 12, color: '#9CA3AF', textAlign: 'right', marginTop: 4 },
 
@@ -446,13 +468,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  warningIcon:  { fontSize: 18, lineHeight: 22 },
-  warningBody:  { flex: 1 },
+  warningIcon: { fontSize: 18, lineHeight: 22 },
+  warningBody: { flex: 1 },
   warningTitle: { fontSize: 13, fontWeight: '700', color: AMBER, marginBottom: 3 },
-  warningDesc:  { fontSize: 13, color: '#78350F', lineHeight: 18 },
-  warningBold:  { fontWeight: '700' },
+  warningDesc: { fontSize: 13, color: '#78350F', lineHeight: 18 },
+  warningBold: { fontWeight: '700' },
 
-  logicRow:    { marginTop: 20, marginBottom: 4 },
+  logicRow: { marginTop: 20, marginBottom: 4 },
   logicLabel: {
     fontSize: 13,
     fontWeight: '600',
@@ -461,10 +483,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  logicToggle:           { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 10, padding: 3 },
-  logicOption:           { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
-  logicOptionActive:     { backgroundColor: INDIGO },
-  logicOptionText:       { fontSize: 13, fontWeight: '600', color: MUTED },
+  logicToggle: { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 10, padding: 3 },
+  logicOption: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
+  logicOptionActive: { backgroundColor: INDIGO },
+  logicOptionText: { fontSize: 13, fontWeight: '600', color: MUTED },
   logicOptionTextActive: { color: '#FFFFFF' },
 
   serverErrorBox: {
@@ -477,8 +499,14 @@ const styles = StyleSheet.create({
   },
   serverErrorText: { fontSize: 13, color: '#991B1B', lineHeight: 19 },
 
-  upgradeBanner: { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginTop: 8, marginBottom: 8 },
-  upgradeText:   { fontSize: 13, color: '#1E40AF', lineHeight: 19 },
+  upgradeBanner: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  upgradeText: { fontSize: 13, color: '#1E40AF', lineHeight: 19 },
 
   ctaButton: {
     backgroundColor: INDIGO,
@@ -493,5 +521,5 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   ctaDisabled: { backgroundColor: '#A5B4FC', shadowOpacity: 0, elevation: 0 },
-  ctaText:     { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  ctaText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

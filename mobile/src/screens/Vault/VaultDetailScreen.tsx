@@ -19,35 +19,45 @@ import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultActionBar } from './components/VaultActionBar';
 import { TransactionReceiptModal } from './components/TransactionReceiptModal';
 
-type Nav  = NativeStackNavigationProp<RootStackParamList, 'VaultDetail'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'VaultDetail'>;
 type RouteProps = RouteProp<RootStackParamList, 'VaultDetail'>;
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GH', {
-    day: 'numeric', month: 'short', year: 'numeric',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
 function formatTimestamp(iso: string): string {
   return new Date(iso).toLocaleString('en-GH', {
-    day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
-interface UnlockInfo { label: string; progress: number | null }
+interface UnlockInfo {
+  label: string;
+  progress: number | null;
+}
 
 function buildUnlockLabel(vault: VaultListItem): UnlockInfo | null {
   if (vault.vault_type !== 'LOCKED') return null;
 
   const dateMet = vault.unlock_at ? new Date(vault.unlock_at) <= new Date() : null;
-  const progressPercent = vault.unlock_amount && vault.balance_pesewas !== null
-    ? Math.min((vault.balance_pesewas / vault.unlock_amount) * 100, 100)
-    : null;
+  const progressPercent =
+    vault.unlock_amount && vault.balance_pesewas !== null
+      ? Math.min((vault.balance_pesewas / vault.unlock_amount) * 100, 100)
+      : null;
 
   if (vault.unlock_at && vault.unlock_amount) {
     const dateStr = new Date(vault.unlock_at).toLocaleDateString('en-GH', {
-      day: 'numeric', month: 'short', year: 'numeric',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     });
     const amtGhs = (vault.unlock_amount / 100).toLocaleString('en-GH', {
       minimumFractionDigits: 2,
@@ -57,11 +67,14 @@ function buildUnlockLabel(vault: VaultListItem): UnlockInfo | null {
   }
   if (vault.unlock_at) {
     const dateStr = new Date(vault.unlock_at).toLocaleDateString('en-GH', {
-      day: 'numeric', month: 'short', year: 'numeric',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
     });
-    const daysLeft = Math.max(0, Math.ceil(
-      (new Date(vault.unlock_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-    ));
+    const daysLeft = Math.max(
+      0,
+      Math.ceil((new Date(vault.unlock_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+    );
     return {
       label: dateMet
         ? `Unlock date reached (${dateStr})`
@@ -96,7 +109,9 @@ function StatementRow({ entry, onPress }: { entry: StatementEntry; onPress: () =
           {entry.transaction_type.replace(/_/g, ' ')}
         </Text>
         {entry.narrative ? (
-          <Text style={txStyles.narrative} numberOfLines={1}>{entry.narrative}</Text>
+          <Text style={txStyles.narrative} numberOfLines={1}>
+            {entry.narrative}
+          </Text>
         ) : null}
         <Text style={txStyles.timestamp}>{formatTimestamp(entry.created_at)}</Text>
       </View>
@@ -121,14 +136,14 @@ function MetaRow({ label, value, last }: { label: string; value: string; last?: 
 // ─── VaultDetailScreen ────────────────────────────────────────────────────────
 
 export default function VaultDetailScreen() {
-  const navigation  = useNavigation<Nav>();
-  const route       = useRoute<RouteProps>();
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
 
   const { vaultId, successMessage } = route.params;
 
-  const [selectedRef,  setSelectedRef]  = useState<string | null>(null);
-  const [showSuccess,  setShowSuccess]  = useState(!!successMessage);
+  const [selectedRef, setSelectedRef] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(!!successMessage);
 
   const {
     data: vault,
@@ -167,8 +182,8 @@ export default function VaultDetailScreen() {
     );
   }
 
-  const unlockInfo  = buildUnlockLabel(vault);
-  const isLocked    = vault.vault_type === 'LOCKED';
+  const unlockInfo = buildUnlockLabel(vault);
+  const isLocked = vault.vault_type === 'LOCKED';
   const isEarlyExit = vault.status === 'EARLY_EXIT_PENDING';
 
   return (
@@ -181,7 +196,9 @@ export default function VaultDetailScreen() {
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{vault.name}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {vault.name}
+        </Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -212,7 +229,9 @@ export default function VaultDetailScreen() {
             <View style={styles.heroCard}>
               <View style={styles.heroTop}>
                 <Text style={styles.heroLabel}>Current balance</Text>
-                <View style={[styles.typeBadge, isLocked ? styles.badgeLocked : styles.badgeStandard]}>
+                <View
+                  style={[styles.typeBadge, isLocked ? styles.badgeLocked : styles.badgeStandard]}
+                >
                   <Text style={styles.badgeText}>{isLocked ? 'LOCKED' : 'STANDARD'}</Text>
                 </View>
               </View>
@@ -258,10 +277,7 @@ export default function VaultDetailScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <StatementRow
-            entry={item}
-            onPress={() => setSelectedRef(item.transaction_reference)}
-          />
+          <StatementRow entry={item} onPress={() => setSelectedRef(item.transaction_reference)} />
         )}
         ListEmptyComponent={
           statementLoading ? (
@@ -300,25 +316,22 @@ export default function VaultDetailScreen() {
         onCancelEarlyExit={() => navigation.navigate('CancelEarlyExit', { vaultId })}
       />
 
-      <TransactionReceiptModal
-        reference={selectedRef}
-        onClose={() => setSelectedRef(null)}
-      />
+      <TransactionReceiptModal reference={selectedRef} onClose={() => setSelectedRef(null)} />
     </SafeAreaView>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const INDIGO     = '#4F46E5';
-const DARK       = '#1A1A2E';
-const MUTED      = '#6B7280';
+const INDIGO = '#4F46E5';
+const DARK = '#1A1A2E';
+const MUTED = '#6B7280';
 const BACKGROUND = '#F8F9FF';
 
 const styles = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: BACKGROUND },
+  safe: { flex: 1, backgroundColor: BACKGROUND },
   loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent:   { paddingBottom: 24 },
+  listContent: { paddingBottom: 24 },
 
   header: {
     flexDirection: 'row',
@@ -330,8 +343,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EDEDF0',
     backgroundColor: BACKGROUND,
   },
-  backBtn:     { width: 40, height: 40, justifyContent: 'center' },
-  backIcon:    { fontSize: 22, color: DARK },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  backIcon: { fontSize: 22, color: DARK },
   headerTitle: { fontSize: 17, fontWeight: '700', color: DARK, flex: 1, textAlign: 'center' },
 
   successBanner: {
@@ -357,33 +370,42 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   heroTop: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   heroLabel: {
-    fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500',
-    textTransform: 'uppercase', letterSpacing: 0.4,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
-  typeBadge:     { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeLocked:   { backgroundColor: 'rgba(255,255,255,0.15)' },
+  typeBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeLocked: { backgroundColor: 'rgba(255,255,255,0.15)' },
   badgeStandard: { backgroundColor: 'rgba(79,70,229,0.4)' },
-  badgeText:     { fontSize: 10, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
+  badgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
   heroBalanceRow: { flexDirection: 'row', alignItems: 'baseline' },
-  heroCurrency:   { fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
-  heroBalance:    { fontSize: 40, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1.5 },
+  heroCurrency: { fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  heroBalance: { fontSize: 40, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1.5 },
   heroBalanceUnavailable: { fontSize: 32, fontWeight: '700', color: 'rgba(255,255,255,0.3)' },
 
   unlockSection: {
-    marginTop: 16, borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 14,
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 14,
   },
-  unlockLabel:  { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 8 },
+  unlockLabel: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 8 },
   progressTrack: {
-    height: 4, backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 2, overflow: 'hidden',
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 2,
+    overflow: 'hidden',
   },
   progressFill: { height: '100%', backgroundColor: '#818CF8', borderRadius: 2 },
-  progressPct:  { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, textAlign: 'right' },
+  progressPct: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, textAlign: 'right' },
 
   metaCard: {
     backgroundColor: '#FFFFFF',
@@ -395,24 +417,39 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sectionTitle: {
-    fontSize: 14, fontWeight: '700', color: MUTED,
-    textTransform: 'uppercase', letterSpacing: 0.5,
-    marginHorizontal: 16, marginBottom: 8,
+    fontSize: 14,
+    fontWeight: '700',
+    color: MUTED,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
 
   statementLoading: { paddingVertical: 32, alignItems: 'center' },
-  loadMore:         { paddingVertical: 16, alignItems: 'center' },
-  emptyStatement:   { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 },
-  emptyIcon:        { fontSize: 40, marginBottom: 12 },
-  emptyText:        { fontSize: 16, fontWeight: '700', color: DARK, marginBottom: 6 },
-  emptySubtext:     { fontSize: 13, color: MUTED, textAlign: 'center', lineHeight: 19 },
+  loadMore: { paddingVertical: 16, alignItems: 'center' },
+  emptyStatement: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 },
+  emptyIcon: { fontSize: 40, marginBottom: 12 },
+  emptyText: { fontSize: 16, fontWeight: '700', color: DARK, marginBottom: 6 },
+  emptySubtext: { fontSize: 13, color: MUTED, textAlign: 'center', lineHeight: 19 },
 });
 
 const metaStyles = StyleSheet.create({
-  row:    { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12 },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
   border: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  label:  { fontSize: 12, color: MUTED, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
-  value:  { fontSize: 13, fontWeight: '600', color: DARK },
+  label: {
+    fontSize: 12,
+    color: MUTED,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  value: { fontSize: 13, fontWeight: '600', color: DARK },
 });
 
 const txStyles = StyleSheet.create({
@@ -426,14 +463,14 @@ const txStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  dirDot:      { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  dotCredit:   { backgroundColor: '#059669' },
-  dotDebit:    { backgroundColor: '#DC2626' },
-  rowBody:     { flex: 1 },
-  txType:      { fontSize: 13, fontWeight: '600', color: DARK, textTransform: 'capitalize' },
-  narrative:   { fontSize: 12, color: MUTED, marginTop: 2 },
-  timestamp:   { fontSize: 11, color: '#9CA3AF', marginTop: 3 },
-  amount:      { fontSize: 14, fontWeight: '700' },
+  dirDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+  dotCredit: { backgroundColor: '#059669' },
+  dotDebit: { backgroundColor: '#DC2626' },
+  rowBody: { flex: 1 },
+  txType: { fontSize: 13, fontWeight: '600', color: DARK, textTransform: 'capitalize' },
+  narrative: { fontSize: 12, color: MUTED, marginTop: 2 },
+  timestamp: { fontSize: 11, color: '#9CA3AF', marginTop: 3 },
+  amount: { fontSize: 14, fontWeight: '700' },
   amountCredit: { color: '#059669' },
-  amountDebit:  { color: '#DC2626' },
+  amountDebit: { color: '#DC2626' },
 });

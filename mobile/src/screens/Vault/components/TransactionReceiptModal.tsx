@@ -19,8 +19,11 @@ interface Props {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('en-GH', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -36,20 +39,20 @@ const TYPE_LABELS: Record<string, string> = {
 // no-unused-styles rule would flag them inside StyleSheet.create.
 const STATUS_PILL_BG: Record<string, { backgroundColor: string }> = {
   COMPLETED: { backgroundColor: '#05966922' },
-  PENDING:   { backgroundColor: '#D9770622' },
-  FAILED:    { backgroundColor: '#DC262622' },
-  DEFAULT:   { backgroundColor: '#6B728022' },
+  PENDING: { backgroundColor: '#D9770622' },
+  FAILED: { backgroundColor: '#DC262622' },
+  DEFAULT: { backgroundColor: '#6B728022' },
 };
 
 const STATUS_TEXT_COLOR: Record<string, { color: string }> = {
   COMPLETED: { color: '#059669' },
-  PENDING:   { color: '#D97706' },
-  FAILED:    { color: '#DC2626' },
-  DEFAULT:   { color: '#6B7280' },
+  PENDING: { color: '#D97706' },
+  FAILED: { color: '#DC2626' },
+  DEFAULT: { color: '#6B7280' },
 };
 
 const ENTRY_CREDIT = { dot: { backgroundColor: '#059669' }, amount: { color: '#059669' } };
-const ENTRY_DEBIT  = { dot: { backgroundColor: '#DC2626' }, amount: { color: '#DC2626' } };
+const ENTRY_DEBIT = { dot: { backgroundColor: '#DC2626' }, amount: { color: '#DC2626' } };
 
 export function TransactionReceiptModal({ reference, onClose }: Props) {
   const { data, isLoading, error } = useTransactionDetail(reference);
@@ -83,20 +86,24 @@ export function TransactionReceiptModal({ reference, onClose }: Props) {
             <Text style={styles.errorText}>Could not load transaction details.</Text>
           </View>
         ) : data ? (
-          <ScrollView contentContainerStyle={styles.receiptContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.receiptContent}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.amountHero}>
               <Text style={styles.heroLabel}>
                 {TYPE_LABELS[data.transaction_type] ?? data.transaction_type}
               </Text>
               <Text style={styles.heroAmount}>GHS {data.gross_amount_cedis}</Text>
-              <View style={[
-                styles.statusPill,
-                STATUS_PILL_BG[data.status] ?? STATUS_PILL_BG.DEFAULT,
-              ]}>
-                <Text style={[
-                  styles.statusText,
-                  STATUS_TEXT_COLOR[data.status] ?? STATUS_TEXT_COLOR.DEFAULT,
-                ]}>
+              <View
+                style={[styles.statusPill, STATUS_PILL_BG[data.status] ?? STATUS_PILL_BG.DEFAULT]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    STATUS_TEXT_COLOR[data.status] ?? STATUS_TEXT_COLOR.DEFAULT,
+                  ]}
+                >
                   {data.status}
                 </Text>
               </View>
@@ -105,15 +112,11 @@ export function TransactionReceiptModal({ reference, onClose }: Props) {
             <View style={styles.detailsCard}>
               <DetailRow label="Reference" value={data.transaction_reference} mono />
               <DetailRow label="Date" value={formatDate(data.created_at)} />
-              {data.posted_at && (
-                <DetailRow label="Settled" value={formatDate(data.posted_at)} />
-              )}
+              {data.posted_at && <DetailRow label="Settled" value={formatDate(data.posted_at)} />}
               {data.external_reference && (
                 <DetailRow label="Paystack ref" value={data.external_reference} mono />
               )}
-              {data.narrative && (
-                <DetailRow label="Narrative" value={data.narrative} />
-              )}
+              {data.narrative && <DetailRow label="Narrative" value={data.narrative} />}
             </View>
 
             {data.entries.length > 0 && (
@@ -163,12 +166,12 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
 }
 
 const INDIGO = '#4F46E5';
-const DARK   = '#1A1A2E';
-const MUTED  = '#6B7280';
+const DARK = '#1A1A2E';
+const MUTED = '#6B7280';
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#F8F9FF' },
-  header:  {
+  safe: { flex: 1, backgroundColor: '#F8F9FF' },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -179,19 +182,23 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 17, fontWeight: '700', color: DARK },
   closeButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  closeIcon:   { fontSize: 18, color: MUTED },
-  centered:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  errorText:   { fontSize: 14, color: '#DC2626' },
+  closeIcon: { fontSize: 18, color: MUTED },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  errorText: { fontSize: 14, color: '#DC2626' },
   receiptContent: { padding: 16, paddingBottom: 40 },
 
   amountHero: { alignItems: 'center', paddingVertical: 28 },
   heroLabel: {
-    fontSize: 13, color: MUTED, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8,
+    fontSize: 13,
+    color: MUTED,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  heroAmount:  { fontSize: 36, fontWeight: '800', color: DARK, letterSpacing: -1, marginBottom: 12 },
-  statusPill:  { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
-  statusText:  { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+  heroAmount: { fontSize: 36, fontWeight: '800', color: DARK, letterSpacing: -1, marginBottom: 12 },
+  statusPill: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
+  statusText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
 
   detailsCard: {
     backgroundColor: '#FFFFFF',
@@ -209,16 +216,20 @@ const styles = StyleSheet.create({
     borderColor: '#EDEDF0',
   },
   entriesTitle: {
-    fontSize: 12, fontWeight: '700', color: MUTED,
-    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12,
+    fontSize: 12,
+    fontWeight: '700',
+    color: MUTED,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
   },
-  entryRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
-  entryBorder:  { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
+  entryBorder: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   directionDot: { width: 8, height: 8, borderRadius: 4 },
-  entryInfo:    { flex: 1 },
+  entryInfo: { flex: 1 },
   entryAccountType: { fontSize: 13, fontWeight: '600', color: DARK },
-  entryNarrative:   { fontSize: 12, color: MUTED, marginTop: 2 },
-  entryAmount:      { fontSize: 14, fontWeight: '700' },
+  entryNarrative: { fontSize: 12, color: MUTED, marginTop: 2 },
+  entryAmount: { fontSize: 14, fontWeight: '700' },
 });
 
 const detailStyles = StyleSheet.create({
@@ -232,12 +243,19 @@ const detailStyles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   label: {
-    fontSize: 12, color: MUTED, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 0.4,
+    fontSize: 12,
+    color: MUTED,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   value: {
-    fontSize: 13, color: DARK, fontWeight: '500',
-    flex: 1, textAlign: 'right', marginLeft: 12,
+    fontSize: 13,
+    color: DARK,
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 12,
   },
   mono: {
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',

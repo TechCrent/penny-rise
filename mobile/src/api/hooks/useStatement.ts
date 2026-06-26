@@ -35,7 +35,7 @@ export function useStatement(ledgerAccountId: string, enabled = true) {
       return data;
     },
     initialPageParam: null,
-    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    getNextPageParam: lastPage => lastPage.next_cursor ?? undefined,
     enabled: !!ledgerAccountId && enabled,
     staleTime: 20_000,
   });

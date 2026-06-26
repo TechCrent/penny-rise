@@ -30,9 +30,7 @@ export function useTransactionDetail(reference: string | null) {
   return useQuery<TransactionDetail>({
     queryKey: ['transaction', reference],
     queryFn: async () => {
-      const { data } = await apiClient.get<TransactionDetail>(
-        `/api/v1/transactions/${reference}`,
-      );
+      const { data } = await apiClient.get<TransactionDetail>(`/api/v1/transactions/${reference}`);
       return data;
     },
     enabled: !!reference,

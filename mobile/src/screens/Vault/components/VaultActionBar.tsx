@@ -13,27 +13,28 @@ interface Props {
 function isNaturallyUnlocked(vault: VaultListItem): boolean {
   if (vault.vault_type !== 'LOCKED') return false;
 
-  const dateMet = vault.unlock_at
-    ? new Date(vault.unlock_at) <= new Date()
-    : false;
-  const amountMet = vault.unlock_amount !== null
-    ? (vault.balance_pesewas ?? 0) >= vault.unlock_amount
-    : false;
+  const dateMet = vault.unlock_at ? new Date(vault.unlock_at) <= new Date() : false;
+  const amountMet =
+    vault.unlock_amount !== null ? (vault.balance_pesewas ?? 0) >= vault.unlock_amount : false;
 
   if (vault.unlock_at && vault.unlock_amount) {
-    return vault.unlock_condition_logic === 'OR'
-      ? dateMet || amountMet
-      : dateMet && amountMet;
+    return vault.unlock_condition_logic === 'OR' ? dateMet || amountMet : dateMet && amountMet;
   }
-  if (vault.unlock_at)     return dateMet;
+  if (vault.unlock_at) return dateMet;
   if (vault.unlock_amount) return amountMet;
   return false;
 }
 
-export function VaultActionBar({ vault, onDeposit, onWithdraw, onEarlyExit, onCancelEarlyExit }: Props) {
+export function VaultActionBar({
+  vault,
+  onDeposit,
+  onWithdraw,
+  onEarlyExit,
+  onCancelEarlyExit,
+}: Props) {
   const isEarlyExitPending = vault.status === 'EARLY_EXIT_PENDING';
-  const isLocked  = vault.vault_type === 'LOCKED';
-  const unlocked  = !isEarlyExitPending && isLocked && isNaturallyUnlocked(vault);
+  const isLocked = vault.vault_type === 'LOCKED';
+  const unlocked = !isEarlyExitPending && isLocked && isNaturallyUnlocked(vault);
 
   if (isEarlyExitPending) {
     return (
@@ -134,8 +135,8 @@ export function VaultActionBar({ vault, onDeposit, onWithdraw, onEarlyExit, onCa
 }
 
 const INDIGO = '#4F46E5';
-const DARK   = '#1A1A2E';
-const AMBER  = '#D97706';
+const DARK = '#1A1A2E';
+const AMBER = '#D97706';
 
 const styles = StyleSheet.create({
   container: {
@@ -171,8 +172,8 @@ const styles = StyleSheet.create({
     borderColor: '#FCA5A5',
     backgroundColor: '#FEF2F2',
   },
-  buttonText:      { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  outlineText:     { fontSize: 15, fontWeight: '700', color: DARK },
+  buttonText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  outlineText: { fontSize: 15, fontWeight: '700', color: DARK },
   destructiveText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
 
   coolOffBanner: {
@@ -184,10 +185,10 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
   },
-  coolOffIcon:  { fontSize: 20 },
-  coolOffBody:  { flex: 1 },
+  coolOffIcon: { fontSize: 20 },
+  coolOffBody: { flex: 1 },
   coolOffTitle: { fontSize: 13, fontWeight: '700', color: '#92400E' },
-  coolOffSub:   { fontSize: 12, color: '#B45309', marginTop: 2 },
+  coolOffSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
 
   unlockedBanner: {
     backgroundColor: '#ECFDF5',

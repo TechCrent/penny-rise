@@ -1,8 +1,10 @@
 package com.stash.platform.vault.api;
 
 import com.stash.platform.vault.api.dto.CreateVaultRequest;
+import com.stash.platform.vault.api.dto.VaultListResponse;
 import com.stash.platform.vault.api.dto.VaultResponse;
 import com.stash.platform.vault.service.VaultCreationService;
+import com.stash.platform.vault.service.VaultListService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,9 +17,12 @@ import java.util.UUID;
 public class VaultController {
 
     private final VaultCreationService creationService;
+    private final VaultListService     listService;
 
-    public VaultController(VaultCreationService creationService) {
+    public VaultController(VaultCreationService creationService,
+                            VaultListService listService) {
         this.creationService = creationService;
+        this.listService     = listService;
     }
 
     @PostMapping
@@ -33,5 +38,18 @@ public class VaultController {
                 userId, request,
                 correlationId != null ? correlationId : "vault-create-" + UUID.randomUUID(),
                 idempotencyKey);
+    }
+
+    @GetMapping
+    public VaultListResponse listVaults(
+            @AuthenticationPrincipal UUID userId,
+            @RequestParam(name = "include_closed", defaultValue = "false")
+            boolean includeClosed,
+            @RequestHeader(value = "X-Correlation-Id", required = false)
+            String correlationId) {
+
+        return listService.listVaults(
+                userId, includeClosed,
+                correlationId != null ? correlationId : "vault-list-" + UUID.randomUUID());
     }
 }

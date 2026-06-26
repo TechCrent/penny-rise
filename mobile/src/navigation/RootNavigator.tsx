@@ -13,6 +13,7 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import KycCardDetailsScreen from '../screens/KycCardDetailsScreen';
 import KycDocumentUploadScreen from '../screens/KycDocumentUploadScreen';
 import KycSubmissionPendingScreen from '../screens/KycSubmissionPendingScreen';
+import { CreateVaultScreen } from '../screens/Vault';
 
 export type RootStackParamList = {
   Register: undefined;
@@ -23,9 +24,8 @@ export type RootStackParamList = {
   AuthenticatedBootstrap: undefined;
   Home: undefined;
   KycFlow: undefined;
-  // Forward-declared for upcoming vault screens (not yet implemented).
   VaultList: undefined;
-  VaultDetail: { vaultId: string };
+  VaultDetail: { vaultId: string; successMessage?: string };
   CreateVault: undefined;
   Transfer: undefined;
   Notifications: undefined;
@@ -78,6 +78,7 @@ export default function RootNavigator() {
           <Stack.Screen name="KycCardDetails" component={KycCardDetailsScreen} />
           <Stack.Screen name="KycDocumentUpload" component={KycDocumentUploadScreen} />
           <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
+          <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
         </>
       ) : (
         <>

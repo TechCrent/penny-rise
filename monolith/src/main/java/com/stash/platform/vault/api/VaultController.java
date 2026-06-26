@@ -1,9 +1,12 @@
 package com.stash.platform.vault.api;
 
 import com.stash.platform.vault.api.dto.CreateVaultRequest;
+import com.stash.platform.vault.api.dto.VaultDepositRequest;
+import com.stash.platform.vault.api.dto.VaultDepositResponse;
 import com.stash.platform.vault.api.dto.VaultListResponse;
 import com.stash.platform.vault.api.dto.VaultResponse;
 import com.stash.platform.vault.service.VaultCreationService;
+import com.stash.platform.vault.service.VaultDepositService;
 import com.stash.platform.vault.service.VaultListService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -18,11 +21,14 @@ public class VaultController {
 
     private final VaultCreationService creationService;
     private final VaultListService     listService;
+    private final VaultDepositService  depositService;
 
     public VaultController(VaultCreationService creationService,
-                            VaultListService listService) {
+                            VaultListService listService,
+                            VaultDepositService depositService) {
         this.creationService = creationService;
         this.listService     = listService;
+        this.depositService  = depositService;
     }
 
     @PostMapping
@@ -51,5 +57,21 @@ public class VaultController {
         return listService.listVaults(
                 userId, includeClosed,
                 correlationId != null ? correlationId : "vault-list-" + UUID.randomUUID());
+    }
+
+    @PostMapping("/{vaultId}/deposits")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public VaultDepositResponse deposit(
+            @PathVariable UUID vaultId,
+            @Valid @RequestBody VaultDepositRequest request,
+            @AuthenticationPrincipal UUID userId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestHeader(value = "X-Correlation-Id", required = false)
+            String correlationId) {
+
+        return depositService.initiateDeposit(
+                vaultId, userId, request,
+                correlationId != null ? correlationId : "vault-deposit-" + UUID.randomUUID(),
+                idempotencyKey);
     }
 }

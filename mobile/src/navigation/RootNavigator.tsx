@@ -23,6 +23,12 @@ export type RootStackParamList = {
   AuthenticatedBootstrap: undefined;
   Home: undefined;
   KycFlow: undefined;
+  // Forward-declared for upcoming vault screens (not yet implemented).
+  VaultList: undefined;
+  VaultDetail: { vaultId: string };
+  CreateVault: undefined;
+  Transfer: undefined;
+  Notifications: undefined;
   KycCardDetails: undefined;
   KycDocumentUpload: {
     submissionId: string;

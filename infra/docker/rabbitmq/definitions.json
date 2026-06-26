@@ -151,6 +151,15 @@
       "auto_delete": false,
       "internal": false,
       "arguments": {}
+    },
+    {
+      "name": "vault.events",
+      "vhost": "stash",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
     }
   ],
   "bindings": [

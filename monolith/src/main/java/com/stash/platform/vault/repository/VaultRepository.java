@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,4 +50,36 @@ public interface VaultRepository extends JpaRepository<VaultEntity, UUID> {
             """)
     List<VaultEntity> findVaultsForUser(@Param("userId")        UUID    userId,
                                          @Param("includeClosed") boolean includeClosed);
+
+    /**
+     * Selects ACTIVE LOCKED vaults that have at least one unlock condition set.
+     * Used by the auto-unlock worker as the candidate set — balance conditions
+     * are then checked per-vault against the Payments Service.
+     *
+     * <p>SELECT FOR UPDATE SKIP LOCKED — safe for concurrent worker instances.
+     * Excludes vaults in EARLY_EXIT_PENDING (those go through the early-exit flow).
+     * Excludes vaults already unlocked (unlocked_at IS NOT NULL).
+     *
+     * <p>For date-based conditions, we can pre-filter here (unlock_by_date <= now).
+     * For amount-based conditions, we must fetch the balance from Payments, so
+     * we include all amount-based vaults as candidates and check balance in the worker.
+     */
+    @Query(value = """
+            SELECT * FROM vault.vaults
+            WHERE vault_type = 'LOCKED'
+              AND status     = 'ACTIVE'
+              AND deleted_at IS NULL
+              AND unlocked_at IS NULL
+              AND (
+                  -- Date condition candidate: date is set and may have passed
+                  (unlock_by_date IS NOT NULL AND unlock_by_date <= :now)
+                  OR
+                  -- Amount condition candidate: amount is set (balance check happens in worker)
+                  unlock_target_amount IS NOT NULL
+              )
+            LIMIT :batchSize
+            FOR UPDATE SKIP LOCKED
+            """, nativeQuery = true)
+    List<VaultEntity> findUnlockCandidates(@Param("now") Instant now,
+                                            @Param("batchSize") int batchSize);
 }

@@ -1,4 +1,4 @@
--- Migration: V1__create_vaults.sql
+-- Migration: V6__create_vaults.sql
 -- Creates the vault schema and vault.vaults table per Schema doc §3.1.
 --
 -- Design decisions:

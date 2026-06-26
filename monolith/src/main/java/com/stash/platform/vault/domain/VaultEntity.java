@@ -47,6 +47,9 @@ public class VaultEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "unlocked_at")
+    private Instant unlockedAt;
+
     protected VaultEntity() {}
 
     public static VaultEntity createStandard(UUID ownerUserId, String name,
@@ -95,4 +98,5 @@ public class VaultEntity {
     public boolean isEarlyExitInProgress()    { return earlyExitInProgress; }
     public Instant getCreatedAt()             { return createdAt; }
     public Instant getDeletedAt()             { return deletedAt; }
+    public Instant getUnlockedAt()            { return unlockedAt; }
 }

@@ -105,4 +105,21 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE u.accountStatus = :accountStatus AND u.deletedAt IS NULL")
     List<User> findByAccountStatus(@Param("accountStatus") AccountStatus accountStatus);
+
+    // ── Vault creation support (v0.3-027) ─────────────────────────────────
+
+    /**
+     * Locks the user row with SELECT FOR UPDATE for the duration of the
+     * calling transaction. Used by vault creation to serialise concurrent
+     * vault-count checks from the same user.
+     */
+    @Query(value = "SELECT id FROM user_module.users WHERE id = :userId FOR UPDATE",
+           nativeQuery = true)
+    UUID lockUserRow(@Param("userId") UUID userId);
+
+    /**
+     * Finds the user and loads kyc_status and subscription_tier in one query.
+     */
+    @Query("SELECT u FROM User u WHERE u.id = :userId")
+    Optional<User> findByIdForVaultCreation(@Param("userId") UUID userId);
 }

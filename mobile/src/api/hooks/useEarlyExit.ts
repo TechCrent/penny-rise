@@ -17,13 +17,19 @@ export interface EarlyExitResponse {
   status: string;
 }
 
+export interface RequestEarlyExitPayload {
+  reason: EarlyExitReason;
+  destination_momo_number: string;
+  momo_provider: 'mtn' | 'vodafone' | 'airteltigo';
+}
+
 export function useRequestEarlyExit(vaultId: string) {
   const queryClient = useQueryClient();
-  return useMutation<EarlyExitResponse, Error, { reason: EarlyExitReason }>({
-    mutationFn: async ({ reason }) => {
+  return useMutation<EarlyExitResponse, Error, RequestEarlyExitPayload>({
+    mutationFn: async payload => {
       const { data } = await apiClient.post<EarlyExitResponse>(
         `/api/v1/vaults/${vaultId}/early-exit`,
-        { reason },
+        payload,
       );
       return data;
     },

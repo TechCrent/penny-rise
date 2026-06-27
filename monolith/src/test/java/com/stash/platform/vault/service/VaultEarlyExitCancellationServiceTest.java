@@ -199,6 +199,7 @@ class VaultEarlyExitCancellationServiceTest {
                 VAULT_ID, USER_ID, "MEDICAL",
                 10_000L, 500L, 9_500L,
                 Instant.parse("2026-06-27T10:00:00Z"),
+                "0241234567", "mtn",
                 Instant.parse("2026-06-24T09:00:00Z")
         );
     }

@@ -288,6 +288,7 @@ class EarlyExitReleaseProcessorTest {
                 VAULT_ID, USER_ID, "MEDICAL",
                 balance, penalty, release,
                 Instant.parse("2026-06-27T10:00:00Z"),
+                "0241234567", "mtn",
                 Instant.parse("2026-06-24T10:00:00Z")
         );
         // @UuidGenerator only assigns the id at persist time; set it here so the

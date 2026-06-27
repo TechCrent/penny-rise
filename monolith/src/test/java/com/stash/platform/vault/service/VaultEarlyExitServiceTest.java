@@ -56,7 +56,7 @@ class VaultEarlyExitServiceTest {
     @DisplayName("creates early-exit request with correct penalty and release amounts")
     void happy_path_correct_penalty() {
         EarlyExitResponse result = service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR);
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR);
 
         assertThat(result.balanceAtRequestPesewas()).isEqualTo(10_000L);
         assertThat(result.penaltyAmountPesewas()).isEqualTo(500L);     // 5% of 10000
@@ -68,7 +68,7 @@ class VaultEarlyExitServiceTest {
     @DisplayName("scheduled_release_at is exactly 72 hours after now")
     void scheduled_release_at_72_hours() {
         EarlyExitResponse result = service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR);
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR);
 
         Instant expected = Instant.parse("2026-06-27T10:00:00Z");  // now + 72h
         assertThat(result.scheduledReleaseAt()).isEqualTo(expected);
@@ -77,7 +77,7 @@ class VaultEarlyExitServiceTest {
     @Test
     @DisplayName("vault status set to EARLY_EXIT_PENDING after request created")
     void vault_status_updated_to_early_exit_pending() {
-        service.requestEarlyExit(VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR);
+        service.requestEarlyExit(VAULT_ID, USER_ID, request("MEDICAL"), CORR);
 
         ArgumentCaptor<VaultEntity> vaultCaptor = ArgumentCaptor.forClass(VaultEntity.class);
         verify(vaultRepo).save(vaultCaptor.capture());
@@ -88,7 +88,7 @@ class VaultEarlyExitServiceTest {
     @Test
     @DisplayName("reason stored on request row (normalised to uppercase)")
     void reason_stored_normalised() {
-        service.requestEarlyExit(VAULT_ID, USER_ID, new EarlyExitRequest("medical"), CORR);
+        service.requestEarlyExit(VAULT_ID, USER_ID, request("medical"), CORR);
 
         ArgumentCaptor<EarlyExitRequestEntity> captor =
                 ArgumentCaptor.forClass(EarlyExitRequestEntity.class);
@@ -100,7 +100,7 @@ class VaultEarlyExitServiceTest {
     @DisplayName("cedis fields formatted correctly in response")
     void cedis_formatted_in_response() {
         EarlyExitResponse result = service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR);
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR);
 
         assertThat(result.balanceAtRequestCedis()).isEqualTo("100.00");
         assertThat(result.penaltyAmountCedis()).isEqualTo("5.00");
@@ -115,7 +115,7 @@ class VaultEarlyExitServiceTest {
         when(balanceClient.fetchBalance(LEDGER_ID, CORR)).thenReturn(Optional.of(0L));
 
         EarlyExitResponse result = service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("FAMILY"), CORR);
+                VAULT_ID, USER_ID, request("FAMILY"), CORR);
 
         assertThat(result.penaltyAmountPesewas()).isEqualTo(0L);
         assertThat(result.releaseAmountPesewas()).isEqualTo(0L);
@@ -130,7 +130,7 @@ class VaultEarlyExitServiceTest {
         when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(NOT_FOUND));
@@ -143,7 +143,7 @@ class VaultEarlyExitServiceTest {
                 .thenReturn(Optional.of(lockedVaultOwnedBy(UUID.randomUUID())));
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(FORBIDDEN));
@@ -155,7 +155,7 @@ class VaultEarlyExitServiceTest {
         when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(activeStandard()));
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     var e = (ResponseStatusException) ex;
@@ -170,7 +170,7 @@ class VaultEarlyExitServiceTest {
         when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(earlyExitPendingVault()));
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     var e = (ResponseStatusException) ex;
@@ -187,7 +187,7 @@ class VaultEarlyExitServiceTest {
                 .thenReturn(Optional.of(Mockito.mock(EarlyExitRequestEntity.class)));
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(CONFLICT));
@@ -200,7 +200,7 @@ class VaultEarlyExitServiceTest {
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     var e = (ResponseStatusException) ex;
@@ -213,10 +213,35 @@ class VaultEarlyExitServiceTest {
     @DisplayName("invalid reason returns 422")
     void invalid_reason_returns_422() {
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("VACATION"), CORR))
+                VAULT_ID, USER_ID, request("VACATION"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(UNPROCESSABLE_ENTITY));
+    }
+
+    @Test
+    @DisplayName("invalid momo_provider returns 422")
+    void invalid_momo_provider_returns_422() {
+        var req = new EarlyExitRequest("MEDICAL", "0241234567", "ORANGE");
+
+        assertThatThrownBy(() -> service.requestEarlyExit(VAULT_ID, USER_ID, req, CORR))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
+    }
+
+    @Test
+    @DisplayName("destination_momo_number and momo_provider stored on the request row")
+    void momo_details_stored_on_request() {
+        var req = new EarlyExitRequest("MEDICAL", "0551234567", "vodafone");
+
+        service.requestEarlyExit(VAULT_ID, USER_ID, req, CORR);
+
+        ArgumentCaptor<EarlyExitRequestEntity> captor =
+                ArgumentCaptor.forClass(EarlyExitRequestEntity.class);
+        verify(requestRepo).save(captor.capture());
+        assertThat(captor.getValue().getDestinationMomoNumber()).isEqualTo("0551234567");
+        assertThat(captor.getValue().getMomoProvider()).isEqualTo("vodafone");
     }
 
     @Test
@@ -225,7 +250,7 @@ class VaultEarlyExitServiceTest {
         when(balanceClient.fetchBalance(LEDGER_ID, CORR)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR))
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(BAD_GATEWAY));
@@ -240,7 +265,7 @@ class VaultEarlyExitServiceTest {
         when(balanceClient.fetchBalance(LEDGER_ID, CORR)).thenReturn(Optional.of(10_000L));
 
         EarlyExitResponse result = service.requestEarlyExit(
-                VAULT_ID, USER_ID, new EarlyExitRequest("MEDICAL"), CORR);
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR);
 
         // Snapshot values are fixed at 10000p regardless of what happens later
         assertThat(result.balanceAtRequestPesewas()).isEqualTo(10_000L);
@@ -254,6 +279,10 @@ class VaultEarlyExitServiceTest {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
+
+    private EarlyExitRequest request(String reason) {
+        return new EarlyExitRequest(reason, "0241234567", "mtn");
+    }
 
     private VaultEntity activeLocked() {
         return VaultEntity.createLocked(USER_ID, "Locked Fund", LEDGER_ID,

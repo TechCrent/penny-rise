@@ -13,7 +13,12 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import KycCardDetailsScreen from '../screens/KycCardDetailsScreen';
 import KycDocumentUploadScreen from '../screens/KycDocumentUploadScreen';
 import KycSubmissionPendingScreen from '../screens/KycSubmissionPendingScreen';
-import { CreateVaultScreen, VaultDetailScreen, DepositScreen, WithdrawScreen } from '../screens/Vault';
+import {
+  CreateVaultScreen,
+  VaultDetailScreen,
+  DepositScreen,
+  WithdrawScreen,
+} from '../screens/Vault';
 
 export type RootStackParamList = {
   Register: undefined;
@@ -84,7 +89,7 @@ export default function RootNavigator() {
           <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
           <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
           <Stack.Screen name="VaultDetail" component={VaultDetailScreen} />
-          <Stack.Screen name="Deposit"  component={DepositScreen} />
+          <Stack.Screen name="Deposit" component={DepositScreen} />
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />
         </>
       ) : (

@@ -14,30 +14,39 @@ jest.mock('../../../src/hooks/useAuth', () => ({
 
 // Mutable navigation refs — names start with 'mock' so Jest hoists them.
 const mockNavigate = jest.fn();
-const mockGoBack   = jest.fn();
+const mockGoBack = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
-  useRoute:      () => ({ params: { vaultId: 'vault-001' } }),
+  useRoute: () => ({ params: { vaultId: 'vault-001' } }),
 }));
 
 const { useVaultWithdrawal } = require('../../../src/api/hooks/useVaultWithdrawal');
-const { useVaultDetail }     = require('../../../src/api/hooks/useVaultDetail');
+const { useVaultDetail } = require('../../../src/api/hooks/useVaultDetail');
 
 const mockMutateAsync = jest.fn();
 const mockVault = {
-  id: 'vault-001', name: 'Emergency Fund', vault_type: 'STANDARD',
-  status: 'ACTIVE', ledger_account_id: 'ledger-001',
-  balance_pesewas: 50_000, balance_cedis: '500.00',
-  unlock_at: null, unlock_amount: null, unlock_condition_logic: null,
-  early_exit_in_progress: false, created_at: '2026-06-01T00:00:00Z',
+  id: 'vault-001',
+  name: 'Emergency Fund',
+  vault_type: 'STANDARD',
+  status: 'ACTIVE',
+  ledger_account_id: 'ledger-001',
+  balance_pesewas: 50_000,
+  balance_cedis: '500.00',
+  unlock_at: null,
+  unlock_amount: null,
+  unlock_condition_logic: null,
+  early_exit_in_progress: false,
+  created_at: '2026-06-01T00:00:00Z',
 };
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
 }
-function renderWithdraw() { return render(<WithdrawScreen />, { wrapper }); }
+function renderWithdraw() {
+  return render(<WithdrawScreen />, { wrapper });
+}
 
 beforeEach(() => {
   jest.clearAllMocks();

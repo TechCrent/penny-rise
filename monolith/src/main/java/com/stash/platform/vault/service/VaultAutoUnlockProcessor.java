@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -59,11 +60,16 @@ public class VaultAutoUnlockProcessor {
     /**
      * Evaluates and possibly unlocks a candidate vault.
      *
+     * <p>{@code REQUIRES_NEW}: the caller ({@code VaultAutoUnlockWorker}) loops over a
+     * whole batch inside one transaction. Without a new transaction per vault, the row
+     * lock from {@code FOR UPDATE SKIP LOCKED} would be held across every candidate's
+     * {@code balanceClient.fetchBalance} call for the rest of the batch.
+     *
      * @param vault         the candidate vault (ACTIVE, LOCKED, unlocked_at IS NULL)
      * @param correlationId trace ID
      * @return true if the vault was unlocked
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean evaluate(VaultEntity vault, String correlationId) {
         UUID vaultId = vault.getId();
         Instant now  = Instant.now(clock);

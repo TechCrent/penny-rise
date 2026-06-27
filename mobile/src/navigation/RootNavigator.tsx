@@ -18,6 +18,8 @@ import {
   VaultDetailScreen,
   DepositScreen,
   WithdrawScreen,
+  EarlyExitScreen,
+  CancelEarlyExitScreen,
 } from '../screens/Vault';
 
 export type RootStackParamList = {
@@ -91,6 +93,8 @@ export default function RootNavigator() {
           <Stack.Screen name="VaultDetail" component={VaultDetailScreen} />
           <Stack.Screen name="Deposit" component={DepositScreen} />
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />
+          <Stack.Screen name="EarlyExit" component={EarlyExitScreen} />
+          <Stack.Screen name="CancelEarlyExit" component={CancelEarlyExitScreen} />
         </>
       ) : (
         <>

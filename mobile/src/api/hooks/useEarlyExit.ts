@@ -1,11 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 
-export type EarlyExitReason =
-  | 'SCHOOL_FEES_EMERGENCY'
-  | 'MEDICAL'
-  | 'FAMILY'
-  | 'OTHER';
+export type EarlyExitReason = 'SCHOOL_FEES_EMERGENCY' | 'MEDICAL' | 'FAMILY' | 'OTHER';
 
 export interface EarlyExitResponse {
   id: string;
@@ -27,7 +23,7 @@ export function useRequestEarlyExit(vaultId: string) {
     mutationFn: async ({ reason }) => {
       const { data } = await apiClient.post<EarlyExitResponse>(
         `/api/v1/vaults/${vaultId}/early-exit`,
-        { reason }
+        { reason },
       );
       return data;
     },

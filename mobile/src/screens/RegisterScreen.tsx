@@ -64,7 +64,7 @@ export default function RegisterScreen() {
           const fieldMap: Record<string, keyof RegisterFormValues> = {
             email: 'email',
             password: 'password',
-            display_name: 'displayName',
+            displayName: 'displayName',
           };
           const formField = fieldMap[field];
           if (formField) {

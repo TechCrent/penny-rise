@@ -219,6 +219,22 @@ class DepositServiceTest {
         assertThat(captor.getAllValues().get(0).getIdempotencyKey()).isEqualTo(IDEM_KEY);
     }
 
+    @Test
+    @DisplayName("destination_ledger_account_id stored on transaction so the webhook handler " +
+                 "can credit the right account (e.g. a vault, not USER_WALLET)")
+    void destination_ledger_account_id_stored_on_transaction() {
+        stubActiveAccount();
+        stubSubaccount();
+        stubPaystackSuccess();
+
+        service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
+
+        ArgumentCaptor<TransactionEntity> captor = ArgumentCaptor.forClass(TransactionEntity.class);
+        verify(txnRepo, atLeastOnce()).save(captor.capture());
+        assertThat(captor.getAllValues().get(0).getDestinationLedgerAccountId())
+                .isEqualTo(ACCOUNT_ID);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private void stubActiveAccount() {

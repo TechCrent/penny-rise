@@ -203,7 +203,7 @@ class TransactionDetailServiceTest {
     void counterparty_access_via_ledger_ownership() {
         // Transfer where counterpartyUserId is null, but COUNTERPARTY_USER owns ACCOUNT_B
         var txn = TransactionEntity.completedTransfer(
-                REF, USER_ID, null, 10_000L, LEDGER_TXN, "corr-001", "idem-001", NOW);
+                REF, USER_ID, null, 10_000L, "TRANSFER", LEDGER_TXN, "corr-001", "idem-001", NOW);
         when(txnRepo.findByReference(REF)).thenReturn(Optional.of(txn));
         when(ledgerService.getEntriesForTransaction(LEDGER_TXN)).thenReturn(twoEntryRows());
         when(accountRepo.findById(ACCOUNT_A))
@@ -219,18 +219,18 @@ class TransactionDetailServiceTest {
 
     private TransactionEntity completedTxn() {
         return TransactionEntity.completedTransfer(
-                REF, USER_ID, COUNTERPARTY_USER, 10_000L,
+                REF, USER_ID, COUNTERPARTY_USER, 10_000L, "TRANSFER",
                 LEDGER_TXN, "corr-001", "idem-001", NOW);
     }
 
     private TransactionEntity pendingTxn() {
         return TransactionEntity.pendingDeposit(
-                REF, USER_ID, 10_000L, "corr-001", "idem-001", NOW);
+                REF, USER_ID, 10_000L, ACCOUNT_A, "corr-001", "idem-001", NOW);
     }
 
     private TransactionEntity completedDeposit() {
         var t = TransactionEntity.pendingDeposit(
-                REF, USER_ID, 10_000L, "corr-001", "idem-001", NOW);
+                REF, USER_ID, 10_000L, ACCOUNT_A, "corr-001", "idem-001", NOW);
         t.markCompleted(LEDGER_TXN, NOW);
         return t;
     }
@@ -244,7 +244,7 @@ class TransactionDetailServiceTest {
 
     private TransactionEntity failedTxn() {
         var t = TransactionEntity.pendingDeposit(
-                REF, USER_ID, 10_000L, "corr-001", "idem-001", NOW);
+                REF, USER_ID, 10_000L, ACCOUNT_A, "corr-001", "idem-001", NOW);
         t.markFailed(NOW);
         return t;
     }

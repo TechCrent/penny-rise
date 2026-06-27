@@ -27,8 +27,10 @@ import java.util.UUID;
  * <p>Flow:
  * <ol>
  *   <li>Look up the local {@code TransactionEntity} by the Paystack reference.</li>
- *   <li>Resolve the user's {@code USER_WALLET} ledger account.</li>
- *   <li>Post a double-entry: CREDIT USER_WALLET + DEBIT PAYSTACK_SETTLEMENT.</li>
+ *   <li>Resolve the destination ledger account stored on the transaction row
+ *       at deposit-initiation time (the USER_WALLET for a direct deposit, or
+ *       a vault's ledger account for a vault deposit).</li>
+ *   <li>Post a double-entry: CREDIT the destination account + DEBIT PAYSTACK_SETTLEMENT.</li>
  *   <li>Mark the transaction COMPLETED and publish {@link DepositCompletedEvent}.</li>
  * </ol>
  *
@@ -92,11 +94,7 @@ public class ChargeSuccessHandler {
         }
 
         UUID userId = txn.getInitiatingUserId();
-        UUID userWalletId = ledgerAccountRepository
-                .findByOwnerTypeAndOwnerIdAndAccountType("USER", userId, "USER_WALLET")
-                .orElseThrow(() -> new IllegalStateException(
-                        "No USER_WALLET ledger account for userId=" + userId))
-                .getId();
+        UUID destinationAccountId = resolveDestinationAccount(txn, userId);
 
         LedgerWriteCommand command = new LedgerWriteCommand(
                 "DEPOSIT",
@@ -104,7 +102,7 @@ public class ChargeSuccessHandler {
                 txn.getId(),
                 "TRANSACTION",
                 List.of(
-                    EntryRequest.of(userWalletId, EntryDirection.CREDIT, amountPesewas),
+                    EntryRequest.of(destinationAccountId, EntryDirection.CREDIT, amountPesewas),
                     EntryRequest.of(paystackSettlementAccountId, EntryDirection.DEBIT, amountPesewas)
                 ),
                 correlationId,
@@ -122,7 +120,7 @@ public class ChargeSuccessHandler {
                         txn.getId(),
                         result.ledgerTransactionId(),
                         userId,
-                        userWalletId,
+                        destinationAccountId,
                         amountPesewas,
                         txn.getReference(),
                         correlationId
@@ -130,11 +128,36 @@ public class ChargeSuccessHandler {
                 correlationId
         );
 
-        log.info("charge.success processed: paystackRef={} internalRef={} amount={}p userId={} ledgerTxn={}",
+        log.info("charge.success processed: paystackRef={} internalRef={} amount={}p userId={} " +
+                "destinationAccount={} ledgerTxn={}",
                 paystackReference, txn.getReference(), amountPesewas,
-                userId, result.ledgerTransactionId());
+                userId, destinationAccountId, result.ledgerTransactionId());
 
         return txn.getId();
+    }
+
+    /**
+     * Resolves the ledger account to credit. Uses {@code destination_ledger_account_id}
+     * stored on the transaction row at deposit-initiation time (the USER_WALLET for a
+     * direct deposit, or a vault's ledger account for a vault deposit). Falls back to
+     * resolving USER_WALLET only for legacy rows created before this column existed —
+     * this fallback should not be hit for any deposit initiated after V3.
+     */
+    private UUID resolveDestinationAccount(TransactionEntity txn, UUID userId) {
+        UUID destination = txn.getDestinationLedgerAccountId();
+        if (destination != null) {
+            return destination;
+        }
+
+        log.warn("charge.success: destination_ledger_account_id is null for txn={} — " +
+                "falling back to USER_WALLET. This indicates a pre-V3 PENDING row.",
+                txn.getReference());
+
+        return ledgerAccountRepository
+                .findByOwnerTypeAndOwnerIdAndAccountType("USER", userId, "USER_WALLET")
+                .orElseThrow(() -> new IllegalStateException(
+                        "No USER_WALLET ledger account for userId=" + userId))
+                .getId();
     }
 
     private static long toLong(Object value) {

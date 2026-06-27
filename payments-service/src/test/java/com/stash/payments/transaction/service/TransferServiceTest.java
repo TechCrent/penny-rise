@@ -121,6 +121,26 @@ class TransferServiceTest {
     }
 
     @Test
+    @DisplayName("transaction row persists the request's transaction type, not a hardcoded TRANSFER")
+    void transaction_row_persists_requested_transaction_type() {
+        stubAccounts();
+        when(balanceService.computeBalanceWithLock(SOURCE_ID)).thenReturn(50_000L);
+
+        // Real caller: EarlyExitReleaseProcessor sends this type for penalty transfers.
+        TransferRequest penaltyTransfer = new TransferRequest(
+                SOURCE_ID, DEST_ID, 10_000L,
+                "VAULT_EARLY_EXIT_PENALTY", UUID.randomUUID(), "VAULT_EARLY_EXIT_PENALTY",
+                "corr-001", "Early-exit penalty");
+
+        service.transfer(penaltyTransfer, IDEM_KEY);
+
+        ArgumentCaptor<TransactionEntity> txnCaptor =
+                ArgumentCaptor.forClass(TransactionEntity.class);
+        verify(txnRepo).save(txnCaptor.capture());
+        assertThat(txnCaptor.getValue().getTransactionType()).isEqualTo("VAULT_EARLY_EXIT_PENALTY");
+    }
+
+    @Test
     @DisplayName("outbox event emitted with correct fields")
     void outbox_event_emitted() {
         stubAccounts();
@@ -144,7 +164,7 @@ class TransferServiceTest {
     @DisplayName("duplicate idempotency key returns cached response without re-executing")
     void idempotent_retry_returns_cached_response() {
         TransactionEntity existing = TransactionEntity.completedTransfer(
-                REF, USER_A, USER_B, 10_000L, LEDGER_ID,
+                REF, USER_A, USER_B, 10_000L, "TRANSFER", LEDGER_ID,
                 "corr-001", IDEM_KEY, Instant.now(FIXED_CLOCK));
         when(txnRepo.findByIdempotencyKey(IDEM_KEY)).thenReturn(Optional.of(existing));
 

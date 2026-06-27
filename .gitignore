@@ -12,6 +12,10 @@ target/
 *.jar
 *.war
 
+# jqwik property-based test seed cache
+.jqwik-database
+**/.jqwik-database
+
 # Node / frontend
 node_modules/
 **/node_modules/

@@ -1,0 +1,219 @@
+package com.stash.platform.vault.service;
+
+import com.stash.platform.user.domain.KycStatus;
+import com.stash.platform.user.domain.SubscriptionTier;
+import com.stash.platform.user.domain.User;
+import com.stash.platform.user.repository.UserRepository;
+import com.stash.platform.vault.api.dto.CreateVaultRequest;
+import com.stash.platform.vault.api.dto.VaultResponse;
+import com.stash.platform.vault.client.PaymentsServiceClient;
+import com.stash.platform.vault.client.PaymentsServiceException;
+import com.stash.platform.vault.domain.VaultEntity;
+import com.stash.platform.vault.repository.VaultRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Creates vaults, enforcing tier limits and provisioning ledger accounts.
+ *
+ * <p><strong>Ordering (critical):</strong>
+ * <ol>
+ *   <li>Acquire SELECT FOR UPDATE lock on the user row.</li>
+ *   <li>Validate KYC status.</li>
+ *   <li>Count existing vaults — reject if free-tier limit reached.</li>
+ *   <li>Call Payments Service to provision the VAULT ledger account.</li>
+ *   <li>Insert the vault row.</li>
+ * </ol>
+ *
+ * <p>If the Payments call succeeds but the vault INSERT fails, a dangling
+ * empty ledger account exists in the Payments Service — acceptable (it has
+ * no balance and is cleaned up by a periodic reconciliation job if needed).
+ *
+ * <p><strong>Concurrency:</strong> the SELECT FOR UPDATE on the user row
+ * in step 1 serialises concurrent vault creation from the same user.
+ * Two simultaneous requests both attempt the lock; the second blocks until
+ * the first's count-check + Payments call + INSERT completes.
+ */
+@Service
+public class VaultCreationService {
+
+    private static final Logger log = LoggerFactory.getLogger(VaultCreationService.class);
+
+    // Free-tier limits
+    static final int FREE_TIER_MAX_STANDARD = 2;
+    static final int FREE_TIER_MAX_LOCKED   = 1;
+
+    private final VaultRepository        vaultRepo;
+    private final UserRepository         userRepo;
+    private final PaymentsServiceClient  paymentsClient;
+    private final Clock                  clock;
+
+    public VaultCreationService(VaultRepository vaultRepo,
+                                 UserRepository userRepo,
+                                 PaymentsServiceClient paymentsClient,
+                                 Clock clock) {
+        this.vaultRepo      = vaultRepo;
+        this.userRepo       = userRepo;
+        this.paymentsClient = paymentsClient;
+        this.clock          = clock;
+    }
+
+    /**
+     * Creates a vault for the authenticated user.
+     *
+     * @param userId         authenticated user's UUID (from JWT)
+     * @param request        validated create request
+     * @param correlationId  trace ID
+     * @param idempotencyKey from the Idempotency-Key header
+     */
+    @Transactional
+    public VaultResponse createVault(UUID userId, CreateVaultRequest request,
+                                      String correlationId, String idempotencyKey) {
+        // ── Step 1: Lock user row ─────────────────────────────────────────
+        userRepo.lockUserRow(userId);
+
+        // ── Step 2: Load user and validate KYC ───────────────────────────
+        User user = userRepo.findByIdForVaultCreation(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User not found: " + userId));
+
+        if (user.getKycStatus() != KycStatus.APPROVED) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "KYC must be APPROVED to create a vault. " +
+                    "Current status: " + user.getKycStatus());
+        }
+
+        // ── Step 3: Validate request ──────────────────────────────────────
+        validateRequest(request);
+
+        // ── Step 4: Free-tier limit check ─────────────────────────────────
+        boolean isPremium = user.getSubscriptionTier() == SubscriptionTier.PREMIUM;
+        if (!isPremium) {
+            enforceFreeTierLimits(userId, request.vaultType());
+        }
+
+        // ── Step 5: Provision ledger account (external HTTP call) ─────────
+        // Pre-generate the vault ID so it can be used as owner_id on the
+        // ledger account before the vault row is committed.
+        UUID vaultId = UUID.randomUUID();
+        UUID ledgerAccountId;
+        try {
+            ledgerAccountId = paymentsClient.provisionVaultLedgerAccount(
+                    userId, vaultId, correlationId, idempotencyKey);
+        } catch (PaymentsServiceException e) {
+            log.error("Vault creation failed: Payments Service unavailable for user={} error={}",
+                    userId, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Failed to provision vault ledger account. Please retry. " +
+                    "Your account has not been charged.");
+        }
+
+        // ── Step 6: Insert vault row ──────────────────────────────────────
+        Instant now = Instant.now(clock);
+        VaultEntity vault;
+
+        if ("STANDARD".equals(request.vaultType())) {
+            vault = VaultEntity.createStandard(userId, request.name(), ledgerAccountId, now);
+        } else {
+            String logic = deriveUnlockLogic(request);
+            vault = VaultEntity.createLocked(
+                    userId, request.name(), ledgerAccountId,
+                    request.unlockAt(), request.unlockAmount(), logic, now);
+        }
+
+        // Set the pre-generated ID
+        try {
+            var f = VaultEntity.class.getDeclaredField("id");
+            f.setAccessible(true);
+            f.set(vault, vaultId);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to set vault ID", e);
+        }
+
+        VaultEntity saved = vaultRepo.save(vault);
+
+        log.info("Vault created: id={} type={} user={} ledgerAccount={} correlation={}",
+                saved.getId(), saved.getVaultType(), userId, ledgerAccountId, correlationId);
+
+        return VaultResponse.from(saved);
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────
+
+    private void validateRequest(CreateVaultRequest request) {
+        if (!"STANDARD".equals(request.vaultType()) && !"LOCKED".equals(request.vaultType())) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "vault_type must be STANDARD or LOCKED.");
+        }
+
+        if ("LOCKED".equals(request.vaultType())) {
+            if (request.unlockAt() == null && request.unlockAmount() == null) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "LOCKED vaults require at least one unlock condition " +
+                        "(unlock_at or unlock_amount).");
+            }
+            if (request.unlockAt() != null && request.unlockAt().isBefore(Instant.now(clock))) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "unlock_at must be in the future.");
+            }
+        }
+
+        if ("STANDARD".equals(request.vaultType())) {
+            if (request.unlockAt() != null || request.unlockAmount() != null) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "STANDARD vaults must not have unlock conditions.");
+            }
+        }
+
+        if (request.unlockConditionLogic() != null
+                && !"AND".equals(request.unlockConditionLogic())
+                && !"OR".equals(request.unlockConditionLogic())) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "unlock_condition_logic must be AND or OR.");
+        }
+
+        if (request.unlockConditionLogic() != null
+                && (request.unlockAt() == null || request.unlockAmount() == null)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "unlock_condition_logic is only valid when both unlock_at " +
+                    "and unlock_amount are provided.");
+        }
+    }
+
+    private void enforceFreeTierLimits(UUID userId, String vaultType) {
+        if ("STANDARD".equals(vaultType)) {
+            long count = vaultRepo.countByOwnerUserIdAndVaultType(userId, "STANDARD");
+            if (count >= FREE_TIER_MAX_STANDARD) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "VAULT_FREE_TIER_LIMIT_REACHED: Free accounts may have at most " +
+                        FREE_TIER_MAX_STANDARD + " STANDARD vault(s). " +
+                        "Upgrade to Premium for unlimited vaults.");
+            }
+        } else {
+            long count = vaultRepo.countByOwnerUserIdAndVaultType(userId, "LOCKED");
+            if (count >= FREE_TIER_MAX_LOCKED) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "VAULT_FREE_TIER_LIMIT_REACHED: Free accounts may have at most " +
+                        FREE_TIER_MAX_LOCKED + " LOCKED vault(s). " +
+                        "Upgrade to Premium for unlimited vaults.");
+            }
+        }
+    }
+
+    private String deriveUnlockLogic(CreateVaultRequest request) {
+        if (request.unlockAt() != null && request.unlockAmount() != null) {
+            // Both conditions set: use provided logic or default to AND
+            return request.unlockConditionLogic() != null
+                    ? request.unlockConditionLogic() : "AND";
+        }
+        return null;  // Only one condition: logic is trivial, leave null
+    }
+}

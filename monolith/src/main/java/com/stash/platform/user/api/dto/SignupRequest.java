@@ -1,5 +1,6 @@
 package com.stash.platform.user.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
 /**
@@ -21,7 +22,9 @@ public record SignupRequest(
 
         @NotBlank(message = "Display name is required")
         @Size(max = 100, message = "Display name must not exceed 100 characters")
+        @JsonProperty("display_name")
         String displayName,
 
+        @JsonProperty("referral_code")
         String referralCode
 ) {}

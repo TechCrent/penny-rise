@@ -13,6 +13,14 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import KycCardDetailsScreen from '../screens/KycCardDetailsScreen';
 import KycDocumentUploadScreen from '../screens/KycDocumentUploadScreen';
 import KycSubmissionPendingScreen from '../screens/KycSubmissionPendingScreen';
+import {
+  CreateVaultScreen,
+  VaultDetailScreen,
+  DepositScreen,
+  WithdrawScreen,
+  EarlyExitScreen,
+  CancelEarlyExitScreen,
+} from '../screens/Vault';
 
 export type RootStackParamList = {
   Register: undefined;
@@ -23,6 +31,11 @@ export type RootStackParamList = {
   AuthenticatedBootstrap: undefined;
   Home: undefined;
   KycFlow: undefined;
+  VaultList: undefined;
+  VaultDetail: { vaultId: string; successMessage?: string };
+  CreateVault: undefined;
+  Transfer: undefined;
+  Notifications: undefined;
   KycCardDetails: undefined;
   KycDocumentUpload: {
     submissionId: string;
@@ -33,6 +46,10 @@ export type RootStackParamList = {
     };
   };
   KycSubmissionPending: { submissionId: string };
+  Deposit: { vaultId: string };
+  Withdraw: { vaultId: string };
+  EarlyExit: { vaultId: string };
+  CancelEarlyExit: { vaultId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -72,6 +89,12 @@ export default function RootNavigator() {
           <Stack.Screen name="KycCardDetails" component={KycCardDetailsScreen} />
           <Stack.Screen name="KycDocumentUpload" component={KycDocumentUploadScreen} />
           <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
+          <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
+          <Stack.Screen name="VaultDetail" component={VaultDetailScreen} />
+          <Stack.Screen name="Deposit" component={DepositScreen} />
+          <Stack.Screen name="Withdraw" component={WithdrawScreen} />
+          <Stack.Screen name="EarlyExit" component={EarlyExitScreen} />
+          <Stack.Screen name="CancelEarlyExit" component={CancelEarlyExitScreen} />
         </>
       ) : (
         <>

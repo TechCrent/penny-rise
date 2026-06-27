@@ -17,6 +17,11 @@ not V4).
 | V3       | v0.2-004  | `user_module/V3__create_email_verification_tokens.sql` | `user_module.email_verification_tokens` |
 | V4       | v0.2-005  | `user_module/V4__create_password_reset_tokens.sql` | `user_module.password_reset_tokens` |
 | V5       | v0.2-006  | `user_module/V5__create_deletion_requests.sql` | `user_module.deletion_requests` |
+| V6       | v0.3-025  | `vault/V6__create_vaults.sql` | `vault.vaults` |
+| V7       | v0.3-026  | `vault/V7__create_locked_vault_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
+| V8       | v0.3-033  | `vault/V8__add_attempts_to_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
+| V9       | v0.3-034  | `vault/V9__add_unlocked_at_to_vaults.sql` | `vault.vaults` |
+| V10      | audit fix | `vault/V10__add_momo_to_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

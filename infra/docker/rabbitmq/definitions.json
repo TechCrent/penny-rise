@@ -69,6 +69,41 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "payments.user.created.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "payments.user.created.dlq"
+      }
+    },
+    {
+      "name": "payments.user.created.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "payments.paystack.subaccount.provision.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "payments.paystack.subaccount.provision.dlq",
+        "x-message-ttl": 60000
+      }
+    },
+    {
+      "name": "payments.paystack.subaccount.provision.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -103,6 +138,24 @@
       "name": "kyc.events",
       "vhost": "stash",
       "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "user.events",
+      "vhost": "stash",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "vault.events",
+      "vhost": "stash",
+      "type": "topic",
       "durable": true,
       "auto_delete": false,
       "internal": false,
@@ -148,6 +201,22 @@
       "destination": "monolith.kyc.rejected.queue",
       "destination_type": "queue",
       "routing_key": "kyc.rejected",
+      "arguments": {}
+    },
+    {
+      "source": "user.events",
+      "vhost": "stash",
+      "destination": "payments.user.created.queue",
+      "destination_type": "queue",
+      "routing_key": "user.created",
+      "arguments": {}
+    },
+    {
+      "source": "payments.events",
+      "vhost": "stash",
+      "destination": "payments.paystack.subaccount.provision.queue",
+      "destination_type": "queue",
+      "routing_key": "paystack.subaccount.provision.requested",
       "arguments": {}
     }
   ]

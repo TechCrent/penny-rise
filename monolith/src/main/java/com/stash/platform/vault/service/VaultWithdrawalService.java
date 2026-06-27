@@ -22,7 +22,9 @@ import java.util.UUID;
  *
  * <p><strong>Hard business rules enforced here:</strong>
  * <ul>
- *   <li>LOCKED vaults may NEVER withdraw via this endpoint — they must use
+ *   <li>LOCKED vaults may not withdraw via this endpoint unless they have
+ *       naturally unlocked (the auto-unlock worker set {@code unlockedAt}
+ *       once the date/amount condition was met) — otherwise they must use
  *       the early-exit flow (v0.3-031). This check happens before any call
  *       to the Payments Service and cannot be bypassed.</li>
  *   <li>Vault must be ACTIVE (not EARLY_EXIT_PENDING, not CLOSED).</li>
@@ -80,8 +82,11 @@ public class VaultWithdrawalService {
                     "Vault does not belong to the authenticated user.");
         }
 
-        // LOCKED vault check — hard business rule, checked before anything else
-        if ("LOCKED".equals(vault.getVaultType())) {
+        // LOCKED vault check — hard business rule, checked before anything else.
+        // A LOCKED vault that has naturally unlocked (unlockedAt set by the
+        // auto-unlock worker) is exempt — its lock conditions were met, so
+        // ordinary withdrawal is permitted without the early-exit penalty.
+        if ("LOCKED".equals(vault.getVaultType()) && vault.getUnlockedAt() == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "VAULT_WITHDRAWAL_NOT_PERMITTED: LOCKED vaults cannot be withdrawn from. " +
                     "Use the early-exit flow to break the lock.");

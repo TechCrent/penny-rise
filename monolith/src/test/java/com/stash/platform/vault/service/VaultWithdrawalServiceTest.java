@@ -119,6 +119,35 @@ class VaultWithdrawalServiceTest {
                         .isEqualTo(CONFLICT));
     }
 
+    @Test
+    @DisplayName("naturally-unlocked LOCKED vault (unlockedAt set by auto-unlock worker) allows withdrawal")
+    void naturally_unlocked_locked_vault_allows_withdrawal() {
+        VaultEntity v = lockedVault();
+        setField(v, "unlockedAt", Instant.parse("2026-06-24T08:00:00Z"));
+        when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(v));
+
+        VaultWithdrawalResponse result =
+                service.initiateWithdrawal(VAULT_ID, USER_ID, request(), CORR, IDEM_KEY);
+
+        assertThat(result.transactionReference()).isEqualTo("STSH-202606-WD001");
+        verify(paymentsClient).initiateWithdrawal(
+                any(), any(), any(), any(), anyLong(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("LOCKED vault still rejected when unlockedAt is null")
+    void locked_vault_without_unlockedAt_still_rejected() {
+        VaultEntity v = lockedVault();
+        assertThat(v.getUnlockedAt()).isNull();
+        when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(v));
+
+        assertThatThrownBy(() ->
+                service.initiateWithdrawal(VAULT_ID, USER_ID, request(), CORR, IDEM_KEY))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(CONFLICT));
+    }
+
     // ── Ownership and status ──────────────────────────────────────────────
 
     @Test

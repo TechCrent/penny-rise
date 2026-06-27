@@ -84,7 +84,7 @@ export default function RootNavigator() {
           <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
           <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
           <Stack.Screen name="VaultDetail" component={VaultDetailScreen} />
-          <Stack.Screen name="Deposit"     component={DepositScreen} />
+          <Stack.Screen name="Deposit" component={DepositScreen} />
         </>
       ) : (
         <>

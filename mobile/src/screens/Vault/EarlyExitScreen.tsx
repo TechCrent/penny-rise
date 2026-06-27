@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import { useAuth } from '../../hooks/useAuth';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import {
   useRequestEarlyExit,
@@ -26,6 +28,29 @@ import {
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EarlyExit'>;
 type Route = RouteProp<RootStackParamList, 'EarlyExit'>;
 type Phase = 'reason' | 'preview' | 'confirm' | 'done';
+
+// ── MoMo provider metadata (same set as DepositScreen/WithdrawScreen) ──────
+
+const PROVIDERS = [
+  { id: 'mtn', label: 'MTN MoMo', color: '#FBB01C' },
+  { id: 'vodafone', label: 'Vodafone Cash', color: '#E10A0A' },
+  { id: 'airteltigo', label: 'AirtelTigo', color: '#FF6200' },
+] as const;
+
+type ProviderId = (typeof PROVIDERS)[number]['id'];
+
+// Plain objects — accessed dynamically, so StyleSheet.create would flag them
+// as unused; object literals in JSX style props would trigger no-inline-styles.
+const PROVIDER_PILL_ACTIVE: Record<ProviderId, { borderColor: string; backgroundColor: string }> = {
+  mtn: { borderColor: '#FBB01C', backgroundColor: '#FAFAFA' },
+  vodafone: { borderColor: '#E10A0A', backgroundColor: '#FAFAFA' },
+  airteltigo: { borderColor: '#FF6200', backgroundColor: '#FAFAFA' },
+};
+const PROVIDER_TEXT_COLOR: Record<ProviderId, { color: string }> = {
+  mtn: { color: '#FBB01C' },
+  vodafone: { color: '#E10A0A' },
+  airteltigo: { color: '#FF6200' },
+};
 
 // ── Reason metadata ────────────────────────────────────────────────────────
 
@@ -97,19 +122,28 @@ export default function EarlyExitScreen() {
   const { vaultId } = route.params;
 
   const { data: vault } = useVaultDetail(vaultId);
+  const { user } = useAuth();
   const { mutateAsync: requestExit, isPending: requesting } = useRequestEarlyExit(vaultId);
 
   const [phase, setPhase] = useState<Phase>('reason');
   const [reason, setReason] = useState<EarlyExitReason | null>(null);
+  const [momoNumber, setMomoNumber] = useState(user?.momoNumber ?? '');
+  const [provider, setProvider] = useState<ProviderId>('mtn');
   const [exitResult, setExitResult] = useState<EarlyExitResponse | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const canProceedFromReason = !!reason && momoNumber.trim().length > 0;
 
   // ── Submit ────────────────────────────────────────────────────────────
   const handleConfirm = useCallback(async () => {
     if (!reason) return;
     setServerError(null);
     try {
-      const result = await requestExit({ reason });
+      const result = await requestExit({
+        reason,
+        destination_momo_number: momoNumber,
+        momo_provider: provider,
+      });
       setExitResult(result);
       setPhase('done');
     } catch (err: unknown) {
@@ -127,7 +161,7 @@ export default function EarlyExitScreen() {
         setServerError('Something went wrong. Your request was not submitted — please try again.');
       }
     }
-  }, [reason, requestExit]);
+  }, [reason, momoNumber, provider, requestExit]);
 
   // ── Shared header ─────────────────────────────────────────────────────
   function renderHeader(title: string, onBack?: () => void) {
@@ -208,9 +242,38 @@ export default function EarlyExitScreen() {
             </TouchableOpacity>
           ))}
 
+          <Text style={styles.fieldLabelMoMo}>Your MoMo number (for payout)</Text>
+
+          <View style={styles.providerRow}>
+            {PROVIDERS.map(p => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.providerPill, provider === p.id && PROVIDER_PILL_ACTIVE[p.id]]}
+                onPress={() => setProvider(p.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: provider === p.id }}
+                accessibilityLabel={p.label}
+              >
+                <Text style={[styles.providerText, provider === p.id && PROVIDER_TEXT_COLOR[p.id]]}>
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TextInput
+            style={styles.input}
+            value={momoNumber}
+            onChangeText={setMomoNumber}
+            placeholder="0241234567"
+            keyboardType="phone-pad"
+            returnKeyType="done"
+            accessibilityLabel="Your MoMo number for the early-exit payout"
+          />
+
           <TouchableOpacity
-            style={[styles.cta, !reason && styles.ctaDisabled]}
-            disabled={!reason}
+            style={[styles.cta, !canProceedFromReason && styles.ctaDisabled]}
+            disabled={!canProceedFromReason}
             onPress={() => setPhase('preview')}
             activeOpacity={0.85}
             accessibilityRole="button"
@@ -702,6 +765,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioInner: { width: 11, height: 11, borderRadius: 6, backgroundColor: INDIGO },
+
+  fieldLabelMoMo: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: DARK,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginTop: 8,
+  },
+  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  providerPill: {
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  providerText: { fontSize: 12, fontWeight: '600', color: MUTED },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: DARK,
+    marginBottom: 16,
+  },
 
   // Preview phase
   releaseHero: { alignItems: 'center', paddingVertical: 28 },

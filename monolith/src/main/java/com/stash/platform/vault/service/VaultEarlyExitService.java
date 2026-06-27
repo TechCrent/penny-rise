@@ -95,6 +95,9 @@ public class VaultEarlyExitService {
                     "Invalid reason. Must be one of: " + VALID_REASONS);
         }
 
+        // ── Validate MoMo provider ────────────────────────────────────────
+        validateMomoProvider(request.momoProvider());
+
         // ── Load and validate vault ───────────────────────────────────────
         VaultEntity vault = vaultRepo.findById(vaultId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -169,6 +172,8 @@ public class VaultEarlyExitService {
                 penalty.penaltyAmount(),
                 penalty.releaseAmount(),
                 scheduledReleaseAt,
+                request.destinationMomoNumber(),
+                request.momoProvider(),
                 now
         );
 
@@ -197,6 +202,15 @@ public class VaultEarlyExitService {
                 scheduledReleaseAt, reason, correlationId);
 
         return EarlyExitResponse.from(savedRequest);
+    }
+
+    private void validateMomoProvider(String provider) {
+        if (!"mtn".equalsIgnoreCase(provider)
+                && !"vodafone".equalsIgnoreCase(provider)
+                && !"airteltigo".equalsIgnoreCase(provider)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "momo_provider must be one of: mtn, vodafone, airteltigo.");
+        }
     }
 
     private void setVaultStatus(VaultEntity vault, String status, boolean earlyExitInProgress) {

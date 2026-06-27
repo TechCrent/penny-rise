@@ -50,6 +50,12 @@ public class EarlyExitRequestEntity {
     @Column(name = "last_attempted_at")
     private Instant lastAttemptedAt;
 
+    @Column(name = "destination_momo_number", nullable = false, length = 20)
+    private String destinationMomoNumber;
+
+    @Column(name = "momo_provider",         nullable = false, length = 20)
+    private String momoProvider;
+
     protected EarlyExitRequestEntity() {}
 
     public static EarlyExitRequestEntity create(UUID vaultId, UUID userId,
@@ -58,17 +64,21 @@ public class EarlyExitRequestEntity {
                                                  long penaltyAmount,
                                                  long releaseAmount,
                                                  Instant scheduledReleaseAt,
+                                                 String destinationMomoNumber,
+                                                 String momoProvider,
                                                  Instant now) {
         EarlyExitRequestEntity r = new EarlyExitRequestEntity();
-        r.vaultId            = vaultId;
-        r.requestedByUserId  = userId;
-        r.reason             = reason;
-        r.balanceAtRequest   = balanceAtRequest;
-        r.penaltyAmount      = penaltyAmount;
-        r.releaseAmount      = releaseAmount;
-        r.scheduledReleaseAt = scheduledReleaseAt;
-        r.status             = "PENDING";
-        r.createdAt          = now;
+        r.vaultId               = vaultId;
+        r.requestedByUserId     = userId;
+        r.reason                = reason;
+        r.balanceAtRequest      = balanceAtRequest;
+        r.penaltyAmount         = penaltyAmount;
+        r.releaseAmount         = releaseAmount;
+        r.scheduledReleaseAt    = scheduledReleaseAt;
+        r.destinationMomoNumber = destinationMomoNumber;
+        r.momoProvider          = momoProvider;
+        r.status                = "PENDING";
+        r.createdAt             = now;
         return r;
     }
 
@@ -101,4 +111,6 @@ public class EarlyExitRequestEntity {
     public Instant getResolvedAt()          { return resolvedAt; }
     public int     getAttempts()            { return attempts; }
     public Instant getLastAttemptedAt()     { return lastAttemptedAt; }
+    public String  getDestinationMomoNumber() { return destinationMomoNumber; }
+    public String  getMomoProvider()        { return momoProvider; }
 }

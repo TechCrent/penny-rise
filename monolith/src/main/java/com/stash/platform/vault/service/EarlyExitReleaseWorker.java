@@ -25,20 +25,18 @@ import java.util.Optional;
  * <p>CANCELLED requests are never returned by the query (filtered on status=PENDING)
  * and are therefore skipped automatically.
  *
- * <p><strong>MoMo details:</strong> the user profile does not yet carry dedicated
- * MoMo fields (planned for v0.5). Until then, the registered {@code phone} is used
- * as the MoMo number and the provider defaults to {@link #FALLBACK_PROVIDER}.
+ * <p><strong>MoMo details:</strong> captured on the early-exit request row at
+ * request-creation time (v0.3-031, extended to capture MoMo details after an
+ * audit found the worker falling back to the user's registered phone number,
+ * which can change or be cleared during the 72-hour cool-off). The user
+ * profile still has no dedicated MoMo field (planned for v0.5), but the
+ * worker no longer depends on it.
  */
 @Component
 public class EarlyExitReleaseWorker {
 
     private static final Logger log = LoggerFactory.getLogger(EarlyExitReleaseWorker.class);
     private static final int    BATCH_SIZE = 20;
-
-    // Fallback MoMo details when not found on the user profile.
-    // In production, users must have registered MoMo details before early exit.
-    // v0.5 will store MoMo number/provider on the user profile.
-    private static final String FALLBACK_PROVIDER = "mtn";
 
     private final EarlyExitRequestRepository requestRepo;
     private final UserRepository             userRepo;
@@ -90,7 +88,8 @@ public class EarlyExitReleaseWorker {
             return;
         }
 
-        // Load user details (MoMo number = registered phone, full name, email)
+        // Load user details (full name, email — for the Paystack recipient).
+        // MoMo details come from the request row itself, captured at request time.
         Optional<User> userOpt = userRepo.findById(request.getRequestedByUserId());
         if (userOpt.isEmpty()) {
             log.error("[P0_ALERT] EarlyExitReleaseWorker: user not found for request={}. " +
@@ -100,13 +99,16 @@ public class EarlyExitReleaseWorker {
         }
 
         User user = userOpt.get();
-        String momoNumber   = user.getPhone();         // v0.5 will add a dedicated MoMo field
-        String momoProvider = FALLBACK_PROVIDER;
+        String momoNumber   = request.getDestinationMomoNumber();
+        String momoProvider = request.getMomoProvider();
 
         if (momoNumber == null || momoNumber.isBlank()) {
-            log.error("[P0_ALERT] EarlyExitReleaseWorker: no MoMo number on user={} " +
-                      "for request={}. MANUAL INTERVENTION REQUIRED.",
-                    request.getRequestedByUserId(), request.getId());
+            // Should not happen for requests created after V10 (the column is
+            // NOT NULL and validated at request time) — defensive for any
+            // pre-migration row that slipped through with the backfilled ''.
+            log.error("[P0_ALERT] EarlyExitReleaseWorker: no MoMo number on request={} " +
+                      "(pre-migration row?). MANUAL INTERVENTION REQUIRED.",
+                    request.getId());
             metrics.recordP0Alert();
             return;
         }

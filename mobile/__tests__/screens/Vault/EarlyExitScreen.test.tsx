@@ -6,6 +6,11 @@ import EarlyExitScreen, { EarlyExitStatusPanel } from '../../../src/screens/Vaul
 
 jest.mock('../../../src/api/hooks/useEarlyExit');
 jest.mock('../../../src/api/hooks/useVaultDetail');
+jest.mock('../../../src/hooks/useAuth', () => ({
+  // Matches the real useAuth() today — no user profile data is available yet,
+  // so the MoMo number must always be entered by hand on this screen.
+  useAuth: () => ({ user: null }),
+}));
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
 
@@ -86,9 +91,17 @@ test('CTA disabled until a reason is selected', () => {
   expect(cta.props.accessibilityState?.disabled).toBe(true);
 });
 
-test('selecting a reason enables CTA', () => {
+test('selecting a reason alone is not enough — CTA stays disabled without a MoMo number', () => {
   renderScreen();
   fireEvent.press(screen.getByRole('radio', { name: /Medical emergency/ }));
+  const cta = screen.getByRole('button', { name: "See what you'll receive" });
+  expect(cta.props.accessibilityState?.disabled).toBe(true);
+});
+
+test('selecting a reason and entering a MoMo number enables CTA', () => {
+  renderScreen();
+  fireEvent.press(screen.getByRole('radio', { name: /Medical emergency/ }));
+  fireEvent.changeText(screen.getByPlaceholderText('0241234567'), '0241234567');
   const cta = screen.getByRole('button', { name: "See what you'll receive" });
   expect(cta.props.accessibilityState?.disabled).toBe(false);
 });
@@ -105,6 +118,7 @@ test('shows penalty explainer and vault balance on reason screen', () => {
 async function advanceToPreview() {
   renderScreen();
   fireEvent.press(screen.getByRole('radio', { name: /Medical emergency/ }));
+  fireEvent.changeText(screen.getByPlaceholderText('0241234567'), '0241234567');
   fireEvent.press(screen.getByRole('button', { name: "See what you'll receive" }));
   await screen.findByText("What you'll receive");
 }
@@ -158,11 +172,15 @@ test('confirm screen shows vault name, reason, and fee summary', async () => {
   expect(screen.getByText(/GHS 950\.00/)).toBeTruthy();
 });
 
-test('confirm button submits early-exit request with correct reason', async () => {
+test('confirm button submits early-exit request with reason and MoMo details', async () => {
   await advanceToConfirm();
   fireEvent.press(screen.getByRole('button', { name: /I understand/ }));
   await waitFor(() => {
-    expect(mockRequestAsync).toHaveBeenCalledWith({ reason: 'MEDICAL' });
+    expect(mockRequestAsync).toHaveBeenCalledWith({
+      reason: 'MEDICAL',
+      destination_momo_number: '0241234567',
+      momo_provider: 'mtn',
+    });
   });
 });
 

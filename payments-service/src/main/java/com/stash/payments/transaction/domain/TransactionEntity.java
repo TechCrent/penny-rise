@@ -50,6 +50,9 @@ public class TransactionEntity {
     @Column(name = "source_ledger_account_id")
     private UUID sourceLedgerAccountId;
 
+    @Column(name = "destination_ledger_account_id")
+    private UUID destinationLedgerAccountId;
+
     @Column(name = "correlation_id",         length = 255)
     private String correlationId;
 
@@ -68,21 +71,23 @@ public class TransactionEntity {
     public static TransactionEntity pendingDeposit(String reference,
                                                     UUID userId,
                                                     long grossAmount,
+                                                    UUID destinationLedgerAccountId,
                                                     String correlationId,
                                                     String idempotencyKey,
                                                     Instant now) {
         TransactionEntity t = new TransactionEntity();
-        t.reference         = reference;
-        t.transactionType   = "DEPOSIT";
-        t.initiatingUserId  = userId;
-        t.grossAmount       = grossAmount;
-        t.feeAmount         = 0L;
-        t.netAmount         = grossAmount;
-        t.status            = "PENDING";
-        t.externalProvider  = "PAYSTACK";
-        t.correlationId     = correlationId;
-        t.idempotencyKey    = idempotencyKey;
-        t.createdAt         = now;
+        t.reference                  = reference;
+        t.transactionType             = "DEPOSIT";
+        t.initiatingUserId            = userId;
+        t.grossAmount                 = grossAmount;
+        t.feeAmount                   = 0L;
+        t.netAmount                   = grossAmount;
+        t.status                      = "PENDING";
+        t.externalProvider            = "PAYSTACK";
+        t.destinationLedgerAccountId  = destinationLedgerAccountId;
+        t.correlationId               = correlationId;
+        t.idempotencyKey              = idempotencyKey;
+        t.createdAt                   = now;
         return t;
     }
 
@@ -115,13 +120,14 @@ public class TransactionEntity {
                                                        UUID initiatingUserId,
                                                        UUID counterpartyUserId,
                                                        long amount,
+                                                       String transactionType,
                                                        UUID ledgerTransactionId,
                                                        String correlationId,
                                                        String idempotencyKey,
                                                        Instant now) {
         TransactionEntity t = new TransactionEntity();
         t.reference              = reference;
-        t.transactionType        = "TRANSFER";
+        t.transactionType        = transactionType;
         t.initiatingUserId       = initiatingUserId;
         t.counterpartyUserId     = counterpartyUserId;
         t.grossAmount            = amount;
@@ -164,6 +170,7 @@ public class TransactionEntity {
     public String getExternalReference()     { return externalReference; }
     public UUID   getLedgerTransactionId()   { return ledgerTransactionId; }
     public UUID   getSourceLedgerAccountId() { return sourceLedgerAccountId; }
+    public UUID   getDestinationLedgerAccountId() { return destinationLedgerAccountId; }
     public String getCorrelationId()         { return correlationId; }
     public String getIdempotencyKey()        { return idempotencyKey; }
     public Instant getCreatedAt()            { return createdAt; }

@@ -141,8 +141,14 @@ public class DepositService {
         String txnReference = generateUniqueReference();
 
         // ── Create PENDING transaction row ────────────────────────────────
+        // destinationLedgerAccountId is the already-validated, already-owned
+        // account from above (USER_WALLET for a direct deposit, or a vault's
+        // ledger account for a vault deposit) — stored so ChargeSuccessHandler
+        // can route the webhook credit correctly instead of defaulting to
+        // USER_WALLET.
         TransactionEntity txn = TransactionEntity.pendingDeposit(
                 txnReference, request.userId(), request.amount(),
+                request.ledgerAccountId(),
                 request.correlationId(), idempotencyKey, Instant.now(clock));
         transactionRepo.save(txn);
 

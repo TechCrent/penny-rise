@@ -137,6 +137,7 @@ public class TransferService {
                 source.getOwnerId(),
                 dest.getOwnerId(),
                 request.amount(),
+                request.transactionType(),
                 result.ledgerTransactionId(),
                 request.correlationId(),
                 idempotencyKey,

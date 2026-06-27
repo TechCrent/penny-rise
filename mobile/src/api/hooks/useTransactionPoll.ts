@@ -6,13 +6,11 @@ export function useTransactionPoll(reference: string | null, enabled: boolean) {
   return useQuery<TransactionDetail>({
     queryKey: ['tx-poll', reference],
     queryFn: async () => {
-      const { data } = await apiClient.get<TransactionDetail>(
-        `/api/v1/transactions/${reference}`,
-      );
+      const { data } = await apiClient.get<TransactionDetail>(`/api/v1/transactions/${reference}`);
       return data;
     },
     enabled: !!reference && enabled,
-    refetchInterval: (query) => {
+    refetchInterval: query => {
       const status = query.state.data?.status;
       if (status === 'COMPLETED' || status === 'FAILED') return false;
       return 3000;

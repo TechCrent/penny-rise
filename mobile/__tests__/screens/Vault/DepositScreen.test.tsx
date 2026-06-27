@@ -15,27 +15,36 @@ jest.mock('../../../src/hooks/useAuth', () => ({
 }));
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ goBack: jest.fn(), navigate: jest.fn() }),
-  useRoute:      () => ({ params: { vaultId: 'vault-001' } }),
+  useRoute: () => ({ params: { vaultId: 'vault-001' } }),
 }));
 
-const { useVaultDeposit }    = require('../../../src/api/hooks/useVaultDeposit');
-const { useVaultDetail }     = require('../../../src/api/hooks/useVaultDetail');
+const { useVaultDeposit } = require('../../../src/api/hooks/useVaultDeposit');
+const { useVaultDetail } = require('../../../src/api/hooks/useVaultDetail');
 const { useTransactionPoll } = require('../../../src/api/hooks/useTransactionPoll');
 
 const mockMutateAsync = jest.fn();
 const mockVault = {
-  id: 'vault-001', name: 'Emergency Fund', vault_type: 'STANDARD',
-  status: 'ACTIVE', ledger_account_id: 'ledger-001',
-  balance_pesewas: 100_000, balance_cedis: '1,000.00',
-  unlock_at: null, unlock_amount: null, unlock_condition_logic: null,
-  early_exit_in_progress: false, created_at: '2026-06-01T00:00:00Z',
+  id: 'vault-001',
+  name: 'Emergency Fund',
+  vault_type: 'STANDARD',
+  status: 'ACTIVE',
+  ledger_account_id: 'ledger-001',
+  balance_pesewas: 100_000,
+  balance_cedis: '1,000.00',
+  unlock_at: null,
+  unlock_amount: null,
+  unlock_condition_logic: null,
+  early_exit_in_progress: false,
+  created_at: '2026-06-01T00:00:00Z',
 };
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
 }
-function renderDeposit() { return render(<DepositScreen />, { wrapper }); }
+function renderDeposit() {
+  return render(<DepositScreen />, { wrapper });
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -142,7 +151,7 @@ test('confirm button calls deposit mutation with correct pesewas', async () => {
     expect(mockMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         payload: expect.objectContaining({
-          amount:         10_000,
+          amount: 10_000,
           payment_method: 'MOMO',
         }),
       }),
@@ -162,7 +171,9 @@ test('idempotency key stays the same across retries', async () => {
     )
     .mockResolvedValue({
       transaction_reference: 'STSH-202606-DEP002',
-      authorisation_url: null, paystack_reference: 'r', status: 'PENDING',
+      authorisation_url: null,
+      paystack_reference: 'r',
+      status: 'PENDING',
     });
 
   await advanceToConfirm();
@@ -183,12 +194,21 @@ test('idempotency key stays the same across retries', async () => {
 test('success screen shown when transaction COMPLETED', async () => {
   // Only return data once txnRef is set and polling is active; null otherwise.
   useTransactionPoll.mockImplementation((ref: string | null, enabled: boolean) => ({
-    data: ref && enabled ? {
-      transaction_reference: 'STSH-202606-DEP001', status: 'COMPLETED',
-      gross_amount_pesewas: 10_000, gross_amount_cedis: '100.00',
-      transaction_type: 'DEPOSIT', fee_amount_pesewas: 0, net_amount_pesewas: 10_000,
-      entries: [], created_at: '2026-06-24T10:00:00Z', posted_at: '2026-06-24T10:01:00Z',
-    } : null,
+    data:
+      ref && enabled
+        ? {
+            transaction_reference: 'STSH-202606-DEP001',
+            status: 'COMPLETED',
+            gross_amount_pesewas: 10_000,
+            gross_amount_cedis: '100.00',
+            transaction_type: 'DEPOSIT',
+            fee_amount_pesewas: 0,
+            net_amount_pesewas: 10_000,
+            entries: [],
+            created_at: '2026-06-24T10:00:00Z',
+            posted_at: '2026-06-24T10:01:00Z',
+          }
+        : null,
   }));
 
   await advanceToConfirm();
@@ -207,12 +227,21 @@ test('success screen shown when transaction COMPLETED', async () => {
 
 test('failure screen shown when transaction FAILED', async () => {
   useTransactionPoll.mockImplementation((ref: string | null, enabled: boolean) => ({
-    data: ref && enabled ? {
-      transaction_reference: 'STSH-202606-DEP001', status: 'FAILED',
-      transaction_type: 'DEPOSIT', gross_amount_pesewas: 10_000,
-      gross_amount_cedis: '100.00', fee_amount_pesewas: 0, net_amount_pesewas: 10_000,
-      entries: [], created_at: '2026-06-24T10:00:00Z', posted_at: null,
-    } : null,
+    data:
+      ref && enabled
+        ? {
+            transaction_reference: 'STSH-202606-DEP001',
+            status: 'FAILED',
+            transaction_type: 'DEPOSIT',
+            gross_amount_pesewas: 10_000,
+            gross_amount_cedis: '100.00',
+            fee_amount_pesewas: 0,
+            net_amount_pesewas: 10_000,
+            entries: [],
+            created_at: '2026-06-24T10:00:00Z',
+            posted_at: null,
+          }
+        : null,
   }));
 
   await advanceToConfirm();
@@ -228,12 +257,21 @@ test('failure screen shown when transaction FAILED', async () => {
 
 test('failure screen retry button returns to confirm phase', async () => {
   useTransactionPoll.mockImplementation((ref: string | null, enabled: boolean) => ({
-    data: ref && enabled ? {
-      transaction_reference: 'STSH-202606-DEP001', status: 'FAILED',
-      transaction_type: 'DEPOSIT', gross_amount_pesewas: 10_000,
-      gross_amount_cedis: '100.00', fee_amount_pesewas: 0, net_amount_pesewas: 10_000,
-      entries: [], created_at: '2026-06-24T10:00:00Z', posted_at: null,
-    } : null,
+    data:
+      ref && enabled
+        ? {
+            transaction_reference: 'STSH-202606-DEP001',
+            status: 'FAILED',
+            transaction_type: 'DEPOSIT',
+            gross_amount_pesewas: 10_000,
+            gross_amount_cedis: '100.00',
+            fee_amount_pesewas: 0,
+            net_amount_pesewas: 10_000,
+            entries: [],
+            created_at: '2026-06-24T10:00:00Z',
+            posted_at: null,
+          }
+        : null,
   }));
 
   await advanceToConfirm();

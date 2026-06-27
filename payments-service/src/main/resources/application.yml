@@ -29,18 +29,14 @@ spring:
           time_zone: UTC
     open-in-view: false
 
+  # Spring Boot's single auto-configured Flyway bean is disabled — each
+  # migration folder below independently starts at V1, and one combined
+  # bean treats all `locations` as one shared version history, which
+  # rejects the resulting duplicate version numbers across folders.
+  # See com.stash.payments.config.FlywayMultiSchemaConfig for the
+  # per-folder Flyway instances (one history table each) that replace it.
   flyway:
-    enabled: true
-    locations:
-      - classpath:db/migration/ledger
-      - classpath:db/migration/transaction
-      - classpath:db/migration/outbox
-      - classpath:db/migration/webhook
-      - classpath:db/migration/idempotency
-      - classpath:db/migration/paystack
-    baseline-on-migrate: true
-    baseline-version: 0
-    out-of-order: false
+    enabled: false
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}

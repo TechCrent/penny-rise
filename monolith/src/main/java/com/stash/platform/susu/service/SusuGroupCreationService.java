@@ -130,7 +130,7 @@ public class SusuGroupCreationService {
 
         // ── Create organiser membership row (same transaction) ────────────
         SusuMembershipEntity membership =
-                SusuMembershipEntity.createOrganiserMembership(
+                SusuMembershipEntity.create(
                         group.getId(), userId, now);
         membershipRepo.save(membership);
 

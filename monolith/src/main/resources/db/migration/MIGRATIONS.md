@@ -22,6 +22,8 @@ not V4).
 | V8       | v0.3-033  | `vault/V8__add_attempts_to_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
 | V9       | v0.3-034  | `vault/V9__add_unlocked_at_to_vaults.sql` | `vault.vaults` |
 | V10      | audit fix | `vault/V10__add_momo_to_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
+| V11      | v0.4-001  | `susu/V11__create_susu_groups.sql` | `susu.susu_groups` |
+| V12      | v0.4-002  | `susu/V12__create_susu_memberships.sql` | `susu.susu_memberships` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

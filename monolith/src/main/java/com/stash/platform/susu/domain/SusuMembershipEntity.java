@@ -34,9 +34,10 @@ public class SusuMembershipEntity {
 
     protected SusuMembershipEntity() {}
 
-    public static SusuMembershipEntity createOrganiserMembership(UUID susuGroupId,
-                                                                   UUID userId,
-                                                                   Instant now) {
+    /** Creates a new ACTIVE membership row for any member (organiser or joiner) — rotation_position is assigned later, at activation. */
+    public static SusuMembershipEntity create(UUID susuGroupId,
+                                               UUID userId,
+                                               Instant now) {
         SusuMembershipEntity m = new SusuMembershipEntity();
         m.susuGroupId      = susuGroupId;
         m.userId           = userId;

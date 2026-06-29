@@ -7,17 +7,28 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface SusuRoundRepository extends JpaRepository<SusuRoundEntity, UUID> {
 
-    /**
-     * Finds the round with a pessimistic write lock.
-     * Used to safely update round status after all contributions are collected
-     * without a concurrent update race.
-     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM SusuRoundEntity r WHERE r.id = :id")
     Optional<SusuRoundEntity> findByIdForUpdate(@Param("id") UUID id);
+
+    @Query("""
+            SELECT r FROM SusuRoundEntity r
+            WHERE r.susuGroupId = :groupId
+              AND r.roundNumber = :roundNumber
+            """)
+    Optional<SusuRoundEntity> findByGroupAndRoundNumber(@Param("groupId")     UUID groupId,
+                                                          @Param("roundNumber") int  roundNumber);
+
+    @Query("""
+            SELECT r FROM SusuRoundEntity r
+            WHERE r.susuGroupId = :groupId
+            ORDER BY r.roundNumber ASC
+            """)
+    List<SusuRoundEntity> findAllByGroup(@Param("groupId") UUID groupId);
 }

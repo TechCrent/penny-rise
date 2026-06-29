@@ -79,4 +79,6 @@ public class SusuGroupEntity {
     public String    getJoinCode()           { return joinCode; }
     public UUID      getLedgerAccountId()    { return ledgerAccountId; }
     public Instant   getCreatedAt()          { return createdAt; }
+
+    void setLedgerAccountId(UUID id)         { this.ledgerAccountId = id; }
 }

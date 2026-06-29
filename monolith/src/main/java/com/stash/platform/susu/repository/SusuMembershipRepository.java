@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEntity, UUID> {
@@ -34,10 +36,6 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
     boolean existsByGroupIdAndUserId(@Param("groupId") UUID groupId,
                                       @Param("userId")  UUID userId);
 
-    /**
-     * Returns true if the user has an ACTIVE membership in the group.
-     * Used by the contribution service to gate payment access.
-     */
     @Query("""
             SELECT COUNT(m) > 0 FROM SusuMembershipEntity m
             WHERE m.susuGroupId = :groupId
@@ -46,4 +44,37 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     boolean isActiveMember(@Param("groupId") UUID groupId,
                             @Param("userId")  UUID userId);
+
+    @Query("""
+            SELECT m FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.status = 'ACTIVE'
+            ORDER BY m.joinedAt ASC
+            """)
+    List<SusuMembershipEntity> findActiveMembersByGroup(@Param("groupId") UUID groupId);
+
+    @Query("""
+            SELECT m FROM SusuMembershipEntity m
+            WHERE m.userId = :userId
+              AND m.status = 'ACTIVE'
+            ORDER BY m.joinedAt DESC
+            """)
+    List<SusuMembershipEntity> findActiveMembershipsByUser(@Param("userId") UUID userId);
+
+    @Query("""
+            SELECT m FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.userId = :userId
+            """)
+    Optional<SusuMembershipEntity> findByGroupAndUser(@Param("groupId") UUID groupId,
+                                                       @Param("userId")  UUID userId);
+
+    @Query("""
+            SELECT m FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.status = 'ACTIVE'
+            ORDER BY m.joinedAt ASC, m.id ASC
+            """)
+    List<SusuMembershipEntity> findActiveMembersByGroupForActivation(
+            @Param("groupId") UUID groupId);
 }

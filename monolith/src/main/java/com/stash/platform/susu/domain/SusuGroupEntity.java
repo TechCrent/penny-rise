@@ -42,6 +42,9 @@ public class SusuGroupEntity {
     @Column(name = "join_code", nullable = false)
     private String joinCode;
 
+    @Column(name = "ledger_account_id")
+    private UUID ledgerAccountId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -74,5 +77,8 @@ public class SusuGroupEntity {
     public String    getStatus()             { return status; }
     public Integer   getCurrentRoundNumber() { return currentRoundNumber; }
     public String    getJoinCode()           { return joinCode; }
+    public UUID      getLedgerAccountId()    { return ledgerAccountId; }
     public Instant   getCreatedAt()          { return createdAt; }
+
+    void setLedgerAccountId(UUID id)         { this.ledgerAccountId = id; }
 }

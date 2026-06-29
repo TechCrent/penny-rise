@@ -28,6 +28,7 @@ not V4).
 | V14      | v0.4-004  | `susu/V14__create_susu_contributions.sql` | `susu.susu_contributions` |
 | V15      | v0.4-008  | `susu/V15__add_ledger_account_to_susu_groups.sql` | `susu.susu_groups` |
 | V16      | v0.4-012  | `susu/V16__add_left_status_to_memberships.sql` | `susu.susu_memberships` |
+| V17      | v0.4-013  | `transfer/V17__create_transfer_tables.sql` | `transfer.peer_transfers`, `transfer.monthly_transfer_quotas` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

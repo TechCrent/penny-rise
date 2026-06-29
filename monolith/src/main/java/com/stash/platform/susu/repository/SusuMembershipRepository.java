@@ -33,4 +33,17 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     boolean existsByGroupIdAndUserId(@Param("groupId") UUID groupId,
                                       @Param("userId")  UUID userId);
+
+    /**
+     * Returns true if the user has an ACTIVE membership in the group.
+     * Used by the contribution service to gate payment access.
+     */
+    @Query("""
+            SELECT COUNT(m) > 0 FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.userId = :userId
+              AND m.status = 'ACTIVE'
+            """)
+    boolean isActiveMember(@Param("groupId") UUID groupId,
+                            @Param("userId")  UUID userId);
 }

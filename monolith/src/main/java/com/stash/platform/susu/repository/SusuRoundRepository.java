@@ -50,4 +50,14 @@ public interface SusuRoundRepository extends JpaRepository<SusuRoundEntity, UUID
             FOR UPDATE SKIP LOCKED
             """, nativeQuery = true)
     List<SusuRoundEntity> findDisbursingRoundsForUpdate(@Param("batchSize") int batchSize);
+
+    @Query("""
+            SELECT r FROM SusuRoundEntity r
+            WHERE r.susuGroupId     = :groupId
+              AND r.recipientUserId = :userId
+              AND r.status          = 'PENDING'
+            ORDER BY r.roundNumber ASC
+            """)
+    List<SusuRoundEntity> findPendingRoundsByRecipient(@Param("groupId") UUID groupId,
+                                                        @Param("userId")  UUID userId);
 }

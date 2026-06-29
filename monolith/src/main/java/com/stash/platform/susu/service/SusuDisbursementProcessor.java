@@ -9,6 +9,7 @@ import com.stash.platform.susu.domain.SusuMembershipEntity;
 import com.stash.platform.susu.domain.SusuRoundEntity;
 import com.stash.platform.susu.event.SusuGroupCompletedEvent;
 import com.stash.platform.susu.event.SusuRoundCompletedEvent;
+import com.stash.platform.susu.event.SusuRoundSkippedEvent;
 import com.stash.platform.susu.event.SusuRoundStartedEvent;
 import com.stash.platform.susu.repository.SusuContributionRepository;
 import com.stash.platform.susu.repository.SusuGroupRepository;
@@ -102,6 +103,13 @@ public class SusuDisbursementProcessor {
                 .orElseThrow(() -> new IllegalStateException(
                         "Group not found: " + round.getSusuGroupId()));
 
+        List<SusuRoundEntity> allRounds = roundRepo.findAllByGroup(group.getId());
+
+        // ── Skip check: has the recipient left or been removed? ──────────────
+        if (handleSkippedRecipient(round, group, allRounds, correlationId)) {
+            return;
+        }
+
         Instant now = Instant.now(clock);
 
         // ── Resolve recipient USER_WALLET ─────────────────────────────────
@@ -148,7 +156,6 @@ public class SusuDisbursementProcessor {
 
         // ── Determine what comes next ─────────────────────────────────────
         int nextRoundNumber = round.getRoundNumber() + 1;
-        List<SusuRoundEntity> allRounds = roundRepo.findAllByGroup(group.getId());
         boolean isFinalRound = round.getRoundNumber() >= allRounds.size();
 
         if (isFinalRound) {
@@ -220,6 +227,89 @@ public class SusuDisbursementProcessor {
                 this, group.getId(), nextRound.getId(), nextRoundNumber, allRounds.size(),
                 nextRound.getRecipientUserId(), nextRound.getScheduledCollectionAt(),
                 correlationId));
+    }
+
+    /**
+     * Checks if the round's recipient has LEFT or been REMOVED, and if so,
+     * marks the round SKIPPED and rolls the pot forward to the next round.
+     *
+     * <p>Returns true if the round was skipped (caller should return immediately).
+     *
+     * <p><strong>Pot roll-forward:</strong> the skipped round's actual_pot_amount
+     * (contributions collected from remaining members, if any) is added to the
+     * next PENDING round's expected_pot_amount.
+     */
+    private boolean handleSkippedRecipient(SusuRoundEntity round,
+                                            SusuGroupEntity group,
+                                            List<SusuRoundEntity> allRounds,
+                                            String correlationId) {
+        UUID recipientUserId = round.getRecipientUserId();
+        if (recipientUserId == null) return false;
+
+        boolean isRemoved = membershipRepo.isRemovedOrLeft(group.getId(), recipientUserId);
+        if (!isRemoved) return false;
+
+        Instant now = Instant.now(clock);
+
+        log.info("DisbursementProcessor: recipient={} of round={} is REMOVED/LEFT — skipping. " +
+                 "correlation={}", recipientUserId, round.getId(), correlationId);
+
+        long skippedPotAmount = round.getActualPotAmount() != null
+                ? round.getActualPotAmount() : 0L;
+        setField(round, "status",          "SKIPPED");
+        setField(round, "actualPotAmount", skippedPotAmount);
+        roundRepo.save(round);
+
+        if (skippedPotAmount > 0) {
+            allRounds.stream()
+                    .filter(r -> "PENDING".equals(r.getStatus()))
+                    .filter(r -> r.getRoundNumber() > round.getRoundNumber())
+                    .min(java.util.Comparator.comparingInt(SusuRoundEntity::getRoundNumber))
+                    .ifPresent(nextRound -> {
+                        long current = nextRound.getExpectedPotAmount() != null
+                                ? nextRound.getExpectedPotAmount() : 0L;
+                        setField(nextRound, "expectedPotAmount", current + skippedPotAmount);
+                        roundRepo.save(nextRound);
+                        log.info("DisbursementProcessor: rolled {}p from skipped round={} " +
+                                 "to next round={}. correlation={}",
+                                skippedPotAmount, round.getRoundNumber(),
+                                nextRound.getRoundNumber(), correlationId);
+                    });
+        }
+
+        int nextRoundNumber = round.getRoundNumber() + 1;
+        boolean isFinalRound = (round.getRoundNumber() >= allRounds.size());
+        if (!isFinalRound) {
+            setField(group, "currentRoundNumber", nextRoundNumber);
+            groupRepo.save(group);
+
+            allRounds.stream()
+                    .filter(r -> r.getRoundNumber() == nextRoundNumber)
+                    .findFirst()
+                    .ifPresent(nextRound -> {
+                        setField(nextRound, "status", "COLLECTING");
+                        roundRepo.save(nextRound);
+
+                        List<SusuMembershipEntity> activeMembers =
+                                membershipRepo.findActiveMembersByGroup(group.getId());
+                        for (SusuMembershipEntity member : activeMembers) {
+                            SusuContributionEntity c = buildContribution(
+                                    nextRound.getId(), group.getId(),
+                                    member.getUserId(), group.getContributionAmount(), now);
+                            contributionRepo.save(c);
+                        }
+                    });
+        } else {
+            setField(group, "status", "COMPLETED");
+            groupRepo.save(group);
+        }
+
+        eventPublisher.publishEvent(new SusuRoundSkippedEvent(
+                this, group.getId(), round.getId(),
+                round.getRoundNumber(), recipientUserId, skippedPotAmount,
+                correlationId, now));
+
+        return true;
     }
 
     private SusuContributionEntity buildContribution(UUID roundId, UUID groupId,

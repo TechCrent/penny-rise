@@ -77,4 +77,13 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     List<SusuMembershipEntity> findActiveMembersByGroupForActivation(
             @Param("groupId") UUID groupId);
+
+    @Query("""
+            SELECT COUNT(m) > 0 FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.userId      = :userId
+              AND m.status      IN ('LEFT', 'REMOVED')
+            """)
+    boolean isRemovedOrLeft(@Param("groupId") UUID groupId,
+                             @Param("userId")  UUID userId);
 }

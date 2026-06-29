@@ -2,6 +2,7 @@ package com.stash.platform.susu.repository;
 
 import com.stash.platform.susu.domain.SusuContributionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -61,4 +62,15 @@ public interface SusuContributionRepository extends JpaRepository<SusuContributi
     List<SusuContributionEntity> findOverduePendingContributions(
             @Param("cutoff")    Instant cutoff,
             @Param("batchSize") int batchSize);
+
+    @Modifying
+    @Query("""
+            UPDATE SusuContributionEntity c
+            SET c.status = 'MISSED'
+            WHERE c.susuGroupId  = :groupId
+              AND c.memberUserId = :userId
+              AND c.status       = 'PENDING'
+            """)
+    int cancelPendingContributions(@Param("groupId") UUID groupId,
+                                   @Param("userId")  UUID userId);
 }

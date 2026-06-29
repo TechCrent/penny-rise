@@ -93,6 +93,21 @@ public class SusuEventPublisher {
         ), event.getCorrelationId());
     }
 
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onContributionLate(SusuContributionLateEvent event) {
+        publish("susu.contribution.late", Map.of(
+                "group_id",        event.getGroupId().toString(),
+                "round_id",        event.getRoundId().toString(),
+                "contribution_id", event.getContributionId().toString(),
+                "member_user_id",  event.getMemberUserId().toString(),
+                "penalty_amount",  event.getPenaltyAmount(),
+                "penalty_waived",  event.isPenaltyWaived(),
+                "occurred_at",     event.getOccurredAt().toString(),
+                "event_type",      "susu.contribution.late"
+        ), event.getCorrelationId());
+    }
+
     private void publish(String routingKey, Map<String, Object> payload, String correlationId) {
         try {
             String body = objectMapper.writeValueAsString(payload);

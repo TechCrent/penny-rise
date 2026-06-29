@@ -67,4 +67,17 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     Optional<SusuMembershipEntity> findByGroupAndUser(@Param("groupId") UUID groupId,
                                                        @Param("userId")  UUID userId);
+
+    /**
+     * Loads members for activation, ordered by joined_at ASC, id ASC.
+     * The service applies the organiser-first ordering after loading.
+     */
+    @Query("""
+            SELECT m FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.status = 'ACTIVE'
+            ORDER BY m.joinedAt ASC, m.id ASC
+            """)
+    List<SusuMembershipEntity> findActiveMembersByGroupForActivation(
+            @Param("groupId") UUID groupId);
 }

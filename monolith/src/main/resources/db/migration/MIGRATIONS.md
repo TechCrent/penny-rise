@@ -26,6 +26,7 @@ not V4).
 | V12      | v0.4-002  | `susu/V12__create_susu_memberships.sql` | `susu.susu_memberships` |
 | V13      | v0.4-003  | `susu/V13__create_susu_rounds.sql` | `susu.susu_rounds` |
 | V14      | v0.4-004  | `susu/V14__create_susu_contributions.sql` | `susu.susu_contributions` |
+| V15      | v0.4-008  | `susu/V15__add_ledger_account_to_susu_groups.sql` | `susu.susu_groups` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

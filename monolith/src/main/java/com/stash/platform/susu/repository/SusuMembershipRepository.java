@@ -36,10 +36,15 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
     boolean existsByGroupIdAndUserId(@Param("groupId") UUID groupId,
                                       @Param("userId")  UUID userId);
 
-    /**
-     * All ACTIVE memberships for a group, ordered by joined_at ASC.
-     * Ordered for deterministic rotation position display.
-     */
+    @Query("""
+            SELECT COUNT(m) > 0 FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.userId = :userId
+              AND m.status = 'ACTIVE'
+            """)
+    boolean isActiveMember(@Param("groupId") UUID groupId,
+                            @Param("userId")  UUID userId);
+
     @Query("""
             SELECT m FROM SusuMembershipEntity m
             WHERE m.susuGroupId = :groupId
@@ -48,9 +53,6 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     List<SusuMembershipEntity> findActiveMembersByGroup(@Param("groupId") UUID groupId);
 
-    /**
-     * All groups where this user has an ACTIVE membership, newest first.
-     */
     @Query("""
             SELECT m FROM SusuMembershipEntity m
             WHERE m.userId = :userId
@@ -59,7 +61,6 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     List<SusuMembershipEntity> findActiveMembershipsByUser(@Param("userId") UUID userId);
 
-    /** Loads a single membership for the caller within a group, regardless of status. */
     @Query("""
             SELECT m FROM SusuMembershipEntity m
             WHERE m.susuGroupId = :groupId
@@ -68,10 +69,6 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
     Optional<SusuMembershipEntity> findByGroupAndUser(@Param("groupId") UUID groupId,
                                                        @Param("userId")  UUID userId);
 
-    /**
-     * Loads members for activation, ordered by joined_at ASC, id ASC.
-     * The service applies the organiser-first ordering after loading.
-     */
     @Query("""
             SELECT m FROM SusuMembershipEntity m
             WHERE m.susuGroupId = :groupId

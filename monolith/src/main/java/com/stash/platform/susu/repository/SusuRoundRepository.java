@@ -31,4 +31,23 @@ public interface SusuRoundRepository extends JpaRepository<SusuRoundEntity, UUID
             ORDER BY r.roundNumber ASC
             """)
     List<SusuRoundEntity> findAllByGroup(@Param("groupId") UUID groupId);
+
+    /**
+     * Finds rounds stuck in DISBURSING status, with SKIP LOCKED so multiple
+     * worker instances don't double-process the same round. Used by the
+     * scheduled fallback poller to catch rounds whose event-driven
+     * disbursement never completed (broker restart, consumer offline, or a
+     * failed attempt that left the round in DISBURSING).
+     *
+     * <p>Native SQL because Spring Data's {@code @Lock} annotation has no
+     * SKIP LOCKED mode — same pattern as VaultAutoUnlockWorker's candidate query.
+     */
+    @Query(value = """
+            SELECT * FROM susu.susu_rounds
+            WHERE status = 'DISBURSING'
+            ORDER BY scheduled_collection_at ASC
+            LIMIT :batchSize
+            FOR UPDATE SKIP LOCKED
+            """, nativeQuery = true)
+    List<SusuRoundEntity> findDisbursingRoundsForUpdate(@Param("batchSize") int batchSize);
 }

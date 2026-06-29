@@ -64,6 +64,35 @@ public class SusuEventPublisher {
         ), event.getCorrelationId());
     }
 
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onRoundCompleted(SusuRoundCompletedEvent event) {
+        publish("susu.round.completed", Map.of(
+                "group_id",                    event.getGroupId().toString(),
+                "round_id",                    event.getRoundId().toString(),
+                "round_number",                event.getRoundNumber(),
+                "total_rounds",                event.getTotalRounds(),
+                "recipient_user_id",           event.getRecipientUserId().toString(),
+                "disbursed_amount",            event.getDisbursedAmount(),
+                "disbursement_transaction_id", event.getDisbursementTransactionId().toString(),
+                "occurred_at",                 event.getOccurredAt().toString(),
+                "event_type",                  "susu.round.completed"
+        ), event.getCorrelationId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onGroupCompleted(SusuGroupCompletedEvent event) {
+        publish("susu.group.completed", Map.of(
+                "group_id",          event.getGroupId().toString(),
+                "group_name",        event.getGroupName(),
+                "organiser_user_id", event.getOrganiserUserId().toString(),
+                "total_rounds",      event.getTotalRounds(),
+                "occurred_at",       event.getOccurredAt().toString(),
+                "event_type",        "susu.group.completed"
+        ), event.getCorrelationId());
+    }
+
     private void publish(String routingKey, Map<String, Object> payload, String correlationId) {
         try {
             String body = objectMapper.writeValueAsString(payload);

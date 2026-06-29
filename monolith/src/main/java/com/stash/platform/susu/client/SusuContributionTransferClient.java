@@ -119,4 +119,57 @@ public class SusuContributionTransferClient {
                     "Payments Service unavailable during contribution transfer: " + e.getMessage());
         }
     }
+
+    /**
+     * Transfers the full pot from SUSU_POT to the recipient's USER_WALLET.
+     * Same endpoint as {@link #transfer}, different transaction_type — disbursement
+     * is semantically distinct from a member's contribution payment.
+     *
+     * @return the transfer result, including the real ledger_transaction_id from
+     *         the Payments Service response (not a generated placeholder)
+     */
+    public DisbursementResult disburse(UUID   susuPotAccountId,
+                                        UUID   recipientWalletId,
+                                        long   potAmountPesewas,
+                                        UUID   roundId,
+                                        String correlationId,
+                                        String idempotencyKey) {
+        try {
+            Map<String, Object> body = new HashMap<>();
+            body.put("source_account_id",       susuPotAccountId.toString());
+            body.put("destination_account_id",  recipientWalletId.toString());
+            body.put("amount",                  potAmountPesewas);
+            body.put("transaction_type",        "SUSU_DISBURSEMENT");
+            body.put("business_reference_id",   roundId.toString());
+            body.put("business_reference_type", "SUSU_ROUND");
+            body.put("correlation_id",          correlationId);
+            body.put("narrative",               "Susu pot disbursement");
+
+            Map<?, ?> resp = webClient.post()
+                    .uri("/internal/v1/transactions/transfers")
+                    .header("Idempotency-Key", idempotencyKey)
+                    .header("X-Correlation-Id", correlationId)
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(TIMEOUT)
+                    .block();
+
+            String reference  = (String) resp.get("transaction_reference");
+            String ledgerTxnId = (String) resp.get("ledger_transaction_id");
+            return new DisbursementResult(reference,
+                    ledgerTxnId != null ? UUID.fromString(ledgerTxnId) : null);
+
+        } catch (WebClientResponseException e) {
+            throw new SusuPaymentsException(
+                    e.getStatusCode().value() + ":" + e.getResponseBodyAsString());
+        } catch (SusuPaymentsException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SusuPaymentsException(
+                    "Disbursement transfer unavailable: " + e.getMessage());
+        }
+    }
+
+    public record DisbursementResult(String transactionReference, UUID ledgerTransactionId) {}
 }

@@ -163,7 +163,8 @@ class SusuMembershipsSchemaTest {
     @Test
     @DisplayName("invalid status value violates CHECK constraint")
     void invalid_status_fails() {
-        assertThatThrownBy(() -> insertMembership(groupId, UUID.randomUUID(), null, "LEFT"))
+        // 'LEFT' is now valid (v0.4-012); use an entirely unknown value instead
+        assertThatThrownBy(() -> insertMembership(groupId, UUID.randomUUID(), null, "INACTIVE"))
                 .hasMessageContaining("susu_memberships_status_check");
     }
 

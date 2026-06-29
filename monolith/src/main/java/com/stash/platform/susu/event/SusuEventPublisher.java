@@ -95,6 +95,34 @@ public class SusuEventPublisher {
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMemberLeft(SusuMemberLeftEvent event) {
+        publish("susu.member.left", Map.of(
+                "group_id",        event.getGroupId().toString(),
+                "user_id",         event.getUserId().toString(),
+                "reason",          event.getReason(),
+                "group_status",    event.getGroupStatus(),
+                "group_cancelled", event.isGroupCancelled(),
+                "occurred_at",     event.getOccurredAt().toString(),
+                "event_type",      "susu.member.left"
+        ), event.getCorrelationId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onRoundSkipped(SusuRoundSkippedEvent event) {
+        publish("susu.round.skipped", Map.of(
+                "group_id",                   event.getGroupId().toString(),
+                "round_id",                   event.getRoundId().toString(),
+                "round_number",               event.getRoundNumber(),
+                "original_recipient_user_id", event.getOriginalRecipientUserId().toString(),
+                "skipped_pot_amount",         event.getSkippedPotAmount(),
+                "occurred_at",                event.getOccurredAt().toString(),
+                "event_type",                 "susu.round.skipped"
+        ), event.getCorrelationId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onContributionLate(SusuContributionLateEvent event) {
         publish("susu.contribution.late", Map.of(
                 "group_id",        event.getGroupId().toString(),

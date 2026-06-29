@@ -172,4 +172,89 @@ public class SusuContributionTransferClient {
     }
 
     public record DisbursementResult(String transactionReference, UUID ledgerTransactionId) {}
+
+    /**
+     * Charges the late penalty split: half to SUSU_POT, half to PENALTY_REVENUE.
+     * Both legs are separate internal transfers. If the first succeeds but the
+     * second fails, the caller retries via the same idempotency key base — the
+     * first leg is idempotent server-side, so no double-charge occurs.
+     *
+     * <p>Uses its own transfer type ({@code SUSU_LATE_PENALTY}) rather than
+     * {@link #transfer}'s hardcoded {@code SUSU_CONTRIBUTION} — a penalty charge
+     * is not a contribution payment, and labeling it as one would mislabel the
+     * resulting ledger transactions.
+     *
+     * @return both transaction references, or {@code waived=true} with null
+     *         references if the member has insufficient balance
+     */
+    public PenaltyChargeResult chargePenaltySplit(
+            UUID   userWalletId,
+            UUID   susuPotId,
+            UUID   penaltyRevenueId,
+            long   halfPenalty,
+            UUID   contributionId,
+            String correlationId,
+            String idempotencyKeyBase) {
+        try {
+            String potRef = penaltyLegTransfer(userWalletId, susuPotId, halfPenalty,
+                    contributionId, correlationId, idempotencyKeyBase + "-pot");
+            String revenueRef = penaltyLegTransfer(userWalletId, penaltyRevenueId, halfPenalty,
+                    contributionId, correlationId, idempotencyKeyBase + "-revenue");
+            return new PenaltyChargeResult(potRef, revenueRef, false);
+
+        } catch (SusuPaymentsException e) {
+            String body = e.getMessage();
+            if (body != null && body.contains("422") &&
+                    body.contains("PAYMENTS_INSUFFICIENT_BALANCE")) {
+                return new PenaltyChargeResult(null, null, true);
+            }
+            throw e;
+        }
+    }
+
+    private String penaltyLegTransfer(UUID   sourceAccountId,
+                                       UUID   destinationAccountId,
+                                       long   amountPesewas,
+                                       UUID   contributionId,
+                                       String correlationId,
+                                       String idempotencyKey) {
+        try {
+            Map<String, Object> body = new HashMap<>();
+            body.put("source_account_id",       sourceAccountId.toString());
+            body.put("destination_account_id",  destinationAccountId.toString());
+            body.put("amount",                  amountPesewas);
+            body.put("transaction_type",        "SUSU_LATE_PENALTY");
+            body.put("business_reference_id",   contributionId.toString());
+            body.put("business_reference_type", "SUSU_CONTRIBUTION");
+            body.put("correlation_id",          correlationId);
+            body.put("narrative",               "Susu late-payment penalty");
+
+            Map<?, ?> resp = webClient.post()
+                    .uri("/internal/v1/transactions/transfers")
+                    .header("Idempotency-Key", idempotencyKey)
+                    .header("X-Correlation-Id", correlationId)
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(TIMEOUT)
+                    .block();
+
+            return (String) resp.get("transaction_reference");
+
+        } catch (WebClientResponseException e) {
+            throw new SusuPaymentsException(
+                    e.getStatusCode().value() + ":" + e.getResponseBodyAsString());
+        } catch (SusuPaymentsException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SusuPaymentsException(
+                    "Penalty transfer unavailable: " + e.getMessage());
+        }
+    }
+
+    public record PenaltyChargeResult(
+            String potTransactionReference,
+            String revenueTransactionReference,
+            boolean waived
+    ) {}
 }

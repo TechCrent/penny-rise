@@ -32,6 +32,9 @@ not V4).
 | V18      | v0.4-016  | `user_module/V18__create_beta_allowlist.sql` | `user_module.beta_allowlist` |
 | V19      | v0.4-021  | `susu/V19__create_susu_contribution_reminders.sql` | `susu.susu_contribution_reminders` |
 | V20      | v0.5-001  | `admin/V20__create_admin_accounts.sql` + `db.migration.admin.V20_1__BootstrapSuperAdmin` | `admin.admin_accounts` |
+| V21      | v0.5-002  | `admin/V21__create_admin_audit_actions.sql` | `admin.admin_audit_actions` |
+| V21.1    | v0.5-002  | `admin/V21_1__revoke_modify_on_admin_audit_actions.sql` | REVOKE UPDATE/DELETE on `admin.admin_audit_actions` |
+| V22      | v0.5-002  | `admin/V22__create_disputes.sql` | `admin.disputes` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

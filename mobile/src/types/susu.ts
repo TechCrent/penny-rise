@@ -87,3 +87,9 @@ export interface SusuContributionResponse {
   status: string;
   round_fully_collected: boolean;
 }
+
+export interface WalletBalance {
+  accountId: string;
+  balancePesewas: number;
+  balanceCedis: string;
+}

@@ -14,6 +14,7 @@ import { useSusuDetail } from '../../hooks/useSusuDetail';
 import { susuApi } from '../../api/susu';
 import { RotationRing } from '../../components/susu/RotationRing';
 import { ContributionStatusPill } from '../../components/susu/ContributionStatusPill';
+import { ContributeBottomSheet } from '../../components/susu/ContributeBottomSheet';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { ContributionStatus } from '../../types/susu';
 
@@ -34,7 +35,7 @@ export function SusuDetailScreen() {
 
   const { group, loading, refreshing, error, fetch, refresh } = useSusuDetail(groupId);
   const [activating, setActivating] = useState(false);
-  const [contributing, setContributing] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   useEffect(() => {
     fetch();
@@ -66,36 +67,6 @@ export function SusuDetailScreen() {
       ],
     );
   }, [group, groupId, fetch]);
-
-  // ── Contribute handler ───────────────────────────────────────────────
-  const handleContribute = useCallback(async () => {
-    if (!group?.current_round) return;
-    const roundId = group.current_round.id;
-    const amount = group.contribution_amount_cedis;
-
-    Alert.alert(
-      `Pay GHS ${amount}?`,
-      'This will transfer your contribution from your wallet to the susu pot.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: `Pay GHS ${amount}`,
-          style: 'default',
-          onPress: async () => {
-            setContributing(true);
-            try {
-              await susuApi.payContribution(roundId, `contrib-${roundId}-${Date.now()}`);
-              await fetch();
-            } catch (e) {
-              Alert.alert('Payment failed', (e as Error)?.message ?? 'Please try again.');
-            } finally {
-              setContributing(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [group, fetch]);
 
   if (loading && !group) {
     return (
@@ -140,139 +111,153 @@ export function SusuDetailScreen() {
   const isDisbursing = round?.status === 'DISBURSING' || round?.status === 'DISBURSED';
 
   return (
-    <ScrollView
-      style={styles.screen}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-      testID="susu-detail-screen"
-    >
-      {/* ── Status banner ─────────────────────────────────────────────── */}
-      {isPending && (
-        <View style={styles.pendingBanner}>
-          <Text style={styles.pendingBannerText}>
-            {group.members.filter(m => m.membership_status === 'ACTIVE').length} /
-            {group.target_member_count} members joined · Waiting to start
-          </Text>
-          {group.is_caller_organiser && (
-            <Text style={styles.joinCode}>Join code: {group.join_code}</Text>
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.screen}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        testID="susu-detail-screen"
+      >
+        {/* ── Status banner ─────────────────────────────────────────────── */}
+        {isPending && (
+          <View style={styles.pendingBanner}>
+            <Text style={styles.pendingBannerText}>
+              {group.members.filter(m => m.membership_status === 'ACTIVE').length} /
+              {group.target_member_count} members joined · Waiting to start
+            </Text>
+            {group.is_caller_organiser && (
+              <Text style={styles.joinCode}>Join code: {group.join_code}</Text>
+            )}
+          </View>
+        )}
+
+        {/* ── Current round hero ────────────────────────────────────────── */}
+        {isActive && round && (
+          <View style={styles.roundHero} testID="round-hero">
+            <Text style={styles.roundLabel}>
+              Round {round.round_number} of {round.total_rounds}
+            </Text>
+            <Text style={styles.recipientName}>{round.recipient_display_name}</Text>
+            <Text style={styles.potAmount}>GHS {round.expected_pot_amount_cedis} pot</Text>
+            {round.scheduled_collection_at && (
+              <Text style={styles.dueDate}>Due {formatDate(round.scheduled_collection_at)}</Text>
+            )}
+
+            {isDisbursing && (
+              <View style={styles.disbursingBadge} testID="disbursing-badge">
+                <Text style={styles.disbursingText}>
+                  {round.status === 'DISBURSED'
+                    ? '✓ Pot disbursed'
+                    : '⏳ Disbursing to ' + round.recipient_display_name}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ── Completed state ────────────────────────────────────────────── */}
+        {isCompleted && (
+          <View style={[styles.roundHero, styles.completedHero]} testID="completed-hero">
+            <Text style={styles.recipientName}>🎉 Susu Complete</Text>
+            <Text style={styles.potAmount}>All rounds have completed</Text>
+          </View>
+        )}
+
+        {/* ── Rotation ring ─────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Rotation</Text>
+          <RotationRing
+            members={group.members}
+            currentRecipientUserId={round?.recipient_user_id ?? null}
+            currentRoundNumber={group.current_round?.round_number ?? null}
+            isPending={isPending}
+          />
+          {isPending && (
+            <Text style={styles.pendingRingNote}>
+              Rotation order will be set when the group activates.
+            </Text>
           )}
         </View>
-      )}
 
-      {/* ── Current round hero ────────────────────────────────────────── */}
-      {isActive && round && (
-        <View style={styles.roundHero} testID="round-hero">
-          <Text style={styles.roundLabel}>
-            Round {round.round_number} of {round.total_rounds}
-          </Text>
-          <Text style={styles.recipientName}>{round.recipient_display_name}</Text>
-          <Text style={styles.potAmount}>GHS {round.expected_pot_amount_cedis} pot</Text>
-          {round.scheduled_collection_at && (
-            <Text style={styles.dueDate}>Due {formatDate(round.scheduled_collection_at)}</Text>
+        {/* ── Contributions for current round ───────────────────────────── */}
+        {round && round.contributions.length > 0 && (
+          <View style={styles.section} testID="contributions-list">
+            <Text style={styles.sectionTitle}>Round {round.round_number} Contributions</Text>
+            {round.contributions.map(contrib => (
+              <ContributionRow key={contrib.member_user_id} contrib={contrib} />
+            ))}
+          </View>
+        )}
+
+        {/* ── Members ───────────────────────────────────────────────────── */}
+        <View style={styles.section} testID="members-list">
+          <Text style={styles.sectionTitle}>Members ({group.members.length})</Text>
+          {group.members.map(m => (
+            <View key={m.user_id} style={styles.memberRow}>
+              <View style={styles.memberLeft}>
+                <View style={styles.positionBadge}>
+                  <Text style={styles.positionText}>{m.rotation_position ?? '?'}</Text>
+                </View>
+                <View>
+                  <Text style={styles.memberName}>
+                    {m.display_name}
+                    {m.is_organiser && <Text style={styles.organiserLabel}> (organiser)</Text>}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Primary CTA ───────────────────────────────────────────────── */}
+        <View style={styles.ctaContainer}>
+          {canActivate && (
+            <TouchableOpacity
+              style={[styles.ctaBtn, styles.ctaBtnActivate, activating && styles.ctaBtnDisabled]}
+              onPress={handleActivate}
+              disabled={activating}
+              testID="activate-btn"
+            >
+              <Text style={styles.ctaBtnText}>{activating ? 'Activating…' : 'Activate Group'}</Text>
+            </TouchableOpacity>
           )}
 
-          {isDisbursing && (
-            <View style={styles.disbursingBadge} testID="disbursing-badge">
-              <Text style={styles.disbursingText}>
-                {round.status === 'DISBURSED'
-                  ? '✓ Pot disbursed'
-                  : '⏳ Disbursing to ' + round.recipient_display_name}
+          {isPending && !group.is_caller_organiser && (
+            <View style={styles.pendingMemberNote}>
+              <Text style={styles.pendingMemberNoteText}>
+                Waiting for the organiser to activate the group.
               </Text>
             </View>
           )}
-        </View>
-      )}
 
-      {/* ── Completed state ────────────────────────────────────────────── */}
-      {isCompleted && (
-        <View style={[styles.roundHero, styles.completedHero]} testID="completed-hero">
-          <Text style={styles.recipientName}>🎉 Susu Complete</Text>
-          <Text style={styles.potAmount}>All rounds have completed</Text>
+          {canContribute && (
+            <TouchableOpacity
+              style={styles.ctaBtn}
+              onPress={() => setSheetVisible(true)}
+              testID="contribute-cta"
+            >
+              <Text style={styles.ctaBtnText}>
+                {'Pay GHS '}
+                {group.contribution_amount_cedis}
+                {' now'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
-      )}
 
-      {/* ── Rotation ring ─────────────────────────────────────────────── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Rotation</Text>
-        <RotationRing
-          members={group.members}
-          currentRecipientUserId={round?.recipient_user_id ?? null}
-          currentRoundNumber={group.current_round?.round_number ?? null}
-          isPending={isPending}
+        <View style={styles.spacer} />
+      </ScrollView>
+      {group && (
+        <ContributeBottomSheet
+          visible={sheetVisible}
+          group={group}
+          onClose={() => setSheetVisible(false)}
+          onSuccess={() => {
+            setSheetVisible(false);
+            refresh();
+          }}
         />
-        {isPending && (
-          <Text style={styles.pendingRingNote}>
-            Rotation order will be set when the group activates.
-          </Text>
-        )}
-      </View>
-
-      {/* ── Contributions for current round ───────────────────────────── */}
-      {round && round.contributions.length > 0 && (
-        <View style={styles.section} testID="contributions-list">
-          <Text style={styles.sectionTitle}>Round {round.round_number} Contributions</Text>
-          {round.contributions.map(contrib => (
-            <ContributionRow key={contrib.member_user_id} contrib={contrib} />
-          ))}
-        </View>
       )}
-
-      {/* ── Members ───────────────────────────────────────────────────── */}
-      <View style={styles.section} testID="members-list">
-        <Text style={styles.sectionTitle}>Members ({group.members.length})</Text>
-        {group.members.map(m => (
-          <View key={m.user_id} style={styles.memberRow}>
-            <View style={styles.memberLeft}>
-              <View style={styles.positionBadge}>
-                <Text style={styles.positionText}>{m.rotation_position ?? '?'}</Text>
-              </View>
-              <View>
-                <Text style={styles.memberName}>
-                  {m.display_name}
-                  {m.is_organiser && <Text style={styles.organiserLabel}> (organiser)</Text>}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {/* ── Primary CTA ───────────────────────────────────────────────── */}
-      <View style={styles.ctaContainer}>
-        {canActivate && (
-          <TouchableOpacity
-            style={[styles.ctaBtn, styles.ctaBtnActivate, activating && styles.ctaBtnDisabled]}
-            onPress={handleActivate}
-            disabled={activating}
-            testID="activate-btn"
-          >
-            <Text style={styles.ctaBtnText}>{activating ? 'Activating…' : 'Activate Group'}</Text>
-          </TouchableOpacity>
-        )}
-
-        {isPending && !group.is_caller_organiser && (
-          <View style={styles.pendingMemberNote}>
-            <Text style={styles.pendingMemberNoteText}>
-              Waiting for the organiser to activate the group.
-            </Text>
-          </View>
-        )}
-
-        {canContribute && (
-          <TouchableOpacity
-            style={[styles.ctaBtn, contributing && styles.ctaBtnDisabled]}
-            onPress={handleContribute}
-            disabled={contributing}
-            testID="contribute-btn"
-          >
-            <Text style={styles.ctaBtnText}>
-              {contributing ? 'Processing…' : `Pay my GHS ${group.contribution_amount_cedis}`}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.spacer} />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -288,6 +273,7 @@ function ContributionRow({ contrib }: { contrib: ContributionStatus }) {
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   screen: { flex: 1, backgroundColor: '#F9FAFB' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#EF4444', fontSize: 14, textAlign: 'center', marginBottom: 16 },

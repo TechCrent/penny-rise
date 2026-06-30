@@ -1,4 +1,4 @@
-﻿package com.stash.platform.transfer.service;
+package com.stash.platform.transfer.service;
 
 import com.stash.platform.transfer.api.dto.CreateTransferRequest;
 import com.stash.platform.transfer.api.dto.CreateTransferResponse;

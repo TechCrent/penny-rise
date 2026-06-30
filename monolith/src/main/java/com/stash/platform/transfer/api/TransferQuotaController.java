@@ -23,7 +23,7 @@ public class TransferQuotaController {
     public QuotaResponse getQuota(@AuthenticationPrincipal UUID callerId) {
         LocalDate today = LocalDate.now();
         int used = quotaRepo
-                .findByUserAndMonthForUpdate(callerId, today.getYear(), today.getMonthValue())
+                .findByUserAndMonth(callerId, today.getYear(), today.getMonthValue())
                 .map(q -> q.getFreeTransfersUsed())
                 .orElse(0);
 

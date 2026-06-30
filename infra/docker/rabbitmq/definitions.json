@@ -104,6 +104,23 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "susu.disbursement.queue",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "susu.disbursement.dlq"
+      }
+    },
+    {
+      "name": "susu.disbursement.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -154,6 +171,15 @@
     },
     {
       "name": "vault.events",
+      "vhost": "stash",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "susu.events",
       "vhost": "stash",
       "type": "topic",
       "durable": true,
@@ -217,6 +243,14 @@
       "destination": "payments.paystack.subaccount.provision.queue",
       "destination_type": "queue",
       "routing_key": "paystack.subaccount.provision.requested",
+      "arguments": {}
+    },
+    {
+      "source": "susu.events",
+      "vhost": "stash",
+      "destination": "susu.disbursement.queue",
+      "destination_type": "queue",
+      "routing_key": "susu.round.fully_collected",
       "arguments": {}
     }
   ]

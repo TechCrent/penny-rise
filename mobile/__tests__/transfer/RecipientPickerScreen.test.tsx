@@ -54,9 +54,7 @@ describe('RecipientPickerScreen', () => {
 
   it('navigates to SendMoney when a recipient is tapped', async () => {
     const navigate = jest.fn();
-    jest
-      .spyOn(require('@react-navigation/native'), 'useNavigation')
-      .mockReturnValue({ navigate });
+    jest.spyOn(require('@react-navigation/native'), 'useNavigation').mockReturnValue({ navigate });
     jest.spyOn(api.transferApi, 'searchRecipients').mockResolvedValue(mockRecipients);
     render(<RecipientPickerScreen />);
     fireEvent.changeText(screen.getByTestId('search-input'), 'Ko');

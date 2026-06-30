@@ -112,6 +112,23 @@ public class SusuMemberRemovalService {
                     round.getId(), round.getRoundNumber(), targetUserId, correlationId);
         }
 
+        // Also skip the current COLLECTING round if this member is the recipient — otherwise
+        // disbursement would attempt to pay a removed member.
+        Integer currentRoundNum = group.getCurrentRoundNumber();
+        if (currentRoundNum != null) {
+            roundRepo.findByGroupAndRoundNumber(groupId, currentRoundNum).ifPresent(current -> {
+                if ("COLLECTING".equals(current.getStatus()) &&
+                        targetUserId.equals(current.getRecipientUserId())) {
+                    setField(current, "status", "SKIPPED");
+                    roundRepo.save(current);
+                    log.warn("SusuMemberRemoval: COLLECTING round={} number={} marked SKIPPED — " +
+                             "removed member={} was the recipient. Pot rollforward at disbursement. " +
+                             "correlation={}",
+                            current.getId(), current.getRoundNumber(), targetUserId, correlationId);
+                }
+            });
+        }
+
         log.info("SusuMemberRemoval: group={} member={} REMOVED. skippedRounds={} admin={}. " +
                  "correlation={}",
                 groupId, targetUserId, pendingRounds.size(), adminUserId, correlationId);

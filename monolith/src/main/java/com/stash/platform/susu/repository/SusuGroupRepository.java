@@ -1,10 +1,12 @@
 package com.stash.platform.susu.repository;
 
 import com.stash.platform.susu.domain.SusuGroupEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,4 +42,7 @@ public interface SusuGroupRepository extends JpaRepository<SusuGroupEntity, UUID
             FOR UPDATE
             """, nativeQuery = true)
     Optional<SusuGroupEntity> findByJoinCodeForUpdate(@Param("joinCode") String joinCode);
+
+    @Query("SELECT g FROM SusuGroupEntity g WHERE g.status = :status")
+    List<SusuGroupEntity> findByStatus(@Param("status") String status, Pageable pageable);
 }

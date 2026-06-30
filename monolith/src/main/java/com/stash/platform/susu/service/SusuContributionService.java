@@ -64,6 +64,7 @@ public class SusuContributionService {
     private final SusuContributionTransferClient transferClient;
     private final ApplicationEventPublisher      eventPublisher;
     private final Clock                          clock;
+    private final SusuPotIntegrityChecker        integrityChecker;
 
     public SusuContributionService(
             SusuRoundRepository roundRepo,
@@ -72,7 +73,8 @@ public class SusuContributionService {
             SusuMembershipRepository membershipRepo,
             SusuContributionTransferClient transferClient,
             ApplicationEventPublisher eventPublisher,
-            Clock clock) {
+            Clock clock,
+            SusuPotIntegrityChecker integrityChecker) {
         this.roundRepo        = roundRepo;
         this.contributionRepo = contributionRepo;
         this.groupRepo        = groupRepo;
@@ -80,6 +82,7 @@ public class SusuContributionService {
         this.transferClient   = transferClient;
         this.eventPublisher   = eventPublisher;
         this.clock            = clock;
+        this.integrityChecker = integrityChecker;
     }
 
     @Transactional
@@ -193,6 +196,18 @@ public class SusuContributionService {
 
             log.info("Round fully collected: round={} group={} actualPot={}p correlation={}",
                     roundId, group.getId(), actualPot, correlationId);
+
+            try {
+                integrityChecker.check(group.getId(), roundId);
+            } catch (SusuIntegrityCheckException e) {
+                log.error("[P0_ALERT] Contribution integrity check failed: " +
+                          "round={} group={} correlation={}. Rolling back.",
+                        roundId, group.getId(), correlationId);
+                throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Payment recorded but pot integrity check failed. " +
+                        "Support has been alerted. Reference: " + correlationId);
+            }
 
             eventPublisher.publishEvent(new SusuRoundFullyCollectedEvent(
                     this, group.getId(), roundId,

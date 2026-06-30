@@ -44,10 +44,11 @@ class SusuDisbursementProcessorTest {
     private final SusuMembershipRepository        membershipRepo   = Mockito.mock(SusuMembershipRepository.class);
     private final SusuContributionTransferClient  transferClient   = Mockito.mock(SusuContributionTransferClient.class);
     private final ApplicationEventPublisher       eventPublisher   = Mockito.mock(ApplicationEventPublisher.class);
+    private final SusuPotIntegrityChecker         integrityChecker = Mockito.mock(SusuPotIntegrityChecker.class);
 
     private final SusuDisbursementProcessor processor = new SusuDisbursementProcessor(
             groupRepo, roundRepo, contributionRepo, membershipRepo,
-            transferClient, eventPublisher, FIXED_CLOCK);
+            transferClient, eventPublisher, FIXED_CLOCK, integrityChecker);
 
     private static final UUID   GROUP_ID     = UUID.randomUUID();
     private static final UUID   ROUND_1_ID   = UUID.randomUUID();

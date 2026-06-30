@@ -35,10 +35,11 @@ class SusuContributionServiceTest {
     private final SusuMembershipRepository       membershipRepo   = Mockito.mock(SusuMembershipRepository.class);
     private final SusuContributionTransferClient transferClient   = Mockito.mock(SusuContributionTransferClient.class);
     private final ApplicationEventPublisher      eventPublisher   = Mockito.mock(ApplicationEventPublisher.class);
+    private final SusuPotIntegrityChecker        integrityChecker = Mockito.mock(SusuPotIntegrityChecker.class);
 
     private final SusuContributionService service = new SusuContributionService(
             roundRepo, contributionRepo, groupRepo, membershipRepo,
-            transferClient, eventPublisher, FIXED_CLOCK);
+            transferClient, eventPublisher, FIXED_CLOCK, integrityChecker);
 
     private static final UUID   CALLER_ID  = UUID.randomUUID();
     private static final UUID   GROUP_ID   = UUID.randomUUID();

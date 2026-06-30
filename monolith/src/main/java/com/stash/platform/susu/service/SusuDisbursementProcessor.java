@@ -56,6 +56,7 @@ public class SusuDisbursementProcessor {
     private final SusuContributionTransferClient transferClient;
     private final ApplicationEventPublisher      eventPublisher;
     private final Clock                          clock;
+    private final SusuPotIntegrityChecker        integrityChecker;
 
     public SusuDisbursementProcessor(
             SusuGroupRepository groupRepo,
@@ -64,7 +65,8 @@ public class SusuDisbursementProcessor {
             SusuMembershipRepository membershipRepo,
             SusuContributionTransferClient transferClient,
             ApplicationEventPublisher eventPublisher,
-            Clock clock) {
+            Clock clock,
+            SusuPotIntegrityChecker integrityChecker) {
         this.groupRepo        = groupRepo;
         this.roundRepo        = roundRepo;
         this.contributionRepo = contributionRepo;
@@ -72,6 +74,7 @@ public class SusuDisbursementProcessor {
         this.transferClient   = transferClient;
         this.eventPublisher   = eventPublisher;
         this.clock            = clock;
+        this.integrityChecker = integrityChecker;
     }
 
     /**
@@ -108,6 +111,16 @@ public class SusuDisbursementProcessor {
         // ── Skip check: has the recipient left or been removed? ──────────────
         if (handleSkippedRecipient(round, group, allRounds, correlationId)) {
             return;
+        }
+
+        // ── Integrity check before disbursing ─────────────────────────────
+        try {
+            integrityChecker.check(group.getId(), roundId);
+        } catch (SusuIntegrityCheckException e) {
+            log.error("[P0_ALERT] Disbursement integrity check failed: " +
+                      "round={} group={}. Halting disbursement. correlation={}",
+                    roundId, group.getId(), correlationId);
+            throw e;
         }
 
         Instant now = Instant.now(clock);

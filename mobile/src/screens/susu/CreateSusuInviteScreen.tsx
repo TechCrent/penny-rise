@@ -32,7 +32,7 @@ export function CreateSusuInviteScreen() {
   };
 
   const fillPct = Math.min(Math.round((memberCount / targetMemberCount) * 100), 100);
-  const memberFillStyle = { width: `${fillPct}%` };
+  const memberFillStyle = { width: `${fillPct}%` as `${number}%` };
 
   return (
     <View style={styles.screen} testID="create-susu-invite-screen">

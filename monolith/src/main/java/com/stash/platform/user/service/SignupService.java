@@ -35,6 +35,7 @@ public class SignupService {
     private final PasswordHasher passwordHasher;
     private final EmailSender emailSender;
     private final ApplicationEventPublisher eventPublisher;
+    private final BetaAllowlistService betaAllowlistService;
     private final SecureRandom secureRandom;
     private final String baseUrl;
 
@@ -43,18 +44,22 @@ public class SignupService {
                          PasswordHasher passwordHasher,
                          EmailSender emailSender,
                          ApplicationEventPublisher eventPublisher,
+                         BetaAllowlistService betaAllowlistService,
                          @Value("${stash.email.base-url:http://localhost:8080}") String baseUrl) {
-        this.userRepository  = userRepository;
-        this.tokenRepository = tokenRepository;
-        this.passwordHasher  = passwordHasher;
-        this.emailSender     = emailSender;
-        this.eventPublisher  = eventPublisher;
-        this.secureRandom    = new SecureRandom();
-        this.baseUrl         = baseUrl;
+        this.userRepository      = userRepository;
+        this.tokenRepository     = tokenRepository;
+        this.passwordHasher      = passwordHasher;
+        this.emailSender         = emailSender;
+        this.eventPublisher      = eventPublisher;
+        this.betaAllowlistService = betaAllowlistService;
+        this.secureRandom        = new SecureRandom();
+        this.baseUrl             = baseUrl;
     }
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
+        betaAllowlistService.assertAllowed(request.email());
+
         String normalisedEmail = request.email().toLowerCase().strip();
 
         if (userRepository.existsByEmail(normalisedEmail)) {

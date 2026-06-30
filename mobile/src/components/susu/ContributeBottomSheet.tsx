@@ -49,7 +49,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
         useNativeDriver: true,
       }).start();
     }
-  }, [visible, fetchBalance, slideAnim]);
+  }, [visible, fetchBalance, slideAnim, group.current_round?.id]);
 
   const contributionPesewas = group.contribution_amount;
   const hasSufficientBalance = balance !== null && balance.balancePesewas >= contributionPesewas;

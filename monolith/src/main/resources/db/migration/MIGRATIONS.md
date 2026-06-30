@@ -22,6 +22,15 @@ not V4).
 | V8       | v0.3-033  | `vault/V8__add_attempts_to_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
 | V9       | v0.3-034  | `vault/V9__add_unlocked_at_to_vaults.sql` | `vault.vaults` |
 | V10      | audit fix | `vault/V10__add_momo_to_early_exit_requests.sql` | `vault.locked_vault_early_exit_requests` |
+| V11      | v0.4-001  | `susu/V11__create_susu_groups.sql` | `susu.susu_groups` |
+| V12      | v0.4-002  | `susu/V12__create_susu_memberships.sql` | `susu.susu_memberships` |
+| V13      | v0.4-003  | `susu/V13__create_susu_rounds.sql` | `susu.susu_rounds` |
+| V14      | v0.4-004  | `susu/V14__create_susu_contributions.sql` | `susu.susu_contributions` |
+| V15      | v0.4-008  | `susu/V15__add_ledger_account_to_susu_groups.sql` | `susu.susu_groups` |
+| V16      | v0.4-012  | `susu/V16__add_left_status_to_memberships.sql` | `susu.susu_memberships` |
+| V17      | v0.4-013  | `transfer/V17__create_transfer_tables.sql` | `transfer.peer_transfers`, `transfer.monthly_transfer_quotas` |
+| V18      | v0.4-016  | `user_module/V18__create_beta_allowlist.sql` | `user_module.beta_allowlist` |
+| V19      | v0.4-021  | `susu/V19__create_susu_contribution_reminders.sql` | `susu.susu_contribution_reminders` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

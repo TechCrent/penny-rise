@@ -57,17 +57,20 @@ public class LoginService {
     private final JwtTokenService jwtTokenService;
     private final RefreshTokenService refreshTokenService;
     private final LoginAttemptTracker attemptTracker;
+    private final BetaAllowlistService betaAllowlistService;
 
     public LoginService(UserRepository userRepository,
                         PasswordHasher passwordHasher,
                         JwtTokenService jwtTokenService,
                         RefreshTokenService refreshTokenService,
-                        LoginAttemptTracker attemptTracker) {
-        this.userRepository      = userRepository;
-        this.passwordHasher      = passwordHasher;
-        this.jwtTokenService     = jwtTokenService;
-        this.refreshTokenService = refreshTokenService;
-        this.attemptTracker      = attemptTracker;
+                        LoginAttemptTracker attemptTracker,
+                        BetaAllowlistService betaAllowlistService) {
+        this.userRepository       = userRepository;
+        this.passwordHasher       = passwordHasher;
+        this.jwtTokenService      = jwtTokenService;
+        this.refreshTokenService  = refreshTokenService;
+        this.attemptTracker       = attemptTracker;
+        this.betaAllowlistService = betaAllowlistService;
     }
 
     /**
@@ -80,6 +83,11 @@ public class LoginService {
     public LoginResponse login(LoginRequest request, String ipAddress) {
         String emailKey = request.email().toLowerCase().strip();
         // DO NOT log emailKey
+
+        // ── Beta gate — before any account lookup or token issuance ────────
+        // Non-allowlisted users get 403, not 401, so we don't leak whether
+        // their email exists as a registered account.
+        betaAllowlistService.assertAllowed(emailKey);
 
         // ── Step 1: Check lockout (fast-fail, before DB lookup) ───────────
         if (attemptTracker.isLocked(emailKey)) {

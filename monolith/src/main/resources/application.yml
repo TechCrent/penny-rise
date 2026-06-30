@@ -135,6 +135,16 @@ stash:
     # FEE_REVENUE system ledger account (seeded in payments-service ledger V5).
     # Fixed UUID so config references it by value without a lookup query.
     fee-revenue-account-id: ${FEE_REVENUE_ACCOUNT_ID:00000000-0000-0000-0000-000000000002}
+    # PENALTY_REVENUE system ledger account (seeded in payments-service ledger V6).
+    # Receives the platform's half of the susu late-payment penalty split.
+    penalty-revenue-account-id: ${PENALTY_REVENUE_ACCOUNT_ID:00000000-0000-0000-0000-000000000003}
+  susu:
+    late-penalty:
+      # System constant per Decision 13. Overridable in v2.0 per-group config.
+      # Total penalty: 500 pesewas (GHS 5). Split 50/50 per Overall doc §6.1.
+      total-amount-pesewas: 500
+      # Hours after scheduled_collection_at before a contribution is marked LATE
+      grace-period-hours: 24
   internal:
     # Shared service token for /internal/** calls. Empty default keeps local/test
     # contexts bootable; production must set INTERNAL_SERVICE_TOKEN.
@@ -142,6 +152,8 @@ stash:
   kyc:
     # Internal kyc-service base URL — mobile hits the monolith proxy on :8080
     service-url: ${KYC_SERVICE_URL:http://localhost:8082}
+  beta:
+    allowlist-enabled: ${STASH_BETA_ALLOWLIST_ENABLED:true}
   email:
     # Switch between Resend (production) and SMTP (local/staging)
     # Set STASH_EMAIL_PROVIDER=resend to use Resend; default uses SMTP

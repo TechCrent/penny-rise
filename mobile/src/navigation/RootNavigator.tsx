@@ -21,6 +21,17 @@ import {
   EarlyExitScreen,
   CancelEarlyExitScreen,
 } from '../screens/Vault';
+import {
+  SusuListScreen,
+  SusuDetailScreen,
+  CreateSusuScreen,
+  CreateSusuInviteScreen,
+  JoinSusuScreen,
+} from '../screens/susu';
+import { RecipientPickerScreen } from '../screens/transfer/RecipientPickerScreen';
+import { SendMoneyScreen } from '../screens/transfer/SendMoneyScreen';
+import { TransferSuccessScreen } from '../screens/transfer/TransferSuccessScreen';
+import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
   Register: undefined;
@@ -50,6 +61,21 @@ export type RootStackParamList = {
   Withdraw: { vaultId: string };
   EarlyExit: { vaultId: string };
   CancelEarlyExit: { vaultId: string };
+  SusuList: undefined;
+  SusuDetail: { groupId: string };
+  CreateSusu: undefined;
+  CreateSusuInvite: {
+    groupId: string;
+    joinCode: string;
+    groupName: string;
+    contributionCedis: string;
+    frequency: string;
+    targetMemberCount: number;
+  };
+  JoinSusu: undefined;
+  RecipientPicker: undefined;
+  SendMoney: { recipient: RecipientResult };
+  TransferSuccess: { result: TransferResult; recipientName: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -95,6 +121,14 @@ export default function RootNavigator() {
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />
           <Stack.Screen name="EarlyExit" component={EarlyExitScreen} />
           <Stack.Screen name="CancelEarlyExit" component={CancelEarlyExitScreen} />
+          <Stack.Screen name="SusuList" component={SusuListScreen} />
+          <Stack.Screen name="SusuDetail" component={SusuDetailScreen} />
+          <Stack.Screen name="CreateSusu" component={CreateSusuScreen} />
+          <Stack.Screen name="CreateSusuInvite" component={CreateSusuInviteScreen} />
+          <Stack.Screen name="JoinSusu" component={JoinSusuScreen} />
+          <Stack.Screen name="RecipientPicker" component={RecipientPickerScreen} />
+          <Stack.Screen name="SendMoney" component={SendMoneyScreen} />
+          <Stack.Screen name="TransferSuccess" component={TransferSuccessScreen} />
         </>
       ) : (
         <>

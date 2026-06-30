@@ -7,6 +7,8 @@ stash:
       access-token-expiry-minutes: 15
   kyc:
     service-url: http://localhost:8082
+  beta:
+    allowlist-enabled: false
 
 spring:
   rabbitmq:

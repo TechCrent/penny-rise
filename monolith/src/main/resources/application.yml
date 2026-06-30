@@ -152,6 +152,8 @@ stash:
   kyc:
     # Internal kyc-service base URL — mobile hits the monolith proxy on :8080
     service-url: ${KYC_SERVICE_URL:http://localhost:8082}
+  beta:
+    allowlist-enabled: ${STASH_BETA_ALLOWLIST_ENABLED:true}
   email:
     # Switch between Resend (production) and SMTP (local/staging)
     # Set STASH_EMAIL_PROVIDER=resend to use Resend; default uses SMTP

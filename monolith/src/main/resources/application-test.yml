@@ -5,3 +5,5 @@ stash:
       signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItdGVzdHMtb25seS0zMi1jaGFycw==
       verification-keys: ""
       access-token-expiry-minutes: 15
+  beta:
+    allowlist-enabled: false

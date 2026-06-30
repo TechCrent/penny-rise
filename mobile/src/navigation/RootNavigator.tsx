@@ -21,7 +21,13 @@ import {
   EarlyExitScreen,
   CancelEarlyExitScreen,
 } from '../screens/Vault';
-import { SusuListScreen, SusuDetailScreen } from '../screens/susu';
+import {
+  SusuListScreen,
+  SusuDetailScreen,
+  CreateSusuScreen,
+  CreateSusuInviteScreen,
+  JoinSusuScreen,
+} from '../screens/susu';
 
 export type RootStackParamList = {
   Register: undefined;
@@ -54,6 +60,14 @@ export type RootStackParamList = {
   SusuList: undefined;
   SusuDetail: { groupId: string };
   CreateSusu: undefined;
+  CreateSusuInvite: {
+    groupId: string;
+    joinCode: string;
+    groupName: string;
+    contributionCedis: string;
+    frequency: string;
+    targetMemberCount: number;
+  };
   JoinSusu: undefined;
 };
 
@@ -102,6 +116,9 @@ export default function RootNavigator() {
           <Stack.Screen name="CancelEarlyExit" component={CancelEarlyExitScreen} />
           <Stack.Screen name="SusuList" component={SusuListScreen} />
           <Stack.Screen name="SusuDetail" component={SusuDetailScreen} />
+          <Stack.Screen name="CreateSusu" component={CreateSusuScreen} />
+          <Stack.Screen name="CreateSusuInvite" component={CreateSusuInviteScreen} />
+          <Stack.Screen name="JoinSusu" component={JoinSusuScreen} />
         </>
       ) : (
         <>

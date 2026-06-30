@@ -34,48 +34,51 @@ public class SusuPotIntegrityJob {
     public void sweep() {
         log.info("SusuPotIntegrityJob: starting nightly sweep");
 
-        List<SusuGroupEntity> activeGroups = groupRepo.findByStatus("ACTIVE",
-                PageRequest.of(0, BATCH_SIZE));
-
         int checked = 0, drifted = 0, skipped = 0;
+        int page = 0;
+        List<SusuGroupEntity> batch;
 
-        for (SusuGroupEntity group : activeGroups) {
-            try {
-                Integer currentRound = group.getCurrentRoundNumber();
-                if (currentRound == null) {
+        do {
+            batch = groupRepo.findByStatus("ACTIVE", PageRequest.of(page++, BATCH_SIZE));
+
+            for (SusuGroupEntity group : batch) {
+                try {
+                    Integer currentRound = group.getCurrentRoundNumber();
+                    if (currentRound == null) {
+                        skipped++;
+                        continue;
+                    }
+
+                    SusuRoundEntity round = roundRepo
+                            .findByGroupAndRoundNumber(group.getId(), currentRound)
+                            .orElse(null);
+
+                    if (round == null) {
+                        log.warn("SusuPotIntegrityJob: group={} currentRound={} not found. Skipping.",
+                                group.getId(), currentRound);
+                        skipped++;
+                        continue;
+                    }
+
+                    if ("PENDING".equals(round.getStatus())) {
+                        skipped++;
+                        continue;
+                    }
+
+                    boolean balanced = checker.checkQuietly(group.getId(), round.getId());
+                    if (balanced) {
+                        checked++;
+                    } else {
+                        drifted++;
+                    }
+
+                } catch (Exception e) {
                     skipped++;
-                    continue;
+                    log.error("SusuPotIntegrityJob: unexpected error for group={}: {}",
+                            group.getId(), e.getMessage());
                 }
-
-                SusuRoundEntity round = roundRepo
-                        .findByGroupAndRoundNumber(group.getId(), currentRound)
-                        .orElse(null);
-
-                if (round == null) {
-                    log.warn("SusuPotIntegrityJob: group={} currentRound={} not found. Skipping.",
-                            group.getId(), currentRound);
-                    skipped++;
-                    continue;
-                }
-
-                if ("PENDING".equals(round.getStatus())) {
-                    skipped++;
-                    continue;
-                }
-
-                boolean balanced = checker.checkQuietly(group.getId(), round.getId());
-                if (balanced) {
-                    checked++;
-                } else {
-                    drifted++;
-                }
-
-            } catch (Exception e) {
-                skipped++;
-                log.error("SusuPotIntegrityJob: unexpected error for group={}: {}",
-                        group.getId(), e.getMessage());
             }
-        }
+        } while (batch.size() == BATCH_SIZE);
 
         log.info("SusuPotIntegrityJob: complete. checked={} drifted={} skipped={}",
                 checked, drifted, skipped);

@@ -1,4 +1,4 @@
-package com.stash.platform.transfer.service;
+﻿package com.stash.platform.transfer.service;
 
 import com.stash.platform.transfer.api.dto.CreateTransferRequest;
 import com.stash.platform.transfer.api.dto.CreateTransferResponse;
@@ -103,13 +103,13 @@ public class PeerTransferService {
         int year  = today.getYear();
         int month = today.getMonthValue();
 
+        // Atomically ensure a quota row exists before locking it — ON CONFLICT DO NOTHING
+        // means concurrent first-transfers both succeed here without a unique-constraint 500.
+        quotaRepo.insertIfAbsent(UUID.randomUUID(), senderId, year, month);
         MonthlyTransferQuotaEntity quota = quotaRepo
                 .findByUserAndMonthForUpdate(senderId, year, month)
-                .orElseGet(() -> {
-                    MonthlyTransferQuotaEntity fresh =
-                            MonthlyTransferQuotaEntity.create(senderId, year, month);
-                    return quotaRepo.save(fresh);
-                });
+                .orElseThrow(() -> new IllegalStateException(
+                        "Quota row missing after insertIfAbsent for user=" + senderId));
 
         boolean isFree     = quota.consumeOneTransfer(FREE_QUOTA_LIMIT);
         long    feeAmount  = isFree ? 0L : overflowFeePesewas;
@@ -172,7 +172,7 @@ public class PeerTransferService {
         }
 
         // ── Mark COMPLETED ────────────────────────────────────────────────
-        transfer.complete(UUID.randomUUID(), isFree, now);
+        transfer.complete(UUID.fromString(principalTxnRef), isFree, now);
         transferRepo.save(transfer);
 
         log.info("PeerTransfer COMPLETED: id={} txnRef={} amount={}p fee={}p isFree={} " +

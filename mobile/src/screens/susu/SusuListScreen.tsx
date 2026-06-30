@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, FlatList, ScrollView, TouchableOpacity,
-  RefreshControl, StyleSheet, ActivityIndicator,
+  View,
+  Text,
+  FlatList,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSusuGroups } from '../../hooks/useSusuGroups';
-import { SusuCard }       from '../../components/susu/SusuCard';
+import { SusuCard } from '../../components/susu/SusuCard';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 type Tab = 'active' | 'past';
@@ -44,14 +50,12 @@ export function SusuListScreen() {
   const { groups, loading, refreshing, error, fetch, refresh } = useSusuGroups();
   const [tab, setTab] = useState<Tab>('active');
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
-  const activeGroups = groups.filter(
-    g => g.status === 'PENDING' || g.status === 'ACTIVE'
-  );
-  const pastGroups = groups.filter(
-    g => g.status === 'COMPLETED' || g.status === 'CANCELLED'
-  );
+  const activeGroups = groups.filter(g => g.status === 'PENDING' || g.status === 'ACTIVE');
+  const pastGroups = groups.filter(g => g.status === 'COMPLETED' || g.status === 'CANCELLED');
   const displayed = tab === 'active' ? activeGroups : pastGroups;
 
   if (loading && groups.length === 0) {
@@ -86,17 +90,11 @@ export function SusuListScreen() {
         </TouchableOpacity>
       </View>
 
-      {error && (
-        <Text style={styles.error}>{error}</Text>
-      )}
+      {error && <Text style={styles.error}>{error}</Text>}
 
       {/* List or empty state */}
       {displayed.length === 0 && tab === 'active' && !loading ? (
-        <ScrollView
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} />
-          }
-        >
+        <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
           <EmptyState />
         </ScrollView>
       ) : (
@@ -106,15 +104,11 @@ export function SusuListScreen() {
           renderItem={({ item }) => (
             <SusuCard
               group={item}
-              onPress={() =>
-                navigation.navigate('SusuDetail', { groupId: item.group_id })
-              }
+              onPress={() => navigation.navigate('SusuDetail', { groupId: item.group_id })}
             />
           )}
           contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
           ListEmptyComponent={
             <View style={styles.center}>
               <Text style={styles.emptySubtitle}>No past susus yet.</Text>
@@ -128,23 +122,28 @@ export function SusuListScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen:               { flex: 1, backgroundColor: '#F9FAFB' },
-  center:               { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  tabRow:               { flexDirection: 'row', padding: 16, paddingBottom: 0 },
-  tab:                  { flex: 1, paddingVertical: 10, alignItems: 'center',
-                           borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive:            { borderBottomColor: '#111827' },
-  tabText:              { fontSize: 14, color: '#9CA3AF', fontWeight: '500' },
-  tabTextActive:        { color: '#111827', fontWeight: '700' },
-  list:                 { padding: 16 },
-  error:                { color: '#EF4444', fontSize: 13, paddingHorizontal: 16, marginTop: 8 },
-  emptyContainer:       { alignItems: 'center', padding: 32 },
-  emptyTitle:           { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  emptySubtitle:        { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
-  emptyCtaRow:          { flexDirection: 'row', gap: 12 },
-  emptyBtn:             { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-  emptyBtnPrimary:      { backgroundColor: '#111827' },
-  emptyBtnPrimaryText:  { color: '#FFFFFF', fontWeight: '700' },
-  emptyBtnSecondary:    { backgroundColor: '#F3F4F6' },
+  screen: { flex: 1, backgroundColor: '#F9FAFB' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  tabRow: { flexDirection: 'row', padding: 16, paddingBottom: 0 },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: { borderBottomColor: '#111827' },
+  tabText: { fontSize: 14, color: '#9CA3AF', fontWeight: '500' },
+  tabTextActive: { color: '#111827', fontWeight: '700' },
+  list: { padding: 16 },
+  error: { color: '#EF4444', fontSize: 13, paddingHorizontal: 16, marginTop: 8 },
+  emptyContainer: { alignItems: 'center', padding: 32 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  emptyCtaRow: { flexDirection: 'row', gap: 12 },
+  emptyBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  emptyBtnPrimary: { backgroundColor: '#111827' },
+  emptyBtnPrimaryText: { color: '#FFFFFF', fontWeight: '700' },
+  emptyBtnSecondary: { backgroundColor: '#F3F4F6' },
   emptyBtnSecondaryText: { color: '#111827', fontWeight: '700' },
 });

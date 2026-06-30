@@ -3,14 +3,14 @@ import { susuApi } from '../api/susu';
 import type { SusuGroupListResponse } from '../types/susu';
 
 export function useSusuGroups() {
-  const [groups, setGroups]         = useState<SusuGroupListResponse[]>([]);
-  const [loading, setLoading]       = useState(false);
+  const [groups, setGroups] = useState<SusuGroupListResponse[]>([]);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]           = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    else           setLoading(true);
+    else setLoading(true);
     setError(null);
     try {
       const data = await susuApi.listGroups(false);

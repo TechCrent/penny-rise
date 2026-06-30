@@ -1,2 +1,2 @@
-export { SusuListScreen }   from './SusuListScreen';
+export { SusuListScreen } from './SusuListScreen';
 export { SusuDetailScreen } from './SusuDetailScreen';

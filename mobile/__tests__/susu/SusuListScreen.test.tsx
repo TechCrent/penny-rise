@@ -9,20 +9,33 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 const mockGroup: SusuGroupListResponse = {
-  group_id: 'g1', name: "Akua's Circle", status: 'ACTIVE',
-  organiser_user_id: 'u1', is_organiser: false,
-  contribution_amount: 20000, contribution_amount_cedis: '200.00',
-  frequency: 'MONTHLY', target_member_count: 6, current_member_count: 6,
-  current_round_number: 2, total_rounds: 6,
+  group_id: 'g1',
+  name: "Akua's Circle",
+  status: 'ACTIVE',
+  organiser_user_id: 'u1',
+  is_organiser: false,
+  contribution_amount: 20000,
+  contribution_amount_cedis: '200.00',
+  frequency: 'MONTHLY',
+  target_member_count: 6,
+  current_member_count: 6,
+  current_round_number: 2,
+  total_rounds: 6,
   next_due_date: '2026-07-24T00:00:00Z',
-  caller_rotation_position: 3, caller_is_next_recipient: false,
-  join_code: 'STSH1234', created_at: '2026-06-24T00:00:00Z',
+  caller_rotation_position: 3,
+  caller_is_next_recipient: false,
+  join_code: 'STSH1234',
+  created_at: '2026-06-24T00:00:00Z',
 };
 
 function mockHook(overrides: Partial<ReturnType<typeof hooks.useSusuGroups>> = {}) {
   jest.spyOn(hooks, 'useSusuGroups').mockReturnValue({
-    groups: [], loading: false, refreshing: false, error: null,
-    fetch: jest.fn(), refresh: jest.fn(),
+    groups: [],
+    loading: false,
+    refreshing: false,
+    error: null,
+    fetch: jest.fn(),
+    refresh: jest.fn(),
     ...overrides,
   });
 }

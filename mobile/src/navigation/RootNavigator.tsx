@@ -51,10 +51,10 @@ export type RootStackParamList = {
   Withdraw: { vaultId: string };
   EarlyExit: { vaultId: string };
   CancelEarlyExit: { vaultId: string };
-  SusuList:   undefined;
+  SusuList: undefined;
   SusuDetail: { groupId: string };
   CreateSusu: undefined;
-  JoinSusu:   undefined;
+  JoinSusu: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -100,7 +100,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />
           <Stack.Screen name="EarlyExit" component={EarlyExitScreen} />
           <Stack.Screen name="CancelEarlyExit" component={CancelEarlyExitScreen} />
-          <Stack.Screen name="SusuList"   component={SusuListScreen} />
+          <Stack.Screen name="SusuList" component={SusuListScreen} />
           <Stack.Screen name="SusuDetail" component={SusuDetailScreen} />
         </>
       ) : (

@@ -73,4 +73,27 @@ public interface SusuContributionRepository extends JpaRepository<SusuContributi
             """)
     int cancelPendingContributions(@Param("groupId") UUID groupId,
                                    @Param("userId")  UUID userId);
+
+    /**
+     * Finds PENDING contributions whose round's scheduled_collection_at falls
+     * within the given window [windowStart, windowEnd).
+     *
+     * Used by the reminder job to find contributions due within 48h and 24h.
+     * Only PENDING contributions are selected — PAID, LATE, MISSED, and WAIVED
+     * members should not receive contribution reminders.
+     */
+    @Query(value = """
+            SELECT c.* FROM susu.susu_contributions c
+            INNER JOIN susu.susu_rounds r ON r.id = c.susu_round_id
+            WHERE c.status = 'PENDING'
+              AND r.status = 'COLLECTING'
+              AND r.scheduled_collection_at >= CAST(:windowStart AS TIMESTAMPTZ)
+              AND r.scheduled_collection_at <  CAST(:windowEnd   AS TIMESTAMPTZ)
+            ORDER BY r.scheduled_collection_at ASC
+            LIMIT :batchSize
+            """, nativeQuery = true)
+    List<SusuContributionEntity> findPendingContributionsInWindow(
+            @Param("windowStart") Instant windowStart,
+            @Param("windowEnd")   Instant windowEnd,
+            @Param("batchSize")   int     batchSize);
 }

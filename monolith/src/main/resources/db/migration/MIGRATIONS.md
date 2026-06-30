@@ -30,6 +30,7 @@ not V4).
 | V16      | v0.4-012  | `susu/V16__add_left_status_to_memberships.sql` | `susu.susu_memberships` |
 | V17      | v0.4-013  | `transfer/V17__create_transfer_tables.sql` | `transfer.peer_transfers`, `transfer.monthly_transfer_quotas` |
 | V18      | v0.4-016  | `user_module/V18__create_beta_allowlist.sql` | `user_module.beta_allowlist` |
+| V19      | v0.4-021  | `susu/V19__create_susu_contribution_reminders.sql` | `susu.susu_contribution_reminders` |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

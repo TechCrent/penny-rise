@@ -123,6 +123,22 @@ public class SusuEventPublisher {
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onContributionReminder(SusuContributionReminderEvent event) {
+        publish("susu.contribution.reminder", Map.of(
+                "group_id",        event.getGroupId().toString(),
+                "round_id",        event.getRoundId().toString(),
+                "contribution_id", event.getContributionId().toString(),
+                "member_user_id",  event.getMemberUserId().toString(),
+                "reminder_type",   event.getReminderType(),
+                "amount_pesewas",  event.getAmountPesewas(),
+                "due_date",        event.getDueDate().toString(),
+                "emitted_at",      event.getEmittedAt().toString(),
+                "event_type",      "susu.contribution.reminder"
+        ), event.getCorrelationId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onContributionLate(SusuContributionLateEvent event) {
         publish("susu.contribution.late", Map.of(
                 "group_id",        event.getGroupId().toString(),

@@ -1,3 +1,4 @@
+import { Share } from 'react-native';
 import { apiClient } from './client';
 import type {
   SusuGroupListResponse,
@@ -5,6 +6,21 @@ import type {
   SusuActivationResponse,
   SusuContributionResponse,
 } from '../types/susu';
+
+type CreateGroupResponse = { id: string; join_code: string; status: string };
+
+type JoinGroupResponse = {
+  group: {
+    id: string;
+    name: string;
+    contribution_amount_cedis: string;
+    frequency: string;
+    target_member_count: number;
+    current_member_count: number;
+    status: string;
+  };
+  membership: { id: string; status: string };
+};
 
 export const susuApi = {
   listGroups: async (includeInactive = false): Promise<SusuGroupListResponse[]> => {
@@ -42,4 +58,38 @@ export const susuApi = {
     );
     return data;
   },
+
+  createGroup: async (
+    groupData: {
+      name: string;
+      contribution_amount: number;
+      frequency: string;
+      target_member_count: number;
+    },
+    idempotencyKey: string,
+  ): Promise<CreateGroupResponse> => {
+    const { data } = await apiClient.post<CreateGroupResponse>('/api/v1/susu/groups', groupData, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
+    return data;
+  },
+
+  joinGroup: async (joinCode: string, idempotencyKey: string): Promise<JoinGroupResponse> => {
+    const { data } = await apiClient.post<JoinGroupResponse>(
+      '/api/v1/susu/groups/join',
+      { join_code: joinCode },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    );
+    return data;
+  },
 };
+
+export async function shareJoinCode(code: string, groupName: string) {
+  await Share.share({
+    message:
+      `Join my Stash susu group "${groupName}"! ` +
+      `Use code ${code} on the Stash app to join. ` +
+      `Download Stash at stash.app`,
+    title: `Join ${groupName} on Stash`,
+  });
+}

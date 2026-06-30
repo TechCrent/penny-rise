@@ -3,6 +3,7 @@ package com.stash.platform.user.repository;
 import com.stash.platform.user.domain.AccountStatus;
 import com.stash.platform.user.domain.KycStatus;
 import com.stash.platform.user.domain.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -122,4 +123,19 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE u.id = :userId")
     Optional<User> findByIdForVaultCreation(@Param("userId") UUID userId);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.kycStatus = :kycStatus
+              AND u.id <> :callerId
+              AND u.deletedAt IS NULL
+              AND (lower(u.displayName) LIKE lower(concat(:q, '%'))
+                   OR lower(u.email) LIKE lower(concat(:q, '%')))
+            ORDER BY u.displayName ASC
+            """)
+    List<User> searchEligibleRecipients(
+            @Param("q")         String    q,
+            @Param("callerId")  UUID      callerId,
+            @Param("kycStatus") KycStatus kycStatus,
+            Pageable pageable);
 }

@@ -2,9 +2,11 @@ package com.stash.platform.susu.repository;
 
 import com.stash.platform.susu.domain.SusuMembershipEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -86,4 +88,23 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
             """)
     boolean isRemovedOrLeft(@Param("groupId") UUID groupId,
                              @Param("userId")  UUID userId);
+
+    @Modifying
+    @Query("""
+            UPDATE SusuMembershipEntity m
+            SET m.status    = 'LEFT',
+                m.removedAt = :now
+            WHERE m.susuGroupId = :groupId
+              AND m.status      = 'ACTIVE'
+            """)
+    int cancelAllActiveMemberships(
+            @Param("groupId") UUID    groupId,
+            @Param("now")     Instant now);
+
+    @Query("""
+            SELECT m.userId FROM SusuMembershipEntity m
+            WHERE m.susuGroupId = :groupId
+              AND m.status      = 'ACTIVE'
+            """)
+    List<UUID> findActiveUserIds(@Param("groupId") UUID groupId);
 }

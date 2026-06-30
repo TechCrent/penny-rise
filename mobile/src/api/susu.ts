@@ -7,6 +7,12 @@ import type {
   SusuContributionResponse,
 } from '../types/susu';
 
+type WalletBalanceResponse = {
+  account_id: string;
+  balance_pesewas: number;
+  balance_cedis: string;
+};
+
 type CreateGroupResponse = { id: string; join_code: string; status: string };
 
 type JoinGroupResponse = {
@@ -80,6 +86,13 @@ export const susuApi = {
       { join_code: joinCode },
       { headers: { 'Idempotency-Key': idempotencyKey } },
     );
+    return data;
+  },
+};
+
+export const walletApi = {
+  getBalance: async (): Promise<WalletBalanceResponse> => {
+    const { data } = await apiClient.get<WalletBalanceResponse>('/api/v1/users/me/wallet-balance');
     return data;
   },
 };

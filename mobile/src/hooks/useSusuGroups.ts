@@ -15,8 +15,8 @@ export function useSusuGroups() {
     try {
       const data = await susuApi.listGroups(false);
       setGroups(data);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load susu groups.');
+    } catch (e) {
+      setError((e as Error)?.message ?? 'Failed to load susu groups.');
     } finally {
       setLoading(false);
       setRefreshing(false);

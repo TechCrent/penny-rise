@@ -15,8 +15,8 @@ export function useSusuDetail(groupId: string) {
     try {
       const data = await susuApi.getGroupDetail(groupId);
       setGroup(data);
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load group details.');
+    } catch (e) {
+      setError((e as Error)?.message ?? 'Failed to load group details.');
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -41,14 +41,8 @@ export function RotationRing({
       <View
         style={[
           styles.ringLine,
-          {
-            width:        radius * 2,
-            height:       radius * 2,
-            borderRadius: radius,
-            left:         center - radius,
-            top:          center - radius,
-            borderColor:  isPending ? '#D1D5DB' : '#374151',
-          },
+          isPending ? styles.ringLinePending : styles.ringLineActive,
+          { width: radius * 2, height: radius * 2, borderRadius: radius, left: center - radius, top: center - radius },
         ]}
       />
 
@@ -118,6 +112,8 @@ const styles = StyleSheet.create({
     position:    'absolute',
     borderWidth: 1.5,
   },
+  ringLinePending: { borderColor: '#D1D5DB' },
+  ringLineActive:  { borderColor: '#374151' },
   node: {
     position:       'absolute',
     borderWidth:    2,

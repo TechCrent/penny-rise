@@ -3,12 +3,15 @@ import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
   ActivityIndicator, StyleSheet, Alert,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { useSusuDetail }           from '../../hooks/useSusuDetail';
-import { susuApi }                  from '../../api/susu';
-import { RotationRing }             from '../../components/susu/RotationRing';
-import { ContributionStatusPill }   from '../../components/susu/ContributionStatusPill';
-import type { ContributionStatus }  from '../../types/susu';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { useSusuDetail }          from '../../hooks/useSusuDetail';
+import { susuApi }                 from '../../api/susu';
+import { RotationRing }            from '../../components/susu/RotationRing';
+import { ContributionStatusPill }  from '../../components/susu/ContributionStatusPill';
+import type { RootStackParamList } from '../../navigation/RootNavigator';
+import type { ContributionStatus } from '../../types/susu';
+
+type SusuDetailRoute = RouteProp<RootStackParamList, 'SusuDetail'>;
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -18,9 +21,8 @@ function formatDate(iso: string | null) {
 }
 
 export function SusuDetailScreen() {
-  const route      = useRoute<any>();
-  const navigation = useNavigation<any>();
-  const { groupId } = route.params as { groupId: string };
+  const route      = useRoute<SusuDetailRoute>();
+  const { groupId } = route.params;
 
   const { group, loading, refreshing, error, fetch, refresh } = useSusuDetail(groupId);
   const [activating, setActivating]     = useState(false);
@@ -44,8 +46,8 @@ export function SusuDetailScreen() {
             try {
               await susuApi.activateGroup(groupId, `activate-${groupId}`);
               await fetch();
-            } catch (e: any) {
-              Alert.alert('Activation failed', e?.message ?? 'Please try again.');
+            } catch (e) {
+              Alert.alert('Activation failed', (e as Error)?.message ?? 'Please try again.');
             } finally {
               setActivating(false);
             }
@@ -74,8 +76,8 @@ export function SusuDetailScreen() {
             try {
               await susuApi.payContribution(roundId, `contrib-${roundId}-${Date.now()}`);
               await fetch();
-            } catch (e: any) {
-              Alert.alert('Payment failed', e?.message ?? 'Please try again.');
+            } catch (e) {
+              Alert.alert('Payment failed', (e as Error)?.message ?? 'Please try again.');
             } finally {
               setContributing(false);
             }
@@ -97,7 +99,7 @@ export function SusuDetailScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error ?? 'Group not found.'}</Text>
-        <TouchableOpacity onPress={fetch} style={styles.retryBtn}>
+        <TouchableOpacity onPress={() => fetch()} style={styles.retryBtn}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>

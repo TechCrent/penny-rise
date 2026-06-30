@@ -4,14 +4,15 @@ import {
   RefreshControl, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSusuGroups } from '../../hooks/useSusuGroups';
 import { SusuCard }       from '../../components/susu/SusuCard';
-import type { SusuGroupListResponse } from '../../types/susu';
+import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 type Tab = 'active' | 'past';
 
 function EmptyState() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   return (
     <View style={styles.emptyContainer} testID="empty-state">
       <Text style={styles.emptyTitle}>No susus yet</Text>
@@ -39,7 +40,7 @@ function EmptyState() {
 }
 
 export function SusuListScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { groups, loading, refreshing, error, fetch, refresh } = useSusuGroups();
   const [tab, setTab] = useState<Tab>('active');
 

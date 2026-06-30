@@ -40,7 +40,7 @@ export function SusuCard({ group, onPress }: Props) {
         <Text style={styles.name} numberOfLines={1}>{group.name}</Text>
         {group.caller_is_next_recipient && (
           <View style={styles.youreNextPill} testID="youre-next-pill">
-            <Text style={styles.youreNextText}>You're next</Text>
+            <Text style={styles.youreNextText}>{"You're next"}</Text>
           </View>
         )}
       </View>

@@ -13,6 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Publishes susu lifecycle events to RabbitMQ AFTER the activation transaction
@@ -134,6 +135,20 @@ public class SusuEventPublisher {
                 "due_date",        event.getDueDate().toString(),
                 "emitted_at",      event.getEmittedAt().toString(),
                 "event_type",      "susu.contribution.reminder"
+        ), event.getCorrelationId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onGroupCancelled(SusuGroupCancelledEvent event) {
+        publish("susu.group.cancelled", Map.of(
+                "group_id",            event.getGroupId().toString(),
+                "group_name",          event.getGroupName(),
+                "organiser_user_id",   event.getOrganiserUserId().toString(),
+                "affected_member_ids", event.getAffectedMemberIds().stream()
+                        .map(UUID::toString).toList(),
+                "occurred_at",         event.getOccurredAt().toString(),
+                "event_type",          "susu.group.cancelled"
         ), event.getCorrelationId());
     }
 

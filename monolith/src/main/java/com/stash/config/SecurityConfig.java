@@ -1,11 +1,13 @@
 package com.stash.config;
 
+import com.stash.admin.rbac.AdminAccessDeniedHandler;
 import com.stash.admin.security.AdminJwtAuthenticationFilter;
 import com.stash.admin.service.AdminJwtService;
 import com.stash.platform.user.security.JwtAuthenticationFilter;
 import com.stash.platform.user.service.JwtTokenService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,12 +29,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * <p>Everything else under /api/v1/** requires a valid JWT.
  */
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtTokenService jwtTokenService,
-                                                   AdminJwtService adminJwtService) throws Exception {
+                                                   AdminJwtService adminJwtService,
+                                                   AdminAccessDeniedHandler adminAccessDeniedHandler) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
@@ -71,7 +75,8 @@ public class SecurityConfig {
                 .addFilterAfter(
                         new AdminJwtAuthenticationFilter(adminJwtService),
                         JwtAuthenticationFilter.class
-                );
+                )
+                .exceptionHandling(e -> e.accessDeniedHandler(adminAccessDeniedHandler));
 
         return http.build();
     }

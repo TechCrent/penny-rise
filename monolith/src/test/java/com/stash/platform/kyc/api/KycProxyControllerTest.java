@@ -1,5 +1,6 @@
 package com.stash.platform.kyc.api;
 
+import com.stash.admin.rbac.AdminAccessDeniedHandler;
 import com.stash.admin.service.AdminJwtService;
 import com.stash.config.SecurityConfig;
 import com.stash.platform.kyc.client.KycServiceClient;
@@ -41,6 +42,7 @@ class KycProxyControllerTest {
     @Autowired JwtTokenService jwtTokenService;
     @MockBean KycServiceClient kycServiceClient;
     @MockBean AdminJwtService adminJwtService;
+    @MockBean AdminAccessDeniedHandler adminAccessDeniedHandler;
 
     private static final UUID USER_ID = UUID.fromString("018f1234-5678-7abc-8000-000000000001");
 

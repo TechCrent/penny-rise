@@ -11,11 +11,7 @@ public final class AdminAuditActionType {
 
     private AdminAuditActionType() {}
 
-    public static final String USER_SUSPENDED           = "USER_SUSPENDED";
-    public static final String USER_RESTORED            = "USER_RESTORED";
-    public static final String USER_FORCE_LOGOUT        = "USER_FORCE_LOGOUT";
-
-    public static final String DISPUTE_ASSIGNED         = "DISPUTE_ASSIGNED";
-    public static final String DISPUTE_RESOLVED         = "DISPUTE_RESOLVED";
-    public static final String DISPUTE_CLOSED_NO_ACTION = "DISPUTE_CLOSED_NO_ACTION";
+    public static final String USER_SUSPENDED    = "USER_SUSPENDED";
+    public static final String USER_RESTORED     = "USER_RESTORED";
+    public static final String USER_FORCE_LOGOUT = "USER_FORCE_LOGOUT";
 }

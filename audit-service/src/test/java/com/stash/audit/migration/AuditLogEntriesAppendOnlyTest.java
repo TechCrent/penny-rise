@@ -40,10 +40,12 @@ class AuditLogEntriesAppendOnlyTest {
                 .password(postgres.getPassword())
                 .build();
 
-        // Create roles BEFORE Flyway — V2 GRANTs SELECT to audit_dashboard_ro;
-        // if that role doesn't exist, the GRANT fails and migration aborts.
+        // Create schema and roles BEFORE Flyway:
+        // - V1 creates audit.audit_log_entries (schema must exist first)
+        // - V2 GRANTs SELECT to audit_dashboard_ro (role must exist first)
         try (Connection conn = migrationDataSource.getConnection();
              Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE SCHEMA audit");
             stmt.execute("CREATE ROLE audit_app LOGIN PASSWORD 'test_app_password'");
             stmt.execute("CREATE ROLE audit_dashboard_ro");
         }

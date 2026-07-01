@@ -210,16 +210,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <environmentVariables>
-                        <BOOTSTRAP_ADMIN_EMAIL>bootstrap-test@stash.app</BOOTSTRAP_ADMIN_EMAIL>
-                        <BOOTSTRAP_ADMIN_PASSWORD>TestBootstrapPassword123!</BOOTSTRAP_ADMIN_PASSWORD>
-                    </environmentVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <parameters>true</parameters>

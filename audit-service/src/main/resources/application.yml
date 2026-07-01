@@ -45,10 +45,8 @@ spring:
     virtual-host: stash
     listener:
       simple:
-        # Placeholder: no active listeners yet — queues declared but no @RabbitListener beans.
-        # Consumer will be wired in when audit_log_entries schema is ready (v0.2+).
         auto-startup: true
-        acknowledge-mode: manual
+        acknowledge-mode: auto
         prefetch: 10
 
   jackson:

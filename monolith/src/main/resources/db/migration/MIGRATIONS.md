@@ -36,6 +36,7 @@ not V4).
 | V21.1    | v0.5-002  | `admin/V21_1__revoke_modify_on_admin_audit_actions.sql` | REVOKE UPDATE/DELETE on `admin.admin_audit_actions` |
 | V22      | v0.5-002  | `admin/V22__create_disputes.sql` | `admin.disputes` |
 | V23      | v0.5-003  | `admin/V23__create_admin_auth_tables.sql` | `admin.admin_refresh_tokens`, `admin.admin_login_attempts` |
+| V24      | v0.5-006  | `auth/V24__add_admin_force_logout_revoked_reason.sql` | `auth.refresh_tokens` (revoked_reason CHECK constraint) |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

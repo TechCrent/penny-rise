@@ -10,6 +10,7 @@ import com.stash.shared.masking.GhanaCardMasker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +34,24 @@ public class UserService {
         String search = blankToNull(criteria.search());
         return userRepository.searchForAdmin(search, kycStatus, accountStatus, pageable)
                 .map(this::toAdminUserView);
+    }
+
+    /**
+     * Transitions the user to SUSPENDED if they are not already.
+     * @return {@code true} if the transition happened; {@code false} if already SUSPENDED or not found
+     */
+    @Transactional
+    public boolean suspend(UUID userId) {
+        return userRepository.suspendIfNotAlreadySuspended(userId, AccountStatus.SUSPENDED) == 1;
+    }
+
+    /**
+     * Restores a SUSPENDED user to ACTIVE.
+     * @return {@code true} if the transition happened; {@code false} if not SUSPENDED or not found
+     */
+    @Transactional
+    public boolean restore(UUID userId) {
+        return userRepository.restoreIfSuspended(userId, AccountStatus.ACTIVE, AccountStatus.SUSPENDED) == 1;
     }
 
     public Optional<AdminUserView> getAdminViewById(UUID id) {

@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -194,6 +195,10 @@ public class PeerTransferService {
                 prior.getTransactionId() != null ? prior.getTransactionId().toString() : null,
                 prior.getAmount(), prior.getFeeAmount(), 0,
                 prior.getRecipientUserId(), prior.getCompletedAt());
+    }
+
+    public Optional<PeerTransferEntity> findById(UUID transferId) {
+        return transferRepo.findById(transferId);
     }
 
     private void translateAndThrow(TransferPaymentsException e, String leg) {

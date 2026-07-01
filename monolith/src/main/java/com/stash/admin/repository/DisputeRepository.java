@@ -41,4 +41,15 @@ public interface DisputeRepository extends JpaRepository<DisputeEntity, UUID> {
     boolean hasOpenDisputeForEntity(
             @Param("entityType") String entityType,
             @Param("entityId")   UUID   entityId);
+
+    @Query("""
+            SELECT COUNT(d) > 0 FROM DisputeEntity d
+            WHERE d.raisedByUserId    = :userId
+              AND d.relatedEntityType = :relatedEntityType
+              AND d.relatedEntityId   = :relatedEntityId
+              AND d.status IN ('OPEN', 'IN_REVIEW')
+            """)
+    boolean existsActiveForEntity(@Param("userId") UUID userId,
+                                   @Param("relatedEntityType") String relatedEntityType,
+                                   @Param("relatedEntityId") UUID relatedEntityId);
 }

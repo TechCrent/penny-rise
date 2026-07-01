@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -22,5 +23,10 @@ public class IntegrationPaymentsClient {
     public List<TransactionRecord> getRecentTransactionsForUser(UUID userId, int limit) {
         log.debug("IntegrationPaymentsClient is a stub — returning empty transaction list for user {}", userId);
         return List.of();
+    }
+
+    public Optional<TransactionDetail> getTransactionById(UUID transactionId) {
+        log.debug("IntegrationPaymentsClient is a stub — returning empty for transaction {}", transactionId);
+        return Optional.empty();
     }
 }

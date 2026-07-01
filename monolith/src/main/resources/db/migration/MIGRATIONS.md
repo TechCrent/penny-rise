@@ -37,6 +37,7 @@ not V4).
 | V22      | v0.5-002  | `admin/V22__create_disputes.sql` | `admin.disputes` |
 | V23      | v0.5-003  | `admin/V23__create_admin_auth_tables.sql` | `admin.admin_refresh_tokens`, `admin.admin_login_attempts` |
 | V24      | v0.5-006  | `auth/V24__add_admin_force_logout_revoked_reason.sql` | `auth.refresh_tokens` (revoked_reason CHECK constraint) |
+| V25      | v0.5-007  | `admin/V25__add_disputes_active_per_entity_unique_index.sql` | `admin.disputes` (partial unique index) |
 
 **Next free version:** assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).

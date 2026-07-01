@@ -156,6 +156,17 @@ public class JwtTokenService {
 
     private AccessTokenClaims extractClaims(Jws<Claims> jws) {
         Claims claims = jws.getPayload();
+
+        // Two-way rejection: admin tokens share the same signing key but must never
+        // authenticate customer endpoints. Admin tokens carry token_type=ADMIN;
+        // customer tokens have no token_type claim. This explicit check is defense in
+        // depth — admin tokens also lack kyc_status/subscription_tier so the claim
+        // extraction below would throw anyway, but explicit is safer and self-documenting.
+        if ("ADMIN".equals(claims.get("token_type"))) {
+            throw new MalformedJwtException(
+                    "Admin token rejected on customer endpoint (token_type=ADMIN)");
+        }
+
         String sub = claims.getSubject();
         if (sub == null || sub.isBlank()) {
             throw new MissingClaimException(jws.getHeader(), claims, "sub", null,

@@ -3,8 +3,10 @@ package com.stash.platform.user.repository;
 import com.stash.platform.user.domain.AccountStatus;
 import com.stash.platform.user.domain.KycStatus;
 import com.stash.platform.user.domain.User;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -123,6 +125,56 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE u.id = :userId")
     Optional<User> findByIdForVaultCreation(@Param("userId") UUID userId);
+
+    /**
+     * Admin search: full-text filter on email/phone, optional status filters.
+     * Soft-deleted users are excluded. All parameters are nullable; a null value
+     * means "no filter on that field".
+     */
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.deletedAt IS NULL
+              AND (:search IS NULL
+                   OR lower(u.email) LIKE lower(concat('%', :search, '%'))
+                   OR u.phone LIKE concat('%', :search, '%'))
+              AND (:kycStatus IS NULL OR u.kycStatus = :kycStatus)
+              AND (:accountStatus IS NULL OR u.accountStatus = :accountStatus)
+            ORDER BY u.createdAt DESC
+            """)
+    Page<User> searchForAdmin(@Param("search") String search,
+                               @Param("kycStatus") KycStatus kycStatus,
+                               @Param("accountStatus") AccountStatus accountStatus,
+                               Pageable pageable);
+
+    // ── Admin status mutations ─────────────────────────────────────────────
+
+    /**
+     * Transitions the user to SUSPENDED only if they are not already suspended.
+     * The conditional WHERE prevents concurrent double-suspends from both succeeding.
+     *
+     * @return 1 if the transition happened, 0 if the user was already SUSPENDED or not found
+     */
+    @Modifying
+    @Query("""
+            UPDATE User u SET u.accountStatus = :suspended
+            WHERE u.id = :id AND u.accountStatus <> :suspended AND u.deletedAt IS NULL
+            """)
+    int suspendIfNotAlreadySuspended(@Param("id") UUID id,
+                                      @Param("suspended") AccountStatus suspended);
+
+    /**
+     * Transitions the user back to ACTIVE only if they are currently SUSPENDED.
+     *
+     * @return 1 if the transition happened, 0 if the user was not SUSPENDED or not found
+     */
+    @Modifying
+    @Query("""
+            UPDATE User u SET u.accountStatus = :active
+            WHERE u.id = :id AND u.accountStatus = :suspended AND u.deletedAt IS NULL
+            """)
+    int restoreIfSuspended(@Param("id") UUID id,
+                            @Param("active") AccountStatus active,
+                            @Param("suspended") AccountStatus suspended);
 
     @Query("""
             SELECT u FROM User u

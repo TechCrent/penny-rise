@@ -41,8 +41,9 @@ class PeerTransferServiceTest {
     private static final UUID   RECIPIENT_ID = UUID.randomUUID();
     private static final UUID   SENDER_WALLET= UUID.randomUUID();
     private static final UUID   RECIP_WALLET = UUID.randomUUID();
-    private static final String CORR         = "corr-transfer-001";
-    private static final String IDEM_KEY     = "idem-transfer-001";
+    private static final String CORR              = "corr-transfer-001";
+    private static final String IDEM_KEY          = "idem-transfer-001";
+    private static final String PRINCIPAL_TXN_REF = "a1b2c3d4-0000-0000-0000-000000000001";
 
     @BeforeEach
     void setUp() {
@@ -60,7 +61,7 @@ class PeerTransferServiceTest {
         when(paymentsClient.resolveUserWallet(SENDER_ID, CORR)).thenReturn(SENDER_WALLET);
         when(paymentsClient.resolveUserWallet(RECIPIENT_ID, CORR)).thenReturn(RECIP_WALLET);
         when(paymentsClient.transferPrincipal(any(), any(), anyLong(), any(), any(), any(), any()))
-                .thenReturn("STSH-202606-TRF001");
+                .thenReturn(PRINCIPAL_TXN_REF);
     }
 
     // ── Happy: free transfer ───────────────────────────────────────────────
@@ -73,7 +74,7 @@ class PeerTransferServiceTest {
 
         assertThat(result.feeAmount()).isEqualTo(0L);
         assertThat(result.totalDebited()).isEqualTo(50_000L);
-        assertThat(result.transactionReference()).isEqualTo("STSH-202606-TRF001");
+        assertThat(result.transactionReference()).isEqualTo(PRINCIPAL_TXN_REF);
         assertThat(result.status()).isEqualTo("COMPLETED");
     }
 
@@ -260,14 +261,14 @@ class PeerTransferServiceTest {
     // ── New quota row created lazily ───────────────────────────────────────
 
     @Test
-    @DisplayName("no existing quota row: created lazily for this month")
+    @DisplayName("no existing quota row: insertIfAbsent called, transfer succeeds")
     void quota_row_created_lazily() {
-        when(quotaRepo.findByUserAndMonthForUpdate(SENDER_ID, 2026, 6))
-                .thenReturn(Optional.empty());
-
+        // setUp mocks findByUserAndMonthForUpdate to return freshQuota(),
+        // which represents the state after insertIfAbsent creates the row.
         service.transfer(SENDER_ID, request(50_000L), CORR, IDEM_KEY);
 
-        verify(quotaRepo, atLeast(2)).save(any(MonthlyTransferQuotaEntity.class));
+        verify(quotaRepo).insertIfAbsent(any(UUID.class), eq(SENDER_ID), anyInt(), anyInt());
+        verify(quotaRepo, atLeastOnce()).save(any(MonthlyTransferQuotaEntity.class));
     }
 
     // ── Idempotency keys for Payments legs ────────────────────────────────

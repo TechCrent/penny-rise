@@ -3,6 +3,7 @@ package com.stash.platform.user.repository;
 import com.stash.platform.user.domain.AccountStatus;
 import com.stash.platform.user.domain.KycStatus;
 import com.stash.platform.user.domain.User;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -123,6 +124,26 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT u FROM User u WHERE u.id = :userId")
     Optional<User> findByIdForVaultCreation(@Param("userId") UUID userId);
+
+    /**
+     * Admin search: full-text filter on email/phone, optional status filters.
+     * Soft-deleted users are excluded. All parameters are nullable; a null value
+     * means "no filter on that field".
+     */
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.deletedAt IS NULL
+              AND (:search IS NULL
+                   OR lower(u.email) LIKE lower(concat('%', :search, '%'))
+                   OR u.phone LIKE concat('%', :search, '%'))
+              AND (:kycStatus IS NULL OR u.kycStatus = :kycStatus)
+              AND (:accountStatus IS NULL OR u.accountStatus = :accountStatus)
+            ORDER BY u.createdAt DESC
+            """)
+    Page<User> searchForAdmin(@Param("search") String search,
+                               @Param("kycStatus") KycStatus kycStatus,
+                               @Param("accountStatus") AccountStatus accountStatus,
+                               Pageable pageable);
 
     @Query("""
             SELECT u FROM User u

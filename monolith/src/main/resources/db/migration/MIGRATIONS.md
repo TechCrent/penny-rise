@@ -41,8 +41,9 @@ not V4).
 | V26      | v0.5-012  | `notification/V26__create_notification_notifications.sql` | `notification.notifications` |
 | V27      | v0.5-012  | `notification/V27__create_notification_device_tokens.sql` | `notification.device_tokens` |
 | V28      | v0.5-013  | `notification/V28__create_notification_processed_worker_events.sql` | `notification.processed_worker_events` |
+| V29      | v0.5-014  | `notification/V29__make_device_tokens_device_id_nullable.sql` | `notification.device_tokens` (device_id → nullable) |
 
-**Next free version:** V29 — assign the next row when opening a migration PR. Merge
+**Next free version:** V30 — assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).
 
 ## Filename convention

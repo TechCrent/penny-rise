@@ -178,6 +178,15 @@ class SeedSystemChallengesTest {
                 assertThat(rs.getInt(1)).isEqualTo(1);    // exactly one row — no duplicate
                 assertThat(rs.getLong(2)).isEqualTo(7500); // updated in place
             }
+
+            // Restore original seed values so other tests that query by
+            // target_amount=5000 / target_duration_days=7 are not affected
+            // by this test's mutation (test-ordering is non-deterministic).
+            stmt.execute("""
+                    UPDATE challenge.savings_challenges
+                    SET name = 'Save GHS 50 in 7 Days', target_amount = 5000
+                    WHERE id = 'b2000000-0000-4000-8000-000000000001'
+                    """);
         }
     }
 

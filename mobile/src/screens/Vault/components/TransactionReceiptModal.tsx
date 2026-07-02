@@ -110,9 +110,11 @@ export function TransactionReceiptModal({ reference, onClose }: Props) {
             </View>
 
             <View style={styles.detailsCard}>
-              <DetailRow label="Reference" value={data.transaction_reference} mono />
+              <DetailRow label="Reference" value={data.reference} mono />
               <DetailRow label="Date" value={formatDate(data.created_at)} />
-              {data.posted_at && <DetailRow label="Settled" value={formatDate(data.posted_at)} />}
+              {data.completed_at && (
+                <DetailRow label="Settled" value={formatDate(data.completed_at)} />
+              )}
               {data.external_reference && (
                 <DetailRow label="Paystack ref" value={data.external_reference} mono />
               )}

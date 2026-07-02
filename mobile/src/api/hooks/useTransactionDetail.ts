@@ -11,18 +11,22 @@ export interface TransactionEntry {
 }
 
 export interface TransactionDetail {
-  transaction_reference: string;
+  reference: string;
   transaction_type: string;
   status: string;
   gross_amount_pesewas: number;
   gross_amount_cedis: string;
   fee_amount_pesewas: number;
+  fee_amount_cedis: string;
   net_amount_pesewas: number;
+  net_amount_cedis: string;
+  initiating_user_id: string;
+  counterparty_user_id: string | null;
   external_provider: string | null;
   external_reference: string | null;
   narrative: string | null;
   created_at: string;
-  posted_at: string | null;
+  completed_at: string | null;
   entries: TransactionEntry[];
 }
 

@@ -61,16 +61,16 @@ public class DeletionExecutionService {
      * must not hold a long transaction across the HTTP calls in steps 3–4.
      */
     public Outcome execute(UUID deletionRequestId, UUID userId) {
-        List<String> blockers = blockerService.evaluateBlockers(userId);
-        if (!blockers.isEmpty()) {
-            // Per Schema doc §1.4: the user stays PENDING until blockers clear.
-            // This is not an error; no attempts increment happens.
-            log.info("Deletion request {} still blocked for user {}: {}",
-                    deletionRequestId, userId, blockers);
-            return Outcome.STILL_BLOCKED;
-        }
-
         try {
+            List<String> blockers = blockerService.evaluateBlockers(userId);
+            if (!blockers.isEmpty()) {
+                // Per Schema doc §1.4: the user stays PENDING until blockers clear.
+                // This is not an error; no attempts increment happens.
+                log.info("Deletion request {} still blocked for user {}: {}",
+                        deletionRequestId, userId, blockers);
+                return Outcome.STILL_BLOCKED;
+            }
+
             // Step 1 — soft-delete (idempotent: WHERE deletedAt IS NULL)
             userRepository.softDeleteIfNotAlready(userId, Instant.now(clock));
 

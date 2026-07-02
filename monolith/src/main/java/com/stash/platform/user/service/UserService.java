@@ -60,6 +60,16 @@ public class UserService {
                 .map(this::toAdminUserView);
     }
 
+    /**
+     * Returns the display name for any user (including deleted/soft-deleted) by their ID.
+     * Used by TransactionHistoryEnricher (v0.5-020) to resolve counterparty_name on
+     * received transfers. Uses findByIdIncludingDeleted so historical transactions from
+     * deleted accounts still show the counterparty name rather than null.
+     */
+    public Optional<String> getDisplayName(UUID userId) {
+        return userRepository.findByIdIncludingDeleted(userId).map(User::getDisplayName);
+    }
+
     private AdminUserView toAdminUserView(User u) {
         return new AdminUserView(
                 u.getId(),

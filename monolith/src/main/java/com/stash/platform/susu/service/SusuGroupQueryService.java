@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -66,6 +67,17 @@ public class SusuGroupQueryService {
         this.roundRepo        = roundRepo;
         this.contributionRepo = contributionRepo;
         this.userRepo         = userRepo;
+    }
+
+    // ── Name lookup (v0.5-020) ───────────────────────────────────────────
+
+    /**
+     * Returns the user-facing name of a susu group by its ID.
+     * Used by TransactionHistoryEnricher to populate account_name for
+     * SUSU_CONTRIBUTION / SUSU_DISBURSEMENT transaction rows.
+     */
+    public Optional<String> getGroupName(UUID groupId) {
+        return groupRepo.findById(groupId).map(SusuGroupEntity::getName);
     }
 
     // ── List ──────────────────────────────────────────────────────────────

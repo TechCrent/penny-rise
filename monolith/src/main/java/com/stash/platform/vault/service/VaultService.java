@@ -5,6 +5,7 @@ import com.stash.platform.vault.repository.VaultRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -34,5 +35,14 @@ public class VaultService {
         return listForOwner(userId).stream()
                 .map(VaultEntity::getLedgerAccountId)
                 .toList();
+    }
+
+    /**
+     * Returns the user-facing name of a vault by its ID.
+     * Used by TransactionHistoryEnricher (v0.5-020) to populate account_name
+     * for VAULT_DEPOSIT / VAULT_WITHDRAWAL transaction rows.
+     */
+    public Optional<String> getVaultName(UUID vaultId) {
+        return vaultRepository.findById(vaultId).map(VaultEntity::getName);
     }
 }

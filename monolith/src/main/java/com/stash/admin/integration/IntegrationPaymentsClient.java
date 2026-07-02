@@ -41,4 +41,23 @@ public class IntegrationPaymentsClient {
     public void closeLedgerAccount(UUID ledgerAccountId) {
         log.debug("IntegrationPaymentsClient is a stub — skipping closeLedgerAccount for {}", ledgerAccountId);
     }
+
+    /**
+     * Returns a cursor-paginated unified transaction history for the given user (v0.5-020).
+     *
+     * <p>STUB — requires a new Payments Service endpoint:
+     * GET /api/v1/transactions?user_id=&amp;...
+     * querying WHERE initiating_user_id = :user_id OR counterparty_user_id = :user_id,
+     * with a supporting index on (counterparty_user_id, created_at DESC).
+     * This endpoint serves all four historical call sites that need transaction lists by user
+     * (v0.5-005, v0.5-007, v0.5-019, v0.5-020) — strongly recommended to build one endpoint
+     * well rather than four ad-hoc methods.
+     */
+    public UnifiedTransactionPage getUnifiedTransactionHistory(UUID userId, String transactionType,
+                                                                java.time.Instant fromDate,
+                                                                java.time.Instant toDate,
+                                                                String cursor, int limit) {
+        log.debug("IntegrationPaymentsClient is a stub — returning empty transaction history for user {}", userId);
+        return new UnifiedTransactionPage(List.of(), null, false);
+    }
 }

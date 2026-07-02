@@ -117,5 +117,16 @@ springdoc:
     enabled: true
     tags-sorter: alpha
     operations-sorter: alpha
+stash:
+  jwt:
+    signing-secret: ${JWT_SIGNING_SECRET}
+  audit:
+    app-role: ${AUDIT_APP_ROLE:audit_app}
+    readonly-role: ${AUDIT_READONLY_ROLE:audit_dashboard_ro}
+    readonly-datasource:
+      jdbc-url: ${AUDIT_READONLY_DB_URL:jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5435}/${AUDIT_DB_NAME:audit_db}}
+      username: ${AUDIT_READONLY_DB_USER:audit_dashboard_ro}
+      password: ${AUDIT_READONLY_DB_PASSWORD}
+
 logging:
   config: classpath:logback-spring.xml

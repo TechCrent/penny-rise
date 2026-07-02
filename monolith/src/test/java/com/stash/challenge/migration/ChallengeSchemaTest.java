@@ -115,7 +115,9 @@ class ChallengeSchemaTest {
                         VALUES (gen_random_uuid(), '%s', '%s', 'ACTIVE')
                         """.formatted(userId, sampleChallengeId)))
                     .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("user_challenges_user_challenge_uk");
+                    // V37 (v0.5-018) replaced the full UNIQUE constraint with a partial
+                    // UNIQUE INDEX scoped to ACTIVE rows; the index is the unique guarantor now.
+                    .hasMessageContaining("user_challenges_active_user_challenge_uk");
         }
     }
 

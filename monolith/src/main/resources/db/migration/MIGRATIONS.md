@@ -43,8 +43,12 @@ not V4).
 | V28      | v0.5-013  | `notification/V28__create_notification_processed_worker_events.sql` | `notification.processed_worker_events` |
 | V29      | v0.5-014  | `notification/V29__make_device_tokens_device_id_nullable.sql` | `notification.device_tokens` (device_id → nullable) |
 | V30      | v0.5-015  | `notification/V30__add_notifications_unread_partial_index.sql` | `notification.notifications` (partial index for unread_count) |
+| V31      | v0.5-016  | `challenge/V31__create_challenge_savings_challenges.sql` | `challenge.savings_challenges` |
+| V32      | v0.5-016  | `challenge/V32__create_challenge_user_challenges.sql` | `challenge.user_challenges` |
+| V33      | v0.5-016  | `challenge/V33__create_challenge_user_badges.sql` | `challenge.user_badges` |
+| V34      | v0.5-016  | `challenge/V34__revoke_modify_on_user_badges.sql` | REVOKE UPDATE/DELETE on `challenge.user_badges` |
 
-**Next free version:** V31 — assign the next row when opening a migration PR. Merge
+**Next free version:** V35 — assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).
 
 ## Filename convention

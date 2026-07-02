@@ -17,7 +17,7 @@ public class DeviceTokenEntity implements DeviceTokenLike {
     @Column(name = "user_id",         nullable = false)
     private UUID userId;
 
-    @Column(name = "device_id",       nullable = false, length = 255)
+    @Column(name = "device_id",       nullable = true, length = 255)
     private String deviceId;
 
     @Column(name = "expo_push_token", nullable = false, length = 255)
@@ -51,13 +51,37 @@ public class DeviceTokenEntity implements DeviceTokenLike {
         return t;
     }
 
+    /**
+     * Called when the same token is re-submitted by a user — reactivates
+     * it (handles the case where v0.5-013's DeviceNotRegistered handling
+     * deactivated it and the app re-registers on a later launch) and
+     * bumps last_used_at so LRU eviction keeps this device alive.
+     *
+     * NOTE: if the same token string is submitted by a different user
+     * than currently owns the row (factory-reset + new account before
+     * old row was cleaned up), this silently reassigns ownership. The
+     * safer fix is a 409 conflict — flagged as a policy decision, not
+     * resolved unilaterally here.
+     */
+    public void refresh(UUID userId, String platform, Instant now) {
+        this.userId     = userId;
+        this.platform   = platform;
+        this.lastUsedAt = now;
+        this.isActive   = true;
+    }
+
+    /** In-memory deactivation — caller must persist via save/saveAll. */
+    public void deactivate() {
+        this.isActive = false;
+    }
+
     @Override public UUID   id()             { return id; }
     @Override public String expoPushToken()  { return expoPushToken; }
 
-    public UUID    getUserId()      { return userId; }
-    public String  getDeviceId()    { return deviceId; }
-    public String  getPlatform()    { return platform; }
-    public boolean isActive()       { return isActive; }
+    public UUID    getUserId()       { return userId; }
+    public String  getDeviceId()     { return deviceId; }
+    public String  getPlatform()     { return platform; }
+    public boolean isActive()        { return isActive; }
     public Instant getRegisteredAt() { return registeredAt; }
     public Instant getLastUsedAt()   { return lastUsedAt; }
 }

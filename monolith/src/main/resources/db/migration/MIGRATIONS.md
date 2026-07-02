@@ -42,8 +42,9 @@ not V4).
 | V27      | v0.5-012  | `notification/V27__create_notification_device_tokens.sql` | `notification.device_tokens` |
 | V28      | v0.5-013  | `notification/V28__create_notification_processed_worker_events.sql` | `notification.processed_worker_events` |
 | V29      | v0.5-014  | `notification/V29__make_device_tokens_device_id_nullable.sql` | `notification.device_tokens` (device_id → nullable) |
+| V30      | v0.5-015  | `notification/V30__add_notifications_unread_partial_index.sql` | `notification.notifications` (partial index for unread_count) |
 
-**Next free version:** V30 — assign the next row when opening a migration PR. Merge
+**Next free version:** V31 — assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).
 
 ## Filename convention

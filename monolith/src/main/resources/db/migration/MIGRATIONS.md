@@ -47,8 +47,11 @@ not V4).
 | V32      | v0.5-016  | `challenge/V32__create_challenge_user_challenges.sql` | `challenge.user_challenges` |
 | V33      | v0.5-016  | `challenge/V33__create_challenge_user_badges.sql` | `challenge.user_badges` |
 | V34      | v0.5-016  | `challenge/V34__revoke_modify_on_user_badges.sql` | REVOKE UPDATE/DELETE on `challenge.user_badges` |
+| V35      | v0.5-017  | `challenge/V35__create_challenge_badges.sql` | `challenge.badges` (new catalogue table, closes schema gap) |
+| V36      | v0.5-017  | `challenge/V36__add_savings_challenges_badge_fk.sql` | `challenge.savings_challenges.badge_id` → `challenge.badges(id)` FK |
+| R        | v0.5-017  | `challenge/R__seed_system_savings_challenges.sql` | Repeatable seed: 4 badges + 4 system-owned challenges (UPSERT on fixed UUIDs) |
 
-**Next free version:** V35 — assign the next row when opening a migration PR. Merge
+**Next free version:** V37 — assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).
 
 ## Filename convention

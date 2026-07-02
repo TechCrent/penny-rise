@@ -54,9 +54,13 @@ public class DeletionRequest {
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
+    @Column(name = "attempts", nullable = false)
+    private int attempts;
+
     public static final String STATUS_PENDING   = "PENDING";
     public static final String STATUS_COMPLETED = "COMPLETED";
     public static final String STATUS_CANCELLED = "CANCELLED";
+    public static final String STATUS_FAILED    = "FAILED";
 
     public DeletionRequest(UUID userId, JsonNode blockersAtSubmission) {
         this.id                    = UuidV7Generator.generate();
@@ -74,5 +78,18 @@ public class DeletionRequest {
     public void cancel() {
         this.status      = STATUS_CANCELLED;
         this.cancelledAt = Instant.now();
+    }
+
+    public void markCompleted(Instant now) {
+        this.status      = STATUS_COMPLETED;
+        this.completedAt = now;
+    }
+
+    public void incrementAttempt() {
+        this.attempts++;
+    }
+
+    public void markFailed() {
+        this.status = STATUS_FAILED;
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -175,6 +176,18 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     int restoreIfSuspended(@Param("id") UUID id,
                             @Param("active") AccountStatus active,
                             @Param("suspended") AccountStatus suspended);
+
+    // ── Deletion flow (v0.5-019) ──────────────────────────────────────────
+
+    /**
+     * Soft-deletes the user by setting deletedAt, but only if not already deleted.
+     * Idempotent: a second call on an already-deleted user is a no-op (returns 0).
+     *
+     * @return 1 if the user was deleted, 0 if already deleted or not found
+     */
+    @Modifying
+    @Query("UPDATE User u SET u.deletedAt = :now WHERE u.id = :userId AND u.deletedAt IS NULL")
+    int softDeleteIfNotAlready(@Param("userId") UUID userId, @Param("now") Instant now);
 
     @Query("""
             SELECT u FROM User u

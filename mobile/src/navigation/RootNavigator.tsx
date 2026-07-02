@@ -31,6 +31,8 @@ import {
 import { RecipientPickerScreen } from '../screens/transfer/RecipientPickerScreen';
 import { SendMoneyScreen } from '../screens/transfer/SendMoneyScreen';
 import { TransferSuccessScreen } from '../screens/transfer/TransferSuccessScreen';
+import { WalletScreen } from '../screens/wallet/WalletScreen';
+import { NotificationInboxScreen } from '../screens/NotificationInbox/NotificationInboxScreen';
 import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
@@ -46,6 +48,7 @@ export type RootStackParamList = {
   VaultDetail: { vaultId: string; successMessage?: string };
   CreateVault: undefined;
   Transfer: undefined;
+  Wallet: undefined;
   Notifications: undefined;
   KycCardDetails: undefined;
   KycDocumentUpload: {
@@ -129,6 +132,8 @@ export default function RootNavigator() {
           <Stack.Screen name="RecipientPicker" component={RecipientPickerScreen} />
           <Stack.Screen name="SendMoney" component={SendMoneyScreen} />
           <Stack.Screen name="TransferSuccess" component={TransferSuccessScreen} />
+          <Stack.Screen name="Wallet" component={WalletScreen} />
+          <Stack.Screen name="Notifications" component={NotificationInboxScreen} />
         </>
       ) : (
         <>

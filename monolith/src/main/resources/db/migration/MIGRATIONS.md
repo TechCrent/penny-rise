@@ -50,8 +50,10 @@ not V4).
 | V35      | v0.5-017  | `challenge/V35__create_challenge_badges.sql` | `challenge.badges` (new catalogue table, closes schema gap) |
 | V36      | v0.5-017  | `challenge/V36__add_savings_challenges_badge_fk.sql` | `challenge.savings_challenges.badge_id` → `challenge.badges(id)` FK |
 | R        | v0.5-017  | `challenge/R__seed_system_savings_challenges.sql` | Repeatable seed: 4 badges + 4 system-owned challenges (UPSERT on fixed UUIDs) |
+| V37      | v0.5-018  | `challenge/V37__scope_user_challenges_uniqueness_to_active.sql` | Drop full UNIQUE(user_id, challenge_id); replace with partial UNIQUE INDEX WHERE status='ACTIVE' |
+| V38      | v0.5-018  | `challenge/V38__create_challenge_processed_deposit_events.sql` | `challenge.processed_deposit_events` (idempotency log for deposit progress consumer) |
 
-**Next free version:** V37 — assign the next row when opening a migration PR. Merge
+**Next free version:** V39 — assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).
 
 ## Filename convention

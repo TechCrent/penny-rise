@@ -33,6 +33,7 @@ import { SendMoneyScreen } from '../screens/transfer/SendMoneyScreen';
 import { TransferSuccessScreen } from '../screens/transfer/TransferSuccessScreen';
 import { WalletScreen } from '../screens/wallet/WalletScreen';
 import { NotificationInboxScreen } from '../screens/NotificationInbox/NotificationInboxScreen';
+import { TransactionHistoryScreen } from '../screens/TransactionHistory/TransactionHistoryScreen';
 import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
@@ -50,6 +51,7 @@ export type RootStackParamList = {
   Transfer: undefined;
   Wallet: undefined;
   Notifications: undefined;
+  TransactionHistory: undefined;
   KycCardDetails: undefined;
   KycDocumentUpload: {
     submissionId: string;
@@ -134,6 +136,7 @@ export default function RootNavigator() {
           <Stack.Screen name="TransferSuccess" component={TransferSuccessScreen} />
           <Stack.Screen name="Wallet" component={WalletScreen} />
           <Stack.Screen name="Notifications" component={NotificationInboxScreen} />
+          <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
         </>
       ) : (
         <>

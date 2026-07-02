@@ -4,6 +4,7 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
+  Pressable,
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
@@ -138,6 +139,12 @@ export function WalletScreen() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent activity</Text>
+        <Pressable
+          onPress={() => navigation.navigate('TransactionHistory')}
+          testID="see-all-transactions-btn"
+        >
+          <Text style={styles.sectionLink}>See all</Text>
+        </Pressable>
       </View>
 
       {stmtError && <ErrorBanner message={stmtError} onRetry={() => fetchStatement()} />}
@@ -203,7 +210,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
 
-  sectionHeader: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#F9FAFB' },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+  },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
@@ -211,6 +225,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  sectionLink: { fontSize: 13, fontWeight: '600', color: '#1A1A1A' },
 
   errorBanner: {
     flexDirection: 'row',

@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useAuth } from '../auth/AuthContext';
 import { useKycResumability } from '../hooks/useKycResumability';
 import { useVaults } from '../hooks/useVaults';
+import { useUnreadNotificationsCount } from '../features/notifications/useNotificationsList';
 import { VaultCard } from '../components/VaultCard';
 import { HomeSkeleton } from '../components/HomeSkeleton';
 import type { VaultListItem } from '../api/vaults';
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   useKycResumability({ enabled: kycStatus !== 'APPROVED' });
 
   const { data, isLoading, isFetching, error, refetch } = useVaults();
+  const unreadNotificationsCount = useUnreadNotificationsCount();
 
   const onRefresh = useCallback(() => {
     refetch();
@@ -91,9 +93,20 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.bellButton}
             onPress={() => navigation.navigate('Notifications')}
-            accessibilityLabel="Notifications"
+            accessibilityLabel={
+              unreadNotificationsCount > 0
+                ? `Notifications, ${unreadNotificationsCount} unread`
+                : 'Notifications'
+            }
           >
             <Text style={styles.bellIcon}>🔔</Text>
+            {unreadNotificationsCount > 0 && (
+              <View style={styles.bellBadge} testID="bell-unread-badge">
+                <Text style={styles.bellBadgeText}>
+                  {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -241,6 +254,25 @@ const styles = StyleSheet.create({
   },
   bellIcon: {
     fontSize: 18,
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 2,
+    borderColor: '#F9FAFB',
+  },
+  bellBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   heroCard: {
     backgroundColor: '#1A1A1A',

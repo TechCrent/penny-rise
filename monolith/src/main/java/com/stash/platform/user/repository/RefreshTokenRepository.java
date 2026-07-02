@@ -41,4 +41,21 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
             WHERE t.userId = :userId AND t.revokedAt IS NULL
             """)
     int revokeAllActiveForUser(@Param("userId") UUID userId, @Param("now") Instant now);
+
+    /**
+     * Revokes all active tokens for the given user with a caller-supplied reason.
+     * Used by flows that need a reason code distinct from ADMIN_FORCE_LOGOUT, such
+     * as the deletion cleanup saga (ACCOUNT_DELETED).
+     *
+     * @return the number of tokens revoked (0 if the user had no active sessions)
+     */
+    @Modifying
+    @Query("""
+            UPDATE RefreshToken t
+            SET t.revokedAt = :now, t.revokedReason = :reason
+            WHERE t.userId = :userId AND t.revokedAt IS NULL
+            """)
+    int revokeAllActiveForUser(@Param("userId") UUID userId,
+                                @Param("reason") String reason,
+                                @Param("now") Instant now);
 }

@@ -107,4 +107,24 @@ public interface SusuMembershipRepository extends JpaRepository<SusuMembershipEn
               AND m.status      = 'ACTIVE'
             """)
     List<UUID> findActiveUserIds(@Param("groupId") UUID groupId);
+
+    /**
+     * Marks a user's active memberships in PENDING susu groups as LEFT.
+     * Used by the deletion cleanup saga (v0.5-019) to clean up memberships in
+     * groups that never activated. Active-group memberships are already a blocker
+     * per Overall doc §18.8 and would have prevented the cleanup job from running.
+     *
+     * @return the number of memberships updated (0 if none matched)
+     */
+    @Modifying
+    @Query("""
+            UPDATE SusuMembershipEntity m SET m.status = 'LEFT', m.removedAt = :now
+            WHERE m.userId = :userId
+              AND m.status = 'ACTIVE'
+              AND m.susuGroupId IN (
+                  SELECT g.id FROM SusuGroupEntity g WHERE g.status = 'PENDING'
+              )
+            """)
+    int cancelActiveMembershipsInPendingGroups(@Param("userId") UUID userId,
+                                                @Param("now") Instant now);
 }

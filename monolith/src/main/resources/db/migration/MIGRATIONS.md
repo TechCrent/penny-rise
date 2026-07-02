@@ -52,8 +52,10 @@ not V4).
 | R        | v0.5-017  | `challenge/R__seed_system_savings_challenges.sql` | Repeatable seed: 4 badges + 4 system-owned challenges (UPSERT on fixed UUIDs) |
 | V37      | v0.5-018  | `challenge/V37__scope_user_challenges_uniqueness_to_active.sql` | Drop full UNIQUE(user_id, challenge_id); replace with partial UNIQUE INDEX WHERE status='ACTIVE' |
 | V38      | v0.5-018  | `challenge/V38__create_challenge_processed_deposit_events.sql` | `challenge.processed_deposit_events` (idempotency log for deposit progress consumer) |
+| V39      | v0.5-019  | `auth/V39__extend_refresh_tokens_revoked_reason_account_deleted.sql` | `auth.refresh_tokens` (add ACCOUNT_DELETED to revoked_reason CHECK) |
+| V40      | v0.5-019  | `user_module/V40__extend_deletion_requests_for_cleanup_job.sql` | `user_module.deletion_requests` (add `attempts` INT, extend status CHECK to include FAILED) |
 
-**Next free version:** V39 — assign the next row when opening a migration PR. Merge
+**Next free version:** V41 — assign the next row when opening a migration PR. Merge
 migration PRs in version order (004 before 005 before 006).
 
 ## Filename convention

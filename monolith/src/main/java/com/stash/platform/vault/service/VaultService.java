@@ -24,4 +24,15 @@ public class VaultService {
     public List<VaultEntity> listForOwner(UUID userId) {
         return vaultRepository.findByOwnerUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
     }
+
+    /**
+     * Returns the ledger account IDs of all non-deleted vaults owned by the user.
+     * Used by the deletion cleanup saga to close each vault's ledger account in
+     * Payments Service before the user record is fully removed.
+     */
+    public List<UUID> listActiveLedgerAccountIdsForOwner(UUID userId) {
+        return listForOwner(userId).stream()
+                .map(VaultEntity::getLedgerAccountId)
+                .toList();
+    }
 }

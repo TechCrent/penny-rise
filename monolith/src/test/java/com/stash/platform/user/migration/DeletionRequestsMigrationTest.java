@@ -73,7 +73,9 @@ class DeletionRequestsMigrationTest {
                         "submitted_at",
                         "scheduled_completion_at",
                         "completed_at",
-                        "cancelled_at");
+                        "cancelled_at",
+                        // V40 (v0.5-019): cleanup job retry counter
+                        "attempts");
 
         assertColumn(columns, "id", "uuid", "NO");
         assertColumn(columns, "user_id", "uuid", "NO");
@@ -83,6 +85,7 @@ class DeletionRequestsMigrationTest {
         assertColumn(columns, "scheduled_completion_at", "timestamptz", "NO");
         assertColumn(columns, "completed_at", "timestamptz", "YES");
         assertColumn(columns, "cancelled_at", "timestamptz", "YES");
+        assertColumn(columns, "attempts", "int4", "NO");
     }
 
     @Test

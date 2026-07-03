@@ -1,6 +1,8 @@
 package com.stash.platform.user.service;
 
 import com.stash.platform.notification.service.EmailSender;
+import com.stash.platform.subscription.domain.Subscription;
+import com.stash.platform.subscription.repository.SubscriptionRepository;
 import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
 import com.stash.platform.user.domain.User;
@@ -47,11 +49,13 @@ class SignupServiceTest {
     @Autowired SignupService signupService;
     @Autowired UserRepository userRepository;
     @Autowired EmailVerificationTokenRepository tokenRepository;
+    @Autowired SubscriptionRepository subscriptionRepository;
     @MockBean  EmailSender emailSender;
 
     @BeforeEach
     void cleanUp() {
         tokenRepository.deleteAll();
+        subscriptionRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -125,6 +129,19 @@ class SignupServiceTest {
 
         User user = userRepository.findByEmail("frank@example.com").orElseThrow();
         assertThat(user.getReferredByCode()).isNull();
+    }
+
+    @Test
+    @DisplayName("signup synchronously creates a FREE/SYSTEM subscription row for the new user (v0.5-029)")
+    void subscription_row_created_at_signup() {
+        SignupResponse response = signupService.signup(new SignupRequest(
+                "jules@example.com", "Str0ng!Pass", "Jules", null));
+
+        Subscription subscription = subscriptionRepository.findByUserId(response.id()).orElseThrow();
+        assertThat(subscription.getTier()).isEqualTo(Subscription.TIER_FREE);
+        assertThat(subscription.getSource()).isEqualTo(Subscription.SOURCE_SYSTEM);
+        assertThat(subscription.getEndsAt()).isNull();
+        assertThat(subscription.getExternalSubscriptionReference()).isNull();
     }
 
     @Test

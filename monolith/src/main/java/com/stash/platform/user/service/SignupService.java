@@ -1,6 +1,8 @@
 package com.stash.platform.user.service;
 
 import com.stash.platform.notification.service.EmailSender;
+import com.stash.platform.subscription.domain.Subscription;
+import com.stash.platform.subscription.repository.SubscriptionRepository;
 import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
 import com.stash.platform.user.domain.EmailVerificationToken;
@@ -32,6 +34,7 @@ public class SignupService {
 
     private final UserRepository userRepository;
     private final EmailVerificationTokenRepository tokenRepository;
+    private final SubscriptionRepository subscriptionRepository;
     private final PasswordHasher passwordHasher;
     private final EmailSender emailSender;
     private final ApplicationEventPublisher eventPublisher;
@@ -41,6 +44,7 @@ public class SignupService {
 
     public SignupService(UserRepository userRepository,
                          EmailVerificationTokenRepository tokenRepository,
+                         SubscriptionRepository subscriptionRepository,
                          PasswordHasher passwordHasher,
                          EmailSender emailSender,
                          ApplicationEventPublisher eventPublisher,
@@ -48,6 +52,7 @@ public class SignupService {
                          @Value("${stash.email.base-url:http://localhost:8080}") String baseUrl) {
         this.userRepository      = userRepository;
         this.tokenRepository     = tokenRepository;
+        this.subscriptionRepository = subscriptionRepository;
         this.passwordHasher      = passwordHasher;
         this.emailSender         = emailSender;
         this.eventPublisher      = eventPublisher;
@@ -79,6 +84,13 @@ public class SignupService {
         }
 
         userRepository.save(user);
+
+        // Synchronous, same transaction as the user row — not the AFTER_COMMIT
+        // event pattern used below for the cross-service wallet provisioning.
+        // subscriptions.user_id is UNIQUE and every downstream subscription
+        // read assumes exactly one row always exists (v0.5-029); an async gap
+        // here would mean a user could exist with zero subscription rows.
+        subscriptionRepository.save(Subscription.createInitialFree(user.getId(), user.getCreatedAt()));
 
         // Fires AFTER_COMMIT via UserCreatedEventPublisher — never inside this tx
         eventPublisher.publishEvent(

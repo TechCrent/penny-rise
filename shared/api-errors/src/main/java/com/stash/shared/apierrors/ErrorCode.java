@@ -159,4 +159,12 @@ public enum ErrorCode {
 
     /** KYC provider call failed after all retry attempts. */
     KYC_PROVIDER_UNAVAILABLE,
+
+    // ── SUBSCRIPTION domain (v0.5-029) ──────────────────────────────────────
+
+    /** Downgrade requested but the user is already on the FREE tier. */
+    SUBSCRIPTION_ALREADY_FREE,
+
+    /** Upgrade requested but the user is already on the PREMIUM tier. */
+    SUBSCRIPTION_ALREADY_PREMIUM,
 }

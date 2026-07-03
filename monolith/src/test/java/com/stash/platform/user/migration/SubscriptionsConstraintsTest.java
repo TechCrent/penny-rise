@@ -174,14 +174,18 @@ class SubscriptionsConstraintsTest {
     }
 
     @Test
-    @DisplayName("deleting a user with a subscription row fails (default FK delete behaviour)")
-    void deleteUserWithSubscriptionFails() {
+    @DisplayName("deleting a user cascades its subscription row (V45: ON DELETE CASCADE)")
+    void deleteUserCascadesSubscription() {
         insertUser(USER_ID);
         insertFreeSubscription(UUID.randomUUID(), USER_ID);
 
-        assertThatThrownBy(() ->
-                jdbc.update("DELETE FROM user_module.users WHERE id = ?", USER_ID))
-                .isInstanceOf(DataIntegrityViolationException.class);
+        jdbc.update("DELETE FROM user_module.users WHERE id = ?", USER_ID);
+
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM user_module.subscriptions WHERE user_id = ?",
+                Integer.class,
+                USER_ID);
+        assertThat(count).isZero();
     }
 
     private void insertUser(UUID userId) {

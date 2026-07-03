@@ -3,6 +3,7 @@ package com.stash.platform.susu.repository;
 import com.stash.platform.susu.domain.SusuGroupEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -45,4 +46,29 @@ public interface SusuGroupRepository extends JpaRepository<SusuGroupEntity, UUID
 
     @Query("SELECT g FROM SusuGroupEntity g WHERE g.status = :status")
     List<SusuGroupEntity> findByStatus(@Param("status") String status, Pageable pageable);
+
+    /**
+     * PENDING/ACTIVE groups organised by this user, oldest first — used by
+     * SusuFreezingService (v0.5-029) to determine which groups beyond the
+     * limit get frozen. Oldest-first means the user's newest group stays
+     * active, matching VaultFreezingService's convention.
+     */
+    @Query("""
+            SELECT g FROM SusuGroupEntity g
+            WHERE g.organiserUserId = :userId
+              AND g.status IN ('PENDING', 'ACTIVE')
+            ORDER BY g.createdAt ASC
+            """)
+    List<SusuGroupEntity> findActiveByOrganiserOrderByCreatedAtAsc(@Param("userId") UUID userId);
+
+    /**
+     * Freezes a single PENDING or ACTIVE group — a no-op (returns 0) if the
+     * group is already in some other status.
+     */
+    @Modifying
+    @Query("""
+            UPDATE SusuGroupEntity g SET g.status = 'FROZEN'
+            WHERE g.id = :groupId AND g.status IN ('PENDING', 'ACTIVE')
+            """)
+    int freezeIfActive(@Param("groupId") UUID groupId);
 }

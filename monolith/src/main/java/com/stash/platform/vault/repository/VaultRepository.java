@@ -2,6 +2,7 @@ package com.stash.platform.vault.repository;
 
 import com.stash.platform.vault.domain.VaultEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -82,4 +83,28 @@ public interface VaultRepository extends JpaRepository<VaultEntity, UUID> {
             """, nativeQuery = true)
     List<VaultEntity> findUnlockCandidates(@Param("now") Instant now,
                                             @Param("batchSize") int batchSize);
+
+    /**
+     * ACTIVE vaults of a given type, oldest first — used by
+     * VaultFreezingService (v0.5-029) to determine which vaults beyond the
+     * limit get frozen. Oldest-first means the user's newest vaults stay
+     * active; only the longest-running excess ones freeze.
+     */
+    @Query("SELECT v FROM VaultEntity v " +
+           "WHERE v.ownerUserId = :userId " +
+           "AND v.vaultType = :vaultType " +
+           "AND v.status = 'ACTIVE' " +
+           "AND v.deletedAt IS NULL " +
+           "ORDER BY v.createdAt ASC")
+    List<VaultEntity> findActiveByOwnerUserIdAndVaultTypeOrderByCreatedAtAsc(
+            @Param("userId") UUID userId, @Param("vaultType") String vaultType);
+
+    /**
+     * Freezes a single ACTIVE vault — a no-op (returns 0) if the vault is
+     * already in some other status, so this is safe to call without a
+     * separate existence/status check first.
+     */
+    @Modifying
+    @Query("UPDATE VaultEntity v SET v.status = 'FROZEN' WHERE v.id = :vaultId AND v.status = 'ACTIVE'")
+    int freezeIfActive(@Param("vaultId") UUID vaultId);
 }

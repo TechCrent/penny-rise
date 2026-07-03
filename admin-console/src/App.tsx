@@ -6,6 +6,8 @@ import LoginPage from './routes/login';
 import KycQueuePage from './routes/kyc-queue/KycQueuePage';
 import UserSearchPage from './routes/users/UserSearchPage';
 import UserDetailPage from './routes/users/UserDetailPage';
+import DisputeQueuePage from './routes/disputes/DisputeQueuePage';
+import DisputeDetailPage from './routes/disputes/DisputeDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +46,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <UserDetailPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/disputes',
+    element: (
+      <ProtectedRoute>
+        <DisputeQueuePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/disputes/:disputeId',
+    element: (
+      <ProtectedRoute>
+        <DisputeDetailPage />
       </ProtectedRoute>
     ),
   },

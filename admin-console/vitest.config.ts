@@ -20,5 +20,12 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests/**/*.test.{ts,tsx}'],
     setupFiles: ['./tests/setup.ts'],
+    // Component test files spin up their own jsdom environment each; running
+    // them concurrently caused real (non-deterministic) timeouts on RTL's
+    // findBy*/waitFor calls under CPU contention — observed consistently
+    // when running the full suite vs. never when running a file alone.
+    // Sequential execution trades a few seconds of wall time for reliability,
+    // which matters more for a suite this size.
+    fileParallelism: false,
   },
 });

@@ -29,6 +29,9 @@ export function AdminShell({ children, title }: AdminShellProps) {
               >
                 KYC Queue
               </Link>
+              <Link to="/users" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+                Users
+              </Link>
             </nav>
           </div>
           <button

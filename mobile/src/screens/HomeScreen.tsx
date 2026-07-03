@@ -26,6 +26,7 @@ const QUICK_ACTIONS = [
   { id: 'deposit', label: 'Deposit', icon: '↓', screen: 'VaultList' as const },
   { id: 'send', label: 'Send', icon: '→', screen: 'Transfer' as const },
   { id: 'withdraw', label: 'Withdraw', icon: '↑', screen: 'VaultList' as const },
+  { id: 'challenges', label: 'Challenges', icon: '🏆', screen: 'ChallengesList' as const },
 ];
 
 function computeTotalPesewas(vaults: VaultListItem[]): number | null {

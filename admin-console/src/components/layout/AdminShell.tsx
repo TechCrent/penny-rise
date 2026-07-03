@@ -32,6 +32,12 @@ export function AdminShell({ children, title }: AdminShellProps) {
               <Link to="/users" className="text-sm font-medium text-slate-600 hover:text-slate-900">
                 Users
               </Link>
+              <Link
+                to="/disputes"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Disputes
+              </Link>
             </nav>
           </div>
           <button

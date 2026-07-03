@@ -43,4 +43,12 @@ public interface KycSubmissionRepository extends JpaRepository<KycSubmission, UU
         List<KycSubmission> all = findAllByUserIdOrderBySubmittedAtDesc(userId);
         return all.isEmpty() ? Optional.empty() : Optional.of(all.get(0));
     }
+
+    /**
+     * v0.5-035: counts how many of a user's submissions have reached a
+     * REJECTED decision — used to detect the second (or later) rejection
+     * so the terminal-decision paths can tell the monolith to flag the
+     * user for resubmission review instead of leaving them REJECTED.
+     */
+    long countByUserIdAndStatus(UUID userId, String status);
 }

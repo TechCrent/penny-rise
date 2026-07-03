@@ -6,10 +6,12 @@ import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.kyc.provider.GhanaCardProviderClient;
 import com.stash.kyc.provider.StubGhanaCardProviderClient;
 import com.stash.kyc.submission.domain.KycSubmission;
+import com.stash.kyc.submission.event.KycRejectedEvent;
 import com.stash.kyc.submission.repository.KycSubmissionRepository;
 import com.stash.kyc.submission.repository.ManualReviewQueueRepository;
 import com.stash.kyc.submission.repository.ProviderDecisionRecordRepository;
 import org.junit.jupiter.api.*;
+import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -59,7 +61,11 @@ class AutomatedDecisionServiceTest {
     }
 
     private KycSubmission submissionInReviewing(String ghanaCardNumber) {
-        KycSubmission s = new KycSubmission(UUID.randomUUID(), ghanaCardNumber, "Test User", "corr-1");
+        return submissionInReviewing(UUID.randomUUID(), ghanaCardNumber);
+    }
+
+    private KycSubmission submissionInReviewing(UUID userId, String ghanaCardNumber) {
+        KycSubmission s = new KycSubmission(userId, ghanaCardNumber, "Test User", "corr-1");
         s.setStatus(KycSubmission.STATUS_REVIEWING);
         return submissionRepository.save(s);
     }
@@ -137,6 +143,34 @@ class AutomatedDecisionServiceTest {
         KycSubmission submission = submissionInReviewing("GHA-999999999-9");
         decisionService.processSubmission(submission.getId(), "corr-1");
         verify(rabbitTemplate).convertAndSend(eq("kyc.events"), eq("kyc.rejected"), any(Object.class));
+    }
+
+    @Test
+    @DisplayName("v0.5-035: a user's first rejection publishes rejectionCount=1")
+    void first_rejection_has_count_one() {
+        KycSubmission submission = submissionInReviewing("GHA-999999999-9");
+        decisionService.processSubmission(submission.getId(), "corr-1");
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(rabbitTemplate).convertAndSend(eq("kyc.events"), eq("kyc.rejected"), captor.capture());
+        assertThat(((KycRejectedEvent) captor.getValue()).payload().rejectionCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("v0.5-035: a user's second rejection (across two separate submissions) publishes rejectionCount=2")
+    void second_rejection_for_same_user_has_count_two() {
+        UUID userId = UUID.randomUUID();
+        KycSubmission first = submissionInReviewing(userId, "GHA-999999999-9");
+        decisionService.processSubmission(first.getId(), "corr-1");
+
+        KycSubmission second = submissionInReviewing(userId, "GHA-999999999-9");
+        decisionService.processSubmission(second.getId(), "corr-2");
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(rabbitTemplate, times(2))
+                .convertAndSend(eq("kyc.events"), eq("kyc.rejected"), captor.capture());
+        int secondCallCount = ((KycRejectedEvent) captor.getAllValues().get(1)).payload().rejectionCount();
+        assertThat(secondCallCount).isEqualTo(2);
     }
 
 // ── Idempotent re-processing ─────────────────────────────────────────

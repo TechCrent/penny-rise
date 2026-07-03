@@ -55,6 +55,19 @@ public class KycUserSyncService {
         log.info("User KYC status synced to APPROVED userId={} submissionId={}", userId, submissionId);
     }
 
+    /**
+     * v0.5-035: rejectionCount (total REJECTED submissions for this user,
+     * including this one, computed by kyc-service at publish time) decides
+     * REJECTED vs RESUBMISSION_REQUIRED — see
+     * KycSubmissionRepository.countByUserIdAndStatus in kyc-service.
+     *
+     * <p>Idempotency is status-based, same as before: a replayed event
+     * that would produce the same status as the user already has is a
+     * no-op. This also correctly allows the *forward* transition from
+     * REJECTED to RESUBMISSION_REQUIRED on a genuinely new second
+     * rejection, which a purely "already REJECTED means skip" check
+     * (the previous behaviour) would have incorrectly swallowed.
+     */
     @Transactional
     public void applyRejected(KycRejectedEvent event) {
         UUID userId = event.payload().userId();
@@ -73,15 +86,20 @@ public class KycUserSyncService {
             return;
         }
 
-        if (KycStatus.REJECTED.equals(user.getKycStatus())) {
-            log.debug("KycRejected idempotent skip: user already REJECTED userId={} submissionId={}",
-                    userId, submissionId);
+        KycStatus targetStatus = event.payload().rejectionCount() >= 2
+                ? KycStatus.RESUBMISSION_REQUIRED
+                : KycStatus.REJECTED;
+
+        if (targetStatus.equals(user.getKycStatus())) {
+            log.debug("KycRejected idempotent skip: user already {} userId={} submissionId={}",
+                    targetStatus, userId, submissionId);
             return;
         }
 
-        user.setKycStatus(KycStatus.REJECTED);
+        user.setKycStatus(targetStatus);
         userRepository.save(user);
 
-        log.info("User KYC status synced to REJECTED userId={} submissionId={}", userId, submissionId);
+        log.info("User KYC status synced to {} userId={} submissionId={} rejectionCount={}",
+                targetStatus, userId, submissionId, event.payload().rejectionCount());
     }
 }

@@ -207,6 +207,9 @@ public class AutomatedDecisionService {
     }
 
     private void publishRejectedEvent(KycSubmission submission, String reason, String correlationId) {
+        int rejectionCount = (int) submissionRepository.countByUserIdAndStatus(
+                submission.getUserId(), KycSubmission.STATUS_REJECTED);
+
         var event = new KycRejectedEvent(
                 UUID.randomUUID().toString(),
                 KycRejectedEvent.EVENT_TYPE,
@@ -214,7 +217,7 @@ public class AutomatedDecisionService {
                 KycRejectedEvent.SOURCE_SERVICE,
                 Instant.now(),
                 correlationId,
-                new KycRejectedEvent.Payload(submission.getId(), submission.getUserId(), reason)
+                new KycRejectedEvent.Payload(submission.getId(), submission.getUserId(), reason, rejectionCount)
         );
 
         rabbitTemplate.convertAndSend(

@@ -6,6 +6,8 @@ import com.stash.kyc.document.repository.DocumentDeletionJobRepository;
 import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
 import com.stash.kyc.storage.ObjectStorage;
 import com.stash.shared.correlation.CorrelationContext;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -34,13 +36,22 @@ public class DocumentDeletionWorker {
     private final ObjectStorage objectStorage;
     private final KycSubmissionDocumentRepository documentRepository;
     private final DocumentDeletionJobRepository deletionJobRepository;
+    private final Counter deletionFailureCounter;
 
     public DocumentDeletionWorker(ObjectStorage objectStorage,
                                   KycSubmissionDocumentRepository documentRepository,
-                                  DocumentDeletionJobRepository deletionJobRepository) {
+                                  DocumentDeletionJobRepository deletionJobRepository,
+                                  MeterRegistry meterRegistry) {
         this.objectStorage         = objectStorage;
         this.documentRepository    = documentRepository;
         this.deletionJobRepository = deletionJobRepository;
+        // v0.5-027: no metric existed anywhere in the deletion path before this
+        // — the only prior signal was DocumentEscalationService's [P0_ALERT] log
+        // line, fired once a single document hits 5 failures. This counter
+        // tracks every failed attempt across all documents, so a rising trend
+        // is visible before any individual document escalates. Renders as
+        // kyc_document_deletion_failures_total on /actuator/prometheus.
+        this.deletionFailureCounter = meterRegistry.counter("kyc.document.deletion.failures");
     }
 
     /**
@@ -76,6 +87,7 @@ public class DocumentDeletionWorker {
             documentRepository.save(current);
 
             recordAttempt(current, "FAILURE", e.getMessage(), e.getClass().getName());
+            deletionFailureCounter.increment();
 
             log.warn("Document deletion failed documentId={} attempt={} error={}",
                     current.getId(), current.getDeletionFailureCount(), e.getMessage());

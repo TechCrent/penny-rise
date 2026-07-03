@@ -8,6 +8,7 @@ import com.stash.kyc.storage.ObjectStorage;
 import com.stash.kyc.submission.domain.KycSubmission;
 import com.stash.kyc.submission.repository.KycSubmissionRepository;
 import com.stash.kyc.support.KycIntegrationTestSupport;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -52,6 +53,7 @@ class DocumentDeletionWorkerTest {
     @Autowired KycSubmissionRepository submissionRepository;
     @Autowired KycSubmissionDocumentRepository documentRepository;
     @Autowired DocumentDeletionJobRepository deletionJobRepository;
+    @Autowired MeterRegistry meterRegistry;
     @MockBean  ObjectStorage objectStorage;
 
     private KycSubmissionDocument document;
@@ -76,6 +78,10 @@ class DocumentDeletionWorkerTest {
     @DisplayName("happy deletion: storage_key nulled, status=DELETED, audit row inserted")
     void happy_deletion() {
         doNothing().when(objectStorage).delete(eq("submissions/abc/front.jpg"));
+        // Baseline, not an absolute assertion — the MeterRegistry is a shared
+        // Spring singleton across every test method in this class, so its
+        // count reflects every test that ran before this one, not just this test.
+        double before = meterRegistry.get("kyc.document.deletion.failures").counter().count();
 
         boolean result = worker.attemptDeletion(document);
 
@@ -89,6 +95,8 @@ class DocumentDeletionWorkerTest {
         List<DocumentDeletionJob> jobs = deletionJobRepository.findAll();
         assertThat(jobs).hasSize(1);
         assertThat(jobs.get(0).getOutcome()).isEqualTo("SUCCESS");
+
+        assertThat(meterRegistry.get("kyc.document.deletion.failures").counter().count()).isEqualTo(before);
     }
 
     @Test
@@ -96,6 +104,7 @@ class DocumentDeletionWorkerTest {
     void storage_failure_increments_count() {
         doThrow(new RuntimeException("Supabase timeout"))
                 .when(objectStorage).delete(any());
+        double before = meterRegistry.get("kyc.document.deletion.failures").counter().count();
 
         boolean result = worker.attemptDeletion(document);
 
@@ -110,6 +119,8 @@ class DocumentDeletionWorkerTest {
         assertThat(jobs).hasSize(1);
         assertThat(jobs.get(0).getOutcome()).isEqualTo("FAILURE");
         assertThat(jobs.get(0).getErrorMessage()).contains("Supabase timeout");
+
+        assertThat(meterRegistry.get("kyc.document.deletion.failures").counter().count()).isEqualTo(before + 1.0);
     }
 
     @Test

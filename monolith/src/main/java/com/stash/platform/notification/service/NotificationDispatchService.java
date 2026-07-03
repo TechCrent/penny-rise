@@ -50,6 +50,7 @@ public class NotificationDispatchService {
     private final EmailSender                    emailSender;
     private final Clock                          clock;
     private final Counter                        dispatchFailureCounter;
+    private final Counter                        dispatchAttemptCounter;
 
     public NotificationDispatchService(ProcessedWorkerEventRepository processedEventRepository,
                                         NotificationRepository notificationRepository,
@@ -71,6 +72,12 @@ public class NotificationDispatchService {
         // Prometheus's Counter naming convention appends _total, so this renders
         // as notification_dispatch_failure_rate_total on /actuator/prometheus.
         this.dispatchFailureCounter   = meterRegistry.counter("notification.dispatch.failure.rate");
+        // v0.5-027: companion counter so a failure *rate* (not just a raw
+        // failure count) can be graphed — renders as
+        // notification_dispatch_attempts_total. Incremented once per channel
+        // dispatch attempted (once per dispatchPushWithRetry call, once per
+        // dispatchEmail call), not per internal retry-loop iteration.
+        this.dispatchAttemptCounter   = meterRegistry.counter("notification.dispatch.attempts");
     }
 
     @Transactional
@@ -110,6 +117,7 @@ public class NotificationDispatchService {
     }
 
     void dispatchPushWithRetry(RenderedNotification rendered, DeviceTokenLike token) {
+        dispatchAttemptCounter.increment();
         NotificationEntity row = persistPending(rendered, "PUSH");
         long backoffMs = INITIAL_BACKOFF_MS;
 
@@ -145,6 +153,7 @@ public class NotificationDispatchService {
     }
 
     void dispatchEmail(RenderedNotification rendered) {
+        dispatchAttemptCounter.increment();
         NotificationEntity row = persistPending(rendered, "EMAIL");
         try {
             String userEmail = userEmailFor(rendered.userId()); // UnsupportedOperationException until wired

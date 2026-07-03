@@ -1,0 +1,82 @@
+{
+  "title": "Ledger Integrity Drift",
+  "uid": "ledger-drift",
+  "tags": ["operational-alert", "payments", "monolith"],
+  "schemaVersion": 39,
+  "timezone": "utc",
+  "time": { "from": "now-7d", "to": "now" },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "title": "ledger_integrity_check_drift_count — zero tolerance, P0 on any nonzero value",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "ledger_integrity_check_drift_count",
+          "legendFormat": "drift count"
+        }
+      ],
+      "description": "Payments Service, LedgerIntegrityService/LedgerIntegrityJob (daily 02:00 UTC) — general double-entry check across ALL posted ledger transactions. See docs/runbook-ledger-integrity.md.",
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "susu_pot_integrity_drift_count — separate, narrower check (monolith)",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "increase(susu_pot_integrity_drift_count[1d])",
+          "legendFormat": "drift events (1d)"
+        }
+      ],
+      "description": "This is a DIFFERENT, additional integrity check — SusuPotIntegrityChecker/SusuPotIntegrityJob, lives in monolith (not payments-service), runs daily at 03:00 UTC, checks a single susu group's ledger-account balance against its expected contribution history. A clean panel above does NOT mean this one is also clean — both are zero-tolerance and both are alerted separately. Do not apply docs/runbook-ledger-integrity.md's \"check the Payments Service is up\" step to this metric — it's the wrong service.",
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Job health — last run age (hours) and transactions checked",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(time() - ledger_integrity_check_last_run_at) / 3600",
+          "legendFormat": "hours since last run (alert if > 26h)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "ledger_integrity_check_stale_pending_count",
+          "legendFormat": "stale PENDING transactions (>30min old)"
+        }
+      ]
+    }
+  ]
+}

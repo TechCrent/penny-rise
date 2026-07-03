@@ -1,0 +1,179 @@
+# infra/grafana/provisioning/alerting/rules.yml
+#
+# Grafana's built-in unified alerting (not Prometheus alerting rules +
+# Alertmanager) — this stack has no Alertmanager container
+# (infra/compose/observability.yml only runs prometheus + grafana), and
+# Grafana 10.4+ evaluates alert conditions itself against a Prometheus
+# datasource, so this is one fewer moving part for the same result.
+
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: stash-operational-alerts
+    folder: Operational Alerts
+    interval: 1m
+    rules:
+
+      - uid: alert-outbox-lag
+        title: "Outbox lag: pending events sustained > 100"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: outbox_pending_count
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [100] }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { type: last, params: [] }
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        labels: { severity: critical, service: payments }
+        annotations:
+          summary: "outbox_pending_count has exceeded 100 for 5+ minutes"
+          description: "See docs/runbook-outbox-relay.md"
+
+      - uid: alert-ledger-integrity-drift
+        title: "Ledger integrity drift — zero tolerance"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: ledger_integrity_check_drift_count
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { type: last, params: [] }
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels: { severity: critical, service: payments }
+        annotations:
+          summary: "ledger_integrity_check_drift_count is nonzero — P0, a ledger invariant has been violated"
+          description: "See docs/runbook-ledger-integrity.md"
+
+      # Not in the AC's literal 4-metric list, but a real, currently-
+      # undashboarded zero-tolerance drift signal that would otherwise go
+      # unmonitored — added alongside the general ledger check it's
+      # frequently confused with. See ledger-drift.json's panel 2 note.
+      - uid: alert-susu-pot-drift
+        title: "Susu pot integrity drift — zero tolerance (separate from the general ledger check)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: increase(susu_pot_integrity_drift_count[10m])
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { type: last, params: [] }
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels: { severity: critical, service: monolith }
+        annotations:
+          summary: "susu_pot_integrity_drift_count increased — a susu group's pot balance no longer matches its contribution history"
+          description: "monolith, not payments-service — SusuPotIntegrityChecker, runs 03:00 UTC daily"
+
+      - uid: alert-notification-failure-rate
+        title: "Notification dispatch failure rate > 5%"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: 100 * rate(notification_dispatch_failure_rate_total[5m]) / rate(notification_dispatch_attempts_total[5m])
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { type: last, params: [] }
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        labels: { severity: warning, service: monolith }
+        annotations:
+          summary: "Notification dispatch failure rate has exceeded 5% for 2+ minutes"
+          description: "Requires notification_dispatch_attempts_total (added in v0.5-027) — see docs/runbook-notification-dispatch-failures.md"
+
+      - uid: alert-kyc-deletion-failures-rising
+        title: "KYC document deletion failures rising"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: increase(kyc_document_deletion_failures_total[10m])
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              type: threshold
+              expression: A
+              # "Rising over a 10-minute window" isn't a precise threshold on
+              # its own — interpreted as "more than 2 new failures within 10
+              # minutes." A judgment call; adjust if a different sensitivity
+              # is wanted.
+              conditions:
+                - evaluator: { type: gt, params: [2] }
+                  operator: { type: and }
+                  query: { params: [A] }
+                  reducer: { type: last, params: [] }
+              refId: C
+        noDataState: NoData
+        execErrState: Error
+        for: 0m
+        labels: { severity: warning, service: kyc }
+        annotations:
+          summary: "3+ new KYC document deletion failures in the last 10 minutes"
+          description: "New metric as of v0.5-027 — see docs/runbook-kyc-document-deletion-failures.md"

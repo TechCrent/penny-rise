@@ -1,0 +1,58 @@
+{
+  "title": "Notification Dispatch Failure Rate",
+  "uid": "notification-failure-rate",
+  "tags": ["operational-alert", "monolith", "notification"],
+  "schemaVersion": 39,
+  "timezone": "utc",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Failure rate (%) — 5m window — alert fires at > 5% sustained 2m",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * rate(notification_dispatch_failure_rate_total[5m]) / rate(notification_dispatch_attempts_total[5m])",
+          "legendFormat": "failure rate %"
+        }
+      ],
+      "description": "notification_dispatch_attempts_total is new as of v0.5-027 — before this issue, only a raw failure count existed (notification_dispatch_failure_rate_total, misleadingly named — it was a Counter, not a percentage), with no companion attempts counter to divide by. This panel renders no data until that change is deployed.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Raw counts — attempts vs failures per sec",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(notification_dispatch_attempts_total[5m])",
+          "legendFormat": "attempts/sec"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(notification_dispatch_failure_rate_total[5m])",
+          "legendFormat": "failures/sec"
+        }
+      ],
+      "description": "If attempts/sec drops to ~0 while failures stay flat, nothing is being dispatched at all (a different problem — check the RabbitMQ consumer, not the failure rate). DeviceNotRegistered outcomes count as an attempt but never as a failure — by design, see NotificationDispatchService.dispatchPushWithRetry."
+    }
+  ]
+}

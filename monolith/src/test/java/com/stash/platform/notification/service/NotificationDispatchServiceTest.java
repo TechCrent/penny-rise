@@ -95,6 +95,10 @@ class NotificationDispatchServiceTest {
 
         verify(expoPushClient, times(1)).send(eq("expo-token-1"), any(), any(), any());
         verify(notificationRepository).markDelivered(any());
+        // One channel-dispatch attempt, regardless of how many internal Expo
+        // retries a delivered send took (this one took zero retries).
+        assertThat(meterRegistry.find("notification.dispatch.attempts").counter().count())
+                .isEqualTo(1.0);
     }
 
     @Test
@@ -111,6 +115,9 @@ class NotificationDispatchServiceTest {
         assertThat(meterRegistry.find("notification.dispatch.failure.rate").counter()).isNotNull();
         assertThat(meterRegistry.find("notification.dispatch.failure.rate").counter().count())
                 .isZero(); // DeviceNotRegistered is NOT counted as a dispatch failure
+        // But it IS counted as an attempt — the dispatch was genuinely tried.
+        assertThat(meterRegistry.find("notification.dispatch.attempts").counter().count())
+                .isEqualTo(1.0);
     }
 
     @Test
@@ -148,6 +155,10 @@ class NotificationDispatchServiceTest {
 
         verify(notificationRepository).markFailed(any(), eq(3)); // MAX_PUSH_ATTEMPTS
         assertThat(meterRegistry.find("notification.dispatch.failure.rate").counter().count())
+                .isEqualTo(1.0);
+        // Attempts counts once per dispatchPushWithRetry call, not once per
+        // internal Expo retry — 3 internal retries here, still 1 attempt.
+        assertThat(meterRegistry.find("notification.dispatch.attempts").counter().count())
                 .isEqualTo(1.0);
     }
 

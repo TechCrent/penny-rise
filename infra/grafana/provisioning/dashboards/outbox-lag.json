@@ -1,0 +1,75 @@
+{
+  "title": "Outbox Lag — Payments Service",
+  "uid": "outbox-lag",
+  "tags": ["operational-alert", "payments"],
+  "schemaVersion": 39,
+  "timezone": "utc",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "outbox_pending_count — alert fires at > 100 sustained 5m",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "outbox_pending_count",
+          "legendFormat": "{{service}} pending events"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "outbox_relay_lag_seconds — age of oldest PENDING row",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "outbox_relay_lag_seconds",
+          "legendFormat": "{{service}} lag (s)"
+        }
+      ],
+      "description": "Documented in docs/runbook-outbox-relay.md as WARNING at >60s/2min, CRITICAL at >300s/1min — not wired as a Grafana alert in this issue (only outbox_pending_count is, per the AC), shown here for context alongside the alerted metric."
+    },
+    {
+      "id": 3,
+      "title": "Publish throughput — published / failed / dead-lettered per sec",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(outbox_events_published_total[5m])",
+          "legendFormat": "published/sec"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(outbox_events_failed_total[5m])",
+          "legendFormat": "failed/sec"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(outbox_events_dead_lettered_total[5m])",
+          "legendFormat": "dead-lettered/sec"
+        }
+      ]
+    }
+  ]
+}

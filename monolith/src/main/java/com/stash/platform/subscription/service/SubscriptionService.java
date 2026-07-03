@@ -6,7 +6,6 @@ import com.stash.platform.subscription.policy.SubscriptionPolicy;
 import com.stash.platform.subscription.repository.SubscriptionRepository;
 import com.stash.platform.transfer.repository.MonthlyTransferQuotaRepository;
 import com.stash.platform.user.domain.SubscriptionTier;
-import com.stash.platform.user.repository.RefreshTokenRepository;
 import com.stash.platform.user.repository.UserRepository;
 import com.stash.shared.apierrors.ErrorCode;
 import com.stash.shared.apierrors.StashApiException;
@@ -27,13 +26,27 @@ import java.util.UUID;
  * users were backfilled by V41, new users get one synchronously at signup
  * (SignupService) — a missing row here is an invariant violation, not a
  * normal "not found" case.
+ *
+ * <p><strong>No session revocation on tier change (v0.5-031 fix):</strong>
+ * an earlier version of this class revoked every active refresh token on
+ * upgrade/downgrade, including the calling device's own session — meaning
+ * the device that just upgraded had nothing left to call
+ * {@code /auth/refresh} with, forcing a full re-login. That directly
+ * contradicted v0.5-031's requirement that a user "must not have to log
+ * out and back in" after upgrading. The fix isn't a more complex
+ * exempt-the-current-device mechanism: nothing anywhere in this codebase
+ * actually reads the JWT's {@code subscription_tier} claim for
+ * authorization (confirmed by search — {@code AccessTokenClaims}
+ * documents it as purely "denormalised", and every real enforcement path,
+ * {@code SubscriptionLimitChecker} included, reads the live
+ * {@code subscriptions}/{@code users} row from the database, never the
+ * JWT). There was nothing the revocation was actually protecting.
  */
 @Service
 public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final MonthlyTransferQuotaRepository quotaRepository;
     private final VaultFreezingService vaultFreezingService;
     private final SusuFreezingService susuFreezingService;
@@ -41,11 +54,8 @@ public class SubscriptionService {
     private final SubscriptionPaystackClient paystackClient;
     private final Clock clock;
 
-    private static final String REVOKE_REASON = "SUBSCRIPTION_TIER_CHANGED";
-
     public SubscriptionService(SubscriptionRepository subscriptionRepository,
                                 UserRepository userRepository,
-                                RefreshTokenRepository refreshTokenRepository,
                                 MonthlyTransferQuotaRepository quotaRepository,
                                 VaultFreezingService vaultFreezingService,
                                 SusuFreezingService susuFreezingService,
@@ -54,7 +64,6 @@ public class SubscriptionService {
                                 Clock clock) {
         this.subscriptionRepository = subscriptionRepository;
         this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
         this.quotaRepository = quotaRepository;
         this.vaultFreezingService = vaultFreezingService;
         this.susuFreezingService = susuFreezingService;
@@ -78,6 +87,24 @@ public class SubscriptionService {
                 current.getSource(), freeRemaining);
     }
 
+    /**
+     * Step 1 of 2 (v0.5-031) — initializes a Paystack checkout and returns the
+     * authorization URL for the mobile client to open in an in-app browser.
+     * Does not mutate the subscription; {@link #upgrade} (step 2) does that
+     * once the user completes the checkout and the client has a reference.
+     */
+    @Transactional(readOnly = true)
+    public UpgradeInitiateResponse initiateUpgrade(UUID userId) {
+        Subscription current = mustFindActive(userId);
+        if (current.isPremium()) {
+            throw new StashApiException(ErrorCode.SUBSCRIPTION_ALREADY_PREMIUM,
+                    "This user is already on the PREMIUM tier.", HttpStatus.CONFLICT);
+        }
+
+        var result = paystackClient.initializeTestSubscription(userId);
+        return new UpgradeInitiateResponse(result.authorizationUrl(), result.reference());
+    }
+
     @Transactional
     public UpgradeResponse upgrade(UUID userId, String paystackSubscriptionToken) {
         Subscription current = mustFindActiveForUpdate(userId);
@@ -92,7 +119,6 @@ public class SubscriptionService {
         current.activatePremium(externalRef, now);
         subscriptionRepository.save(current);
         userRepository.syncSubscriptionTier(userId, SubscriptionTier.PREMIUM);
-        revokeActiveSessions(userId, now);
 
         return new UpgradeResponse(current.getTier(), current.getStartedAt());
     }
@@ -121,8 +147,6 @@ public class SubscriptionService {
         vaultFreezingService.freezeExcessVaults(
                 userId, SubscriptionPolicy.FREE_STANDARD_VAULT_LIMIT, SubscriptionPolicy.FREE_LOCKED_VAULT_LIMIT);
         susuFreezingService.freezeExcessGroups(userId, SubscriptionPolicy.FREE_SUSU_ORGANISER_LIMIT);
-
-        revokeActiveSessions(userId, now);
 
         return preview;
     }
@@ -155,10 +179,6 @@ public class SubscriptionService {
                 .orElseThrow(() -> new IllegalStateException(
                         "User " + userId + " has no subscription row — this should be impossible " +
                         "given V41's backfill and SignupService's mandatory row-per-signup invariant"));
-    }
-
-    private void revokeActiveSessions(UUID userId, Instant now) {
-        refreshTokenRepository.revokeAllActiveForUser(userId, REVOKE_REASON, now);
     }
 
     private int transferQuotaRemaining(UUID userId, int monthlyLimit) {

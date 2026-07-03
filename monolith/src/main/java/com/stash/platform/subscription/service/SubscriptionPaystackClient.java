@@ -26,9 +26,20 @@ import java.util.UUID;
  *
  * <p><strong>Sketch-level only:</strong> Paystack's real Subscriptions API
  * request/response contract is not available in this codebase or its docs.
- * {@link #createTestSubscription} intentionally throws until wired to the
- * real API — SubscriptionService's tests mock this client rather than
- * exercising a real (nonexistent) HTTP integration.
+ * {@link #initializeTestSubscription} and {@link #createTestSubscription}
+ * intentionally throw until wired to the real API — SubscriptionService's
+ * tests mock this client rather than exercising a real (nonexistent) HTTP
+ * integration.
+ *
+ * <p><strong>Two-step shape added in v0.5-031:</strong> the original
+ * single-method design assumed a {@code paystackSubscriptionToken} would
+ * already exist by the time a client calls upgrade — but nothing in this
+ * codebase or any real Paystack integration produces one out of thin air.
+ * Real Paystack subscription checkouts are a two-step handshake:
+ * initialize (get an authorization URL to open in a browser), then verify
+ * after the redirect. {@link #initializeTestSubscription} is the missing
+ * first step; {@link #createTestSubscription} is now called with the
+ * reference obtained from it, not an unexplained pre-existing token.
  */
 @Component
 public class SubscriptionPaystackClient {
@@ -42,6 +53,15 @@ public class SubscriptionPaystackClient {
                 .baseUrl("https://api.paystack.co")
                 .defaultHeader("Authorization", "Bearer " + testSecretKey)
                 .build();
+    }
+
+    /** Result of initializing a Paystack checkout — open {@code authorizationUrl} in a browser. */
+    public record InitializeResult(String authorizationUrl, String reference) {}
+
+    public InitializeResult initializeTestSubscription(UUID userId) {
+        throw new UnsupportedOperationException(
+                "Wire to Paystack's real test-mode Subscriptions/Transaction initialize API — " +
+                "sketch only, no contract available in this codebase to build against.");
     }
 
     /** @return the Paystack subscription_code to store as external_subscription_reference. */

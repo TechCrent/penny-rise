@@ -59,6 +59,7 @@ export default function CreateVaultScreen() {
   const [unlockAmount, setUnlockAmount] = useState('');
   const [condLogic, setCondLogic] = useState<'AND' | 'OR'>('AND');
   const [serverError, setServerError] = useState<string | null>(null);
+  const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const vaults = vaultData?.vaults ?? [];
@@ -138,11 +139,16 @@ export default function CreateVaultScreen() {
     } catch (err: unknown) {
       const apiError = extractApiError(err);
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+      setUpgradeUrl(null);
 
-      if (status === 422 && apiError?.code === 'VAULT_FREE_TIER_LIMIT_REACHED') {
+      // v0.5-030 renamed this backend error code from VAULT_FREE_TIER_LIMIT_REACHED
+      // to VAULT_TIER_LIMIT_EXCEEDED — this branch never matched the real
+      // response after that rename, so the upgrade prompt below never showed.
+      if (status === 422 && apiError?.code === 'VAULT_TIER_LIMIT_EXCEEDED') {
         setServerError(
           "You've reached the free-tier limit for this vault type. Upgrade to Premium to create more.",
         );
+        setUpgradeUrl(apiError?.details?.upgrade_url ?? null);
       } else if (status === 403) {
         setServerError('Your KYC verification must be approved before creating a vault.');
       } else if (apiError?.message) {
@@ -345,6 +351,17 @@ export default function CreateVaultScreen() {
             </View>
           )}
 
+          {!!upgradeUrl && (
+            <TouchableOpacity
+              style={styles.upgradeLink}
+              onPress={() => navigation.navigate('SubscriptionUpgrade')}
+              accessibilityRole="button"
+              accessibilityLabel="Upgrade to Premium"
+            >
+              <Text style={styles.upgradeLinkText}>Upgrade to Premium →</Text>
+            </TouchableOpacity>
+          )}
+
           {step === 1 && selectedLimited && (
             <View style={styles.upgradeBanner}>
               <Text style={styles.upgradeText}>
@@ -498,6 +515,8 @@ const styles = StyleSheet.create({
     borderColor: '#FCA5A5',
   },
   serverErrorText: { fontSize: 13, color: '#991B1B', lineHeight: 19 },
+  upgradeLink: { marginTop: 10, alignItems: 'center', paddingVertical: 6 },
+  upgradeLinkText: { fontSize: 14, fontWeight: '700', color: '#4F46E5' },
 
   upgradeBanner: {
     backgroundColor: '#EFF6FF',

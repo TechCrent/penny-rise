@@ -2,6 +2,7 @@ package com.stash.platform.user.repository;
 
 import com.stash.platform.user.domain.AccountStatus;
 import com.stash.platform.user.domain.KycStatus;
+import com.stash.platform.user.domain.SubscriptionTier;
 import com.stash.platform.user.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -203,4 +204,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("callerId")  UUID      callerId,
             @Param("kycStatus") KycStatus kycStatus,
             Pageable pageable);
+
+    // ── Subscription sync (v0.5-029) ────────────────────────────────────────
+
+    /**
+     * Keeps the denormalised users.subscription_tier read cache in sync with
+     * the authoritative user_module.subscriptions row. Called by
+     * SubscriptionService after every successful upgrade/downgrade commit.
+     */
+    @Modifying
+    @Query("UPDATE User u SET u.subscriptionTier = :tier WHERE u.id = :userId")
+    int syncSubscriptionTier(@Param("userId") UUID userId, @Param("tier") SubscriptionTier tier);
 }

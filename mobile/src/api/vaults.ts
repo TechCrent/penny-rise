@@ -4,7 +4,7 @@ export interface VaultListItem {
   id: string;
   name: string;
   vault_type: 'STANDARD' | 'LOCKED';
-  status: 'ACTIVE' | 'EARLY_EXIT_PENDING' | 'CLOSED';
+  status: 'ACTIVE' | 'EARLY_EXIT_PENDING' | 'CLOSED' | 'FROZEN';
   ledger_account_id: string;
   balance_pesewas: number | null;
   balance_cedis: string | null;

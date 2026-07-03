@@ -25,6 +25,7 @@ export function SusuCard({ group, onPress }: Props) {
 
   const dueDate = formatDueDate(group.next_due_date);
   const isPending = group.status === 'PENDING';
+  const isFrozen = group.status === 'FROZEN';
 
   return (
     <TouchableOpacity
@@ -43,7 +44,18 @@ export function SusuCard({ group, onPress }: Props) {
             <Text style={styles.youreNextText}>{"You're next"}</Text>
           </View>
         )}
+        {isFrozen && (
+          <View style={styles.frozenPill} testID={`susu-frozen-badge-${group.group_id}`}>
+            <Text style={styles.frozenText}>FROZEN</Text>
+          </View>
+        )}
       </View>
+
+      {isFrozen && (
+        <Text style={styles.frozenNotice}>
+          Over the organiser&apos;s plan limit — new contributions are blocked until they upgrade.
+        </Text>
+      )}
 
       {/* Meta row */}
       <View style={styles.metaRow}>
@@ -121,6 +133,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#92400E',
+  },
+  frozenPill: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  frozenText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  frozenNotice: {
+    fontSize: 12,
+    color: '#1E40AF',
+    marginTop: 4,
+    lineHeight: 17,
   },
   metaRow: {
     flexDirection: 'row',

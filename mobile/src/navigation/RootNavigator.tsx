@@ -38,6 +38,7 @@ import { ChallengesListScreen } from '../screens/Challenges/ChallengesListScreen
 import { ChallengeDetailScreen } from '../screens/Challenges/ChallengeDetailScreen';
 import { DeleteAccountScreen } from '../screens/DeleteAccount/DeleteAccountScreen';
 import { UpgradeScreen } from '../screens/Subscription/UpgradeScreen';
+import { DowngradeScreen } from '../screens/Subscription/DowngradeScreen';
 import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
@@ -89,6 +90,7 @@ export type RootStackParamList = {
   SendMoney: { recipient: RecipientResult };
   TransferSuccess: { result: TransferResult; recipientName: string };
   SubscriptionUpgrade: undefined;
+  SubscriptionDowngrade: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -150,6 +152,7 @@ export default function RootNavigator() {
           <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} />
           <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
           <Stack.Screen name="SubscriptionUpgrade" component={UpgradeScreen} />
+          <Stack.Screen name="SubscriptionDowngrade" component={DowngradeScreen} />
         </>
       ) : (
         <>

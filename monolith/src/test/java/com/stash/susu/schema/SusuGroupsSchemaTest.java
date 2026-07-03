@@ -266,7 +266,7 @@ class SusuGroupsSchemaTest {
                 SELECT COUNT(*) FROM information_schema.columns
                 WHERE table_schema = 'susu' AND table_name = 'susu_groups'
                 """, Integer.class);
-        assertThat(count).isEqualTo(12);  // 12 columns: 11 original + ledger_account_id (v0.4-008)
+        assertThat(count).isEqualTo(14);  // 12 prior + flagged_for_review + flagged_at (v0.5-034)
     }
 
     @Test

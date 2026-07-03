@@ -114,7 +114,8 @@ class AdminSusuGroupServiceTest {
     @Test
     @DisplayName("clearFlag on a flagged group succeeds and writes an audit row")
     void clearFlagSucceeds() {
-        when(groupRepo.findById(GROUP_ID)).thenReturn(Optional.of(flaggedGroup()));
+        var group = flaggedGroup();
+        when(groupRepo.findById(GROUP_ID)).thenReturn(Optional.of(group));
 
         service.clearFlag(GROUP_ID, ADMIN_ID);
 

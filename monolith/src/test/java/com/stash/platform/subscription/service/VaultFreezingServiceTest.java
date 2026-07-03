@@ -32,8 +32,9 @@ class VaultFreezingServiceTest {
     @Test
     @DisplayName("under the limit: nothing previewed or frozen")
     void underLimitNoFreezing() {
+        VaultEntity vaultA = vault("a", "Vault A", Instant.parse("2026-01-01T00:00:00Z"));
         when(vaultRepository.findActiveByOwnerUserIdAndVaultTypeOrderByCreatedAtAsc(USER_ID, "STANDARD"))
-                .thenReturn(List.of(vault("a", "Vault A", Instant.parse("2026-01-01T00:00:00Z"))));
+                .thenReturn(List.of(vaultA));
         when(vaultRepository.findActiveByOwnerUserIdAndVaultTypeOrderByCreatedAtAsc(USER_ID, "LOCKED"))
                 .thenReturn(List.of());
 
@@ -68,15 +69,16 @@ class VaultFreezingServiceTest {
     @Test
     @DisplayName("STANDARD and LOCKED excess are both included independently")
     void bothVaultTypesConsidered() {
+        VaultEntity s1 = vault("s1", "Standard 1", Instant.parse("2026-01-01T00:00:00Z"));
+        VaultEntity s2 = vault("s2", "Standard 2", Instant.parse("2026-01-02T00:00:00Z"));
+        VaultEntity s3 = vault("s3", "Standard 3", Instant.parse("2026-01-03T00:00:00Z"));
+        VaultEntity l1 = vault("l1", "Locked 1", Instant.parse("2026-01-01T00:00:00Z"));
+        VaultEntity l2 = vault("l2", "Locked 2", Instant.parse("2026-01-02T00:00:00Z"));
+
         when(vaultRepository.findActiveByOwnerUserIdAndVaultTypeOrderByCreatedAtAsc(USER_ID, "STANDARD"))
-                .thenReturn(List.of(
-                        vault("s1", "Standard 1", Instant.parse("2026-01-01T00:00:00Z")),
-                        vault("s2", "Standard 2", Instant.parse("2026-01-02T00:00:00Z")),
-                        vault("s3", "Standard 3", Instant.parse("2026-01-03T00:00:00Z"))));
+                .thenReturn(List.of(s1, s2, s3));
         when(vaultRepository.findActiveByOwnerUserIdAndVaultTypeOrderByCreatedAtAsc(USER_ID, "LOCKED"))
-                .thenReturn(List.of(
-                        vault("l1", "Locked 1", Instant.parse("2026-01-01T00:00:00Z")),
-                        vault("l2", "Locked 2", Instant.parse("2026-01-02T00:00:00Z"))));
+                .thenReturn(List.of(l1, l2));
 
         var preview = service.previewExcessVaults(USER_ID, 2, 1);
 

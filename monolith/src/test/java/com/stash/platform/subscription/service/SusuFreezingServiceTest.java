@@ -30,8 +30,9 @@ class SusuFreezingServiceTest {
     @Test
     @DisplayName("organiser at or under the limit (1): nothing previewed or frozen")
     void underLimitNoFreezing() {
+        SusuGroupEntity onlyGroup = group("g1", "Only Group");
         when(susuGroupRepository.findActiveByOrganiserOrderByCreatedAtAsc(USER_ID))
-                .thenReturn(List.of(group("g1", "Only Group")));
+                .thenReturn(List.of(onlyGroup));
 
         assertThat(service.previewExcessGroups(USER_ID, 1)).isEmpty();
 
@@ -43,8 +44,10 @@ class SusuFreezingServiceTest {
     @DisplayName("2 organised groups, limit 1: the OLDEST one freezes, newest stays active")
     void excessFreezesOldestFirst() {
         UUID oldestId = UUID.nameUUIDFromBytes("oldest".getBytes());
+        SusuGroupEntity oldest = group("oldest", "Oldest Group");
+        SusuGroupEntity newest = group("newest", "Newest Group");
         when(susuGroupRepository.findActiveByOrganiserOrderByCreatedAtAsc(USER_ID))
-                .thenReturn(List.of(group("oldest", "Oldest Group"), group("newest", "Newest Group")));
+                .thenReturn(List.of(oldest, newest));
 
         var preview = service.previewExcessGroups(USER_ID, 1);
         assertThat(preview).hasSize(1);

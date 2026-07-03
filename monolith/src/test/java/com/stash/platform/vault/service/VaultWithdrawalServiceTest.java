@@ -1,5 +1,7 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
 import com.stash.platform.vault.api.dto.VaultWithdrawalRequest;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import com.stash.shared.apierrors.ErrorCode;
+import com.stash.shared.apierrors.StashApiException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.*;
@@ -27,8 +31,10 @@ class VaultWithdrawalServiceTest {
     private final VaultRepository          vaultRepo      = Mockito.mock(VaultRepository.class);
     private final UserRepository           userRepo       = Mockito.mock(UserRepository.class);
     private final PaymentsWithdrawalClient paymentsClient = Mockito.mock(PaymentsWithdrawalClient.class);
+    private final SubscriptionLimitChecker subscriptionLimitChecker =
+            new SubscriptionLimitChecker(new SubscriptionPolicy());
     private final VaultWithdrawalService   service =
-            new VaultWithdrawalService(vaultRepo, userRepo, paymentsClient);
+            new VaultWithdrawalService(vaultRepo, userRepo, paymentsClient, subscriptionLimitChecker);
 
     private static final UUID   USER_ID   = UUID.randomUUID();
     private static final UUID   VAULT_ID  = UUID.randomUUID();
@@ -190,6 +196,21 @@ class VaultWithdrawalServiceTest {
                 });
     }
 
+    @Test
+    @DisplayName("FROZEN vault returns 422 with VAULT_FROZEN (v0.5-030)")
+    void frozen_vault_returns_422() {
+        when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(frozenStandardVault()));
+
+        assertThatThrownBy(() ->
+                service.initiateWithdrawal(VAULT_ID, USER_ID, request(), CORR, IDEM_KEY))
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> {
+                    var e = (StashApiException) ex;
+                    assertThat(e.getHttpStatus()).isEqualTo(UNPROCESSABLE_ENTITY);
+                    assertThat(e.getErrorCode()).isEqualTo(ErrorCode.VAULT_FROZEN);
+                });
+    }
+
     // ── Insufficient balance error translation ────────────────────────────
 
     @Test
@@ -297,6 +318,13 @@ class VaultWithdrawalServiceTest {
         VaultEntity v = VaultEntity.createStandard(USER_ID, "Closed Fund", LEDGER_ID,
                 Instant.parse("2026-06-01T00:00:00Z"));
         setField(v, "status", "CLOSED");
+        return v;
+    }
+
+    private static VaultEntity frozenStandardVault() {
+        VaultEntity v = VaultEntity.createStandard(USER_ID, "Frozen Fund", LEDGER_ID,
+                Instant.parse("2026-06-01T00:00:00Z"));
+        setField(v, "status", "FROZEN");
         return v;
     }
 

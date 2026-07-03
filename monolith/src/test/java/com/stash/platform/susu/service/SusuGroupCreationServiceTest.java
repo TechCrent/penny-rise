@@ -1,5 +1,7 @@
 package com.stash.platform.susu.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.susu.api.dto.CreateSusuGroupRequest;
 import com.stash.platform.susu.api.dto.SusuGroupResponse;
 import com.stash.platform.susu.domain.SusuGroupEntity;
@@ -15,6 +17,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import com.stash.shared.apierrors.ErrorCode;
+import com.stash.shared.apierrors.StashApiException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
@@ -36,10 +40,12 @@ class SusuGroupCreationServiceTest {
     private final SusuMembershipRepository membershipRepo = Mockito.mock(SusuMembershipRepository.class);
     private final UserRepository           userRepo       = Mockito.mock(UserRepository.class);
     private final JoinCodeGenerator        joinCodeGen    = Mockito.mock(JoinCodeGenerator.class);
+    private final SubscriptionLimitChecker subscriptionLimitChecker =
+            new SubscriptionLimitChecker(new SubscriptionPolicy());
 
     private final SusuGroupCreationService service =
             new SusuGroupCreationService(groupRepo, membershipRepo, userRepo,
-                    joinCodeGen, FIXED_CLOCK);
+                    joinCodeGen, subscriptionLimitChecker, FIXED_CLOCK);
 
     private static final UUID   USER_ID = UUID.randomUUID();
     private static final String CORR    = "corr-susu-create-001";
@@ -47,6 +53,7 @@ class SusuGroupCreationServiceTest {
 
     @BeforeEach
     void setUp() {
+        when(userRepo.lockUserRow(USER_ID)).thenReturn(USER_ID);
         when(userRepo.findById(USER_ID)).thenReturn(Optional.of(approvedFreeUser()));
         when(groupRepo.countActiveGroupsByOrganiser(USER_ID)).thenReturn(0L);
         when(joinCodeGen.generate()).thenReturn("STSH1234");
@@ -182,16 +189,16 @@ class SusuGroupCreationServiceTest {
     // ── Free-tier limit ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("free user at limit (1 active group) returns 422 SUSU_FREE_TIER_LIMIT_REACHED")
+    @DisplayName("free user at limit (1 active group) returns 422 SUSU_TIER_LIMIT_EXCEEDED")
     void free_tier_limit_returns_422() {
         when(groupRepo.countActiveGroupsByOrganiser(USER_ID)).thenReturn(1L);
 
         assertThatThrownBy(() -> service.createGroup(USER_ID, validRequest(), CORR, IDEM))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(StashApiException.class)
                 .satisfies(ex -> {
-                    var e = (ResponseStatusException) ex;
-                    assertThat(e.getStatusCode()).isEqualTo(UNPROCESSABLE_ENTITY);
-                    assertThat(e.getReason()).contains("SUSU_FREE_TIER_LIMIT_REACHED");
+                    var e = (StashApiException) ex;
+                    assertThat(e.getHttpStatus()).isEqualTo(UNPROCESSABLE_ENTITY);
+                    assertThat(e.getErrorCode()).isEqualTo(ErrorCode.SUSU_TIER_LIMIT_EXCEEDED);
                 });
     }
 
@@ -212,8 +219,8 @@ class SusuGroupCreationServiceTest {
         when(groupRepo.countActiveGroupsByOrganiser(USER_ID)).thenReturn(3L);
 
         assertThatThrownBy(() -> service.createGroup(USER_ID, validRequest(), CORR, IDEM))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> assertThat(((StashApiException) ex).getHttpStatus())
                         .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 
@@ -224,6 +231,35 @@ class SusuGroupCreationServiceTest {
 
         assertThatCode(() -> service.createGroup(USER_ID, validRequest(), CORR, IDEM))
                 .doesNotThrowAnyException();
+    }
+
+    // ── Concurrency (v0.5-030: userRepo.lockUserRow closes a previously-missing gap) ──
+
+    @Test
+    @DisplayName("user row is locked before the organiser count is read")
+    void locksUserRowBeforeCountCheck() {
+        service.createGroup(USER_ID, validRequest(), CORR, IDEM);
+
+        var inOrder = inOrder(userRepo, groupRepo);
+        inOrder.verify(userRepo).lockUserRow(USER_ID);
+        inOrder.verify(groupRepo).countActiveGroupsByOrganiser(USER_ID);
+    }
+
+    @Test
+    @DisplayName("concurrent creation: second request sees the updated count after the first commits")
+    void concurrent_creation_second_sees_limit() {
+        // First request: count = 0 (one slot left); second (after first commits): count = 1 (at limit)
+        when(groupRepo.countActiveGroupsByOrganiser(USER_ID))
+                .thenReturn(0L)
+                .thenReturn(1L);
+
+        assertThatCode(() -> service.createGroup(USER_ID, validRequest(), CORR, "idem-001"))
+                .doesNotThrowAnyException();
+
+        assertThatThrownBy(() -> service.createGroup(USER_ID, validRequest(), CORR, "idem-002"))
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> assertThat(((StashApiException) ex).getHttpStatus())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 
     // ── Join code ──────────────────────────────────────────────────────────

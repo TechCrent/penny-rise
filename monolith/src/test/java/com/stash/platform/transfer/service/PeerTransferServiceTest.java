@@ -6,9 +6,11 @@ import com.stash.platform.transfer.client.PeerTransferPaymentsClient;
 import com.stash.platform.transfer.client.TransferPaymentsException;
 import com.stash.platform.transfer.domain.MonthlyTransferQuotaEntity;
 import com.stash.platform.transfer.domain.PeerTransferEntity;
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
 import com.stash.platform.transfer.repository.MonthlyTransferQuotaRepository;
 import com.stash.platform.transfer.repository.PeerTransferRepository;
 import com.stash.platform.user.domain.KycStatus;
+import com.stash.platform.user.domain.SubscriptionTier;
 import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
 import org.junit.jupiter.api.*;
@@ -35,7 +37,7 @@ class PeerTransferServiceTest {
     private final PeerTransferPaymentsClient     paymentsClient = Mockito.mock(PeerTransferPaymentsClient.class);
 
     private final PeerTransferService service = new PeerTransferService(
-            transferRepo, quotaRepo, userRepo, paymentsClient, FIXED_CLOCK, 200L);
+            transferRepo, quotaRepo, userRepo, paymentsClient, new SubscriptionPolicy(), FIXED_CLOCK, 200L);
 
     private static final UUID   SENDER_ID    = UUID.randomUUID();
     private static final UUID   RECIPIENT_ID = UUID.randomUUID();
@@ -135,6 +137,39 @@ class PeerTransferServiceTest {
 
         assertThat(exhausted.getFreeTransfersUsed()).isEqualTo(5);   // unchanged
         assertThat(exhausted.getPaidTransfersCount()).isEqualTo(1);  // incremented
+    }
+
+    // ── PREMIUM tier: 20/month, not the FREE tier's 5 (v0.5-030) ───────────
+
+    @Test
+    @DisplayName("PREMIUM sender: 6th transfer this month is still free (FREE tier would charge a fee here)")
+    void premium_sender_sixth_transfer_still_free() {
+        when(userRepo.findById(SENDER_ID)).thenReturn(Optional.of(premiumUser(SENDER_ID)));
+        MonthlyTransferQuotaEntity quota = MonthlyTransferQuotaEntity.create(SENDER_ID, 2026, 6);
+        for (int i = 0; i < 5; i++) quota.consumeOneTransfer(20); // 5 used, PREMIUM limit is 20
+        when(quotaRepo.findByUserAndMonthForUpdate(SENDER_ID, 2026, 6))
+                .thenReturn(Optional.of(quota));
+
+        CreateTransferResponse result = service.transfer(SENDER_ID, request(50_000L), CORR, IDEM_KEY);
+
+        assertThat(result.feeAmount()).isEqualTo(0L);
+        assertThat(result.freeTransfersRemaining()).isEqualTo(14); // 20 - 6 used
+        verify(paymentsClient, never()).transferFee(any(), anyLong(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("PREMIUM sender: 21st transfer this month is charged the overflow fee")
+    void premium_sender_beyond_20_charged_fee() {
+        when(userRepo.findById(SENDER_ID)).thenReturn(Optional.of(premiumUser(SENDER_ID)));
+        MonthlyTransferQuotaEntity quota = MonthlyTransferQuotaEntity.create(SENDER_ID, 2026, 6);
+        for (int i = 0; i < 20; i++) quota.consumeOneTransfer(20); // fully used
+        when(quotaRepo.findByUserAndMonthForUpdate(SENDER_ID, 2026, 6))
+                .thenReturn(Optional.of(quota));
+
+        CreateTransferResponse result = service.transfer(SENDER_ID, request(50_000L), CORR, IDEM_KEY);
+
+        assertThat(result.feeAmount()).isEqualTo(200L);
+        verify(paymentsClient).transferFee(any(), eq(200L), any(), any(), any());
     }
 
     // ── Validation failures ───────────────────────────────────────────────
@@ -301,6 +336,14 @@ class PeerTransferServiceTest {
         User u = new User();
         u.setId(id);
         u.setKycStatus(KycStatus.PENDING);
+        return u;
+    }
+
+    private static User premiumUser(UUID id) {
+        User u = new User();
+        u.setId(id);
+        u.setKycStatus(KycStatus.APPROVED);
+        u.setSubscriptionTier(SubscriptionTier.PREMIUM);
         return u;
     }
 

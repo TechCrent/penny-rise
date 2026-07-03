@@ -1,5 +1,7 @@
 package com.stash.platform.susu.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.susu.api.dto.SusuContributionResponse;
 import com.stash.platform.susu.client.SusuContributionTransferClient;
 import com.stash.platform.susu.client.SusuPaymentsException;
@@ -14,6 +16,8 @@ import com.stash.platform.susu.repository.SusuRoundRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.context.ApplicationEventPublisher;
+import com.stash.shared.apierrors.ErrorCode;
+import com.stash.shared.apierrors.StashApiException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.*;
@@ -36,10 +40,12 @@ class SusuContributionServiceTest {
     private final SusuContributionTransferClient transferClient   = Mockito.mock(SusuContributionTransferClient.class);
     private final ApplicationEventPublisher      eventPublisher   = Mockito.mock(ApplicationEventPublisher.class);
     private final SusuPotIntegrityChecker        integrityChecker = Mockito.mock(SusuPotIntegrityChecker.class);
+    private final SubscriptionLimitChecker       subscriptionLimitChecker =
+            new SubscriptionLimitChecker(new SubscriptionPolicy());
 
     private final SusuContributionService service = new SusuContributionService(
             roundRepo, contributionRepo, groupRepo, membershipRepo,
-            transferClient, eventPublisher, FIXED_CLOCK, integrityChecker);
+            transferClient, eventPublisher, FIXED_CLOCK, integrityChecker, subscriptionLimitChecker);
 
     private static final UUID   CALLER_ID  = UUID.randomUUID();
     private static final UUID   GROUP_ID   = UUID.randomUUID();
@@ -163,6 +169,21 @@ class SusuContributionServiceTest {
                     var e = (ResponseStatusException) ex;
                     assertThat(e.getStatusCode()).isEqualTo(CONFLICT);
                     assertThat(e.getReason()).contains("SUSU_ROUND_NOT_COLLECTING");
+                });
+    }
+
+    @Test
+    @DisplayName("FROZEN group returns 422 with SUSU_FROZEN (v0.5-030)")
+    void frozen_group_returns_422() {
+        when(groupRepo.findById(GROUP_ID)).thenReturn(Optional.of(frozenGroup()));
+
+        assertThatThrownBy(() ->
+                service.payContribution(ROUND_ID, CALLER_ID, CORR, IDEM_KEY))
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> {
+                    var e = (StashApiException) ex;
+                    assertThat(e.getHttpStatus()).isEqualTo(UNPROCESSABLE_ENTITY);
+                    assertThat(e.getErrorCode()).isEqualTo(ErrorCode.SUSU_FROZEN);
                 });
     }
 
@@ -340,6 +361,16 @@ class SusuContributionServiceTest {
                 "MONTHLY", 6, "STSH1234", Instant.parse("2026-06-20T00:00:00Z"));
         setField(g, "id",              GROUP_ID);
         setField(g, "status",          "ACTIVE");
+        setField(g, "ledgerAccountId", LEDGER_ID);
+        return g;
+    }
+
+    private SusuGroupEntity frozenGroup() {
+        SusuGroupEntity g = SusuGroupEntity.create(
+                UUID.randomUUID(), "Frozen Circle", 20_000L,
+                "MONTHLY", 6, "STSH5678", Instant.parse("2026-06-20T00:00:00Z"));
+        setField(g, "id",              GROUP_ID);
+        setField(g, "status",          "FROZEN");
         setField(g, "ledgerAccountId", LEDGER_ID);
         return g;
     }

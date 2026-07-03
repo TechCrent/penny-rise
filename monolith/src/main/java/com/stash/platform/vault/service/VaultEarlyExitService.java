@@ -1,5 +1,6 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.vault.api.dto.EarlyExitRequest;
 import com.stash.platform.vault.api.dto.EarlyExitResponse;
 import com.stash.platform.vault.client.PaymentsBalanceClient;
@@ -60,17 +61,20 @@ public class VaultEarlyExitService {
     private final EarlyExitRequestRepository  requestRepo;
     private final PaymentsBalanceClient       balanceClient;
     private final EarlyExitPenaltyCalculator  penaltyCalculator;
+    private final SubscriptionLimitChecker    subscriptionLimitChecker;
     private final Clock                       clock;
 
     public VaultEarlyExitService(VaultRepository vaultRepo,
                                   EarlyExitRequestRepository requestRepo,
                                   PaymentsBalanceClient balanceClient,
                                   EarlyExitPenaltyCalculator penaltyCalculator,
+                                  SubscriptionLimitChecker subscriptionLimitChecker,
                                   Clock clock) {
         this.vaultRepo         = vaultRepo;
         this.requestRepo       = requestRepo;
         this.balanceClient     = balanceClient;
         this.penaltyCalculator = penaltyCalculator;
+        this.subscriptionLimitChecker = subscriptionLimitChecker;
         this.clock             = clock;
     }
 
@@ -113,6 +117,10 @@ public class VaultEarlyExitService {
                     "VAULT_EARLY_EXIT_NOT_APPLICABLE: Early exit is only available " +
                     "for LOCKED vaults. This vault is type " + vault.getVaultType() + ".");
         }
+
+        // v0.5-030: checked before the generic status check below so a FROZEN
+        // vault gets the specific 422 VAULT_FROZEN code, not a generic 409.
+        subscriptionLimitChecker.assertVaultNotFrozen(vault.getStatus());
 
         if (!"ACTIVE".equals(vault.getStatus())) {
             // Covers EARLY_EXIT_PENDING (duplicate), CLOSED, and any other status

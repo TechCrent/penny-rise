@@ -1,5 +1,6 @@
 package com.stash.platform.transfer.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
 import com.stash.platform.transfer.api.dto.CreateTransferRequest;
 import com.stash.platform.transfer.api.dto.CreateTransferResponse;
 import com.stash.platform.transfer.client.PeerTransferPaymentsClient;
@@ -29,12 +30,11 @@ public class PeerTransferService {
 
     private static final Logger log = LoggerFactory.getLogger(PeerTransferService.class);
 
-    static final int FREE_QUOTA_LIMIT = 5;
-
     private final PeerTransferRepository         transferRepo;
     private final MonthlyTransferQuotaRepository quotaRepo;
     private final UserRepository                 userRepo;
     private final PeerTransferPaymentsClient     paymentsClient;
+    private final SubscriptionPolicy             subscriptionPolicy;
     private final Clock                          clock;
     private final long                           overflowFeePesewas;
 
@@ -43,6 +43,7 @@ public class PeerTransferService {
             MonthlyTransferQuotaRepository quotaRepo,
             UserRepository userRepo,
             PeerTransferPaymentsClient paymentsClient,
+            SubscriptionPolicy subscriptionPolicy,
             Clock clock,
             @Value("${stash.transfer.overflow-fee-pesewas:200}")
                     long overflowFeePesewas) {
@@ -50,6 +51,7 @@ public class PeerTransferService {
         this.quotaRepo          = quotaRepo;
         this.userRepo           = userRepo;
         this.paymentsClient     = paymentsClient;
+        this.subscriptionPolicy = subscriptionPolicy;
         this.clock              = clock;
         this.overflowFeePesewas = overflowFeePesewas;
     }
@@ -112,9 +114,12 @@ public class PeerTransferService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Quota row missing after insertIfAbsent for user=" + senderId));
 
-        boolean isFree     = quota.consumeOneTransfer(FREE_QUOTA_LIMIT);
-        long    feeAmount  = isFree ? 0L : overflowFeePesewas;
-        int     freeRemaining = Math.max(0, FREE_QUOTA_LIMIT - quota.getFreeTransfersUsed());
+        // v0.5-030: quota limit is tier-aware — FREE=5/month, PREMIUM=20/month
+        // (SubscriptionPolicy), both charged overflowFeePesewas beyond quota.
+        int     monthlyLimit  = subscriptionPolicy.transfersPerMonth(sender.getSubscriptionTier());
+        boolean isFree        = quota.consumeOneTransfer(monthlyLimit);
+        long    feeAmount     = isFree ? 0L : overflowFeePesewas;
+        int     freeRemaining = Math.max(0, monthlyLimit - quota.getFreeTransfersUsed());
         quotaRepo.save(quota);
 
         // ── Create PENDING transfer row ────────────────────────────────────

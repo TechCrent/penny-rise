@@ -1,5 +1,6 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.user.domain.KycStatus;
 import com.stash.platform.user.domain.SubscriptionTier;
 import com.stash.platform.user.domain.User;
@@ -47,22 +48,21 @@ public class VaultCreationService {
 
     private static final Logger log = LoggerFactory.getLogger(VaultCreationService.class);
 
-    // Free-tier limits
-    static final int FREE_TIER_MAX_STANDARD = 2;
-    static final int FREE_TIER_MAX_LOCKED   = 1;
-
-    private final VaultRepository        vaultRepo;
-    private final UserRepository         userRepo;
-    private final PaymentsServiceClient  paymentsClient;
-    private final Clock                  clock;
+    private final VaultRepository            vaultRepo;
+    private final UserRepository             userRepo;
+    private final PaymentsServiceClient      paymentsClient;
+    private final SubscriptionLimitChecker   subscriptionLimitChecker;
+    private final Clock                      clock;
 
     public VaultCreationService(VaultRepository vaultRepo,
                                  UserRepository userRepo,
                                  PaymentsServiceClient paymentsClient,
+                                 SubscriptionLimitChecker subscriptionLimitChecker,
                                  Clock clock) {
         this.vaultRepo      = vaultRepo;
         this.userRepo       = userRepo;
         this.paymentsClient = paymentsClient;
+        this.subscriptionLimitChecker = subscriptionLimitChecker;
         this.clock          = clock;
     }
 
@@ -94,11 +94,8 @@ public class VaultCreationService {
         // ── Step 3: Validate request ──────────────────────────────────────
         validateRequest(request);
 
-        // ── Step 4: Free-tier limit check ─────────────────────────────────
-        boolean isPremium = user.getSubscriptionTier() == SubscriptionTier.PREMIUM;
-        if (!isPremium) {
-            enforceFreeTierLimits(userId, request.vaultType());
-        }
+        // ── Step 4: Tier limit check (v0.5-030: centralized in SubscriptionLimitChecker) ──
+        enforceTierLimit(userId, user.getSubscriptionTier(), request.vaultType());
 
         // ── Step 5: Provision ledger account (external HTTP call) ─────────
         // Pre-generate the vault ID so it can be used as owner_id on the
@@ -188,23 +185,13 @@ public class VaultCreationService {
         }
     }
 
-    private void enforceFreeTierLimits(UUID userId, String vaultType) {
+    private void enforceTierLimit(UUID userId, SubscriptionTier tier, String vaultType) {
         if ("STANDARD".equals(vaultType)) {
             long count = vaultRepo.countByOwnerUserIdAndVaultType(userId, "STANDARD");
-            if (count >= FREE_TIER_MAX_STANDARD) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "VAULT_FREE_TIER_LIMIT_REACHED: Free accounts may have at most " +
-                        FREE_TIER_MAX_STANDARD + " STANDARD vault(s). " +
-                        "Upgrade to Premium for unlimited vaults.");
-            }
+            subscriptionLimitChecker.assertStandardVaultWithinLimit(tier, count);
         } else {
             long count = vaultRepo.countByOwnerUserIdAndVaultType(userId, "LOCKED");
-            if (count >= FREE_TIER_MAX_LOCKED) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "VAULT_FREE_TIER_LIMIT_REACHED: Free accounts may have at most " +
-                        FREE_TIER_MAX_LOCKED + " LOCKED vault(s). " +
-                        "Upgrade to Premium for unlimited vaults.");
-            }
+            subscriptionLimitChecker.assertLockedVaultWithinLimit(tier, count);
         }
     }
 

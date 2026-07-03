@@ -1,5 +1,7 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.user.domain.KycStatus;
 import com.stash.platform.user.domain.SubscriptionTier;
 import com.stash.platform.user.domain.User;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import com.stash.shared.apierrors.ErrorCode;
+import com.stash.shared.apierrors.StashApiException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.*;
@@ -27,11 +31,13 @@ class VaultCreationServiceTest {
     private static final Clock FIXED_CLOCK =
             Clock.fixed(Instant.parse("2026-06-24T10:00:00Z"), ZoneOffset.UTC);
 
-    private final VaultRepository       vaultRepo      = Mockito.mock(VaultRepository.class);
-    private final UserRepository        userRepo       = Mockito.mock(UserRepository.class);
-    private final PaymentsServiceClient paymentsClient = Mockito.mock(PaymentsServiceClient.class);
+    private final VaultRepository          vaultRepo      = Mockito.mock(VaultRepository.class);
+    private final UserRepository           userRepo       = Mockito.mock(UserRepository.class);
+    private final PaymentsServiceClient    paymentsClient = Mockito.mock(PaymentsServiceClient.class);
+    private final SubscriptionLimitChecker subscriptionLimitChecker =
+            new SubscriptionLimitChecker(new SubscriptionPolicy());
     private final VaultCreationService  service =
-            new VaultCreationService(vaultRepo, userRepo, paymentsClient, FIXED_CLOCK);
+            new VaultCreationService(vaultRepo, userRepo, paymentsClient, subscriptionLimitChecker, FIXED_CLOCK);
 
     private static final UUID USER_ID      = UUID.randomUUID();
     private static final UUID LEDGER_ACCT  = UUID.randomUUID();
@@ -165,17 +171,17 @@ class VaultCreationServiceTest {
     // ── Free-tier limits ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("free tier at STANDARD limit returns 422 with VAULT_FREE_TIER_LIMIT_REACHED")
+    @DisplayName("free tier at STANDARD limit returns 422 with VAULT_TIER_LIMIT_EXCEEDED")
     void standard_limit_reached_returns_422() {
         when(vaultRepo.countByOwnerUserIdAndVaultType(USER_ID, "STANDARD"))
-                .thenReturn((long) VaultCreationService.FREE_TIER_MAX_STANDARD);
+                .thenReturn((long) SubscriptionPolicy.FREE_STANDARD_VAULT_LIMIT);
 
         assertThatThrownBy(() -> service.createVault(USER_ID, standardRequest(), CORR_ID, IDEM_KEY))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(StashApiException.class)
                 .satisfies(ex -> {
-                    var e = (ResponseStatusException) ex;
-                    assertThat(e.getStatusCode()).isEqualTo(UNPROCESSABLE_ENTITY);
-                    assertThat(e.getReason()).contains("VAULT_FREE_TIER_LIMIT_REACHED");
+                    var e = (StashApiException) ex;
+                    assertThat(e.getHttpStatus()).isEqualTo(UNPROCESSABLE_ENTITY);
+                    assertThat(e.getErrorCode()).isEqualTo(ErrorCode.VAULT_TIER_LIMIT_EXCEEDED);
                 });
     }
 
@@ -183,14 +189,14 @@ class VaultCreationServiceTest {
     @DisplayName("free tier at LOCKED limit returns 422")
     void locked_limit_reached_returns_422() {
         when(vaultRepo.countByOwnerUserIdAndVaultType(USER_ID, "LOCKED"))
-                .thenReturn((long) VaultCreationService.FREE_TIER_MAX_LOCKED);
+                .thenReturn((long) SubscriptionPolicy.FREE_LOCKED_VAULT_LIMIT);
 
         var req = new CreateVaultRequest("Locked Fund", "LOCKED",
                 Instant.parse("2028-06-24T00:00:00Z"), null, null);
 
         assertThatThrownBy(() -> service.createVault(USER_ID, req, CORR_ID, IDEM_KEY))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> assertThat(((StashApiException) ex).getHttpStatus())
                         .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 
@@ -239,8 +245,8 @@ class VaultCreationServiceTest {
 
         // Second fails with limit reached
         assertThatThrownBy(() -> service.createVault(USER_ID, standardRequest(), CORR_ID, "idem-002"))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> assertThat(((StashApiException) ex).getHttpStatus())
                         .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 

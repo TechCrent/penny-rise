@@ -1,5 +1,6 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
 import com.stash.platform.vault.api.dto.VaultDepositRequest;
@@ -45,16 +46,19 @@ public class VaultDepositService {
 
     private static final Logger log = LoggerFactory.getLogger(VaultDepositService.class);
 
-    private final VaultRepository       vaultRepo;
-    private final UserRepository        userRepo;
-    private final PaymentsDepositClient paymentsClient;
+    private final VaultRepository          vaultRepo;
+    private final UserRepository           userRepo;
+    private final PaymentsDepositClient    paymentsClient;
+    private final SubscriptionLimitChecker subscriptionLimitChecker;
 
     public VaultDepositService(VaultRepository vaultRepo,
                                 UserRepository userRepo,
-                                PaymentsDepositClient paymentsClient) {
+                                PaymentsDepositClient paymentsClient,
+                                SubscriptionLimitChecker subscriptionLimitChecker) {
         this.vaultRepo      = vaultRepo;
         this.userRepo       = userRepo;
         this.paymentsClient = paymentsClient;
+        this.subscriptionLimitChecker = subscriptionLimitChecker;
     }
 
     /**
@@ -94,6 +98,10 @@ public class VaultDepositService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "VAULT_CLOSED: Cannot deposit into a closed vault.");
         }
+
+        // v0.5-030: checked before the generic status check below so a FROZEN
+        // vault gets the specific 422 VAULT_FROZEN code, not a generic 409.
+        subscriptionLimitChecker.assertVaultNotFrozen(vault.getStatus());
 
         if (!"ACTIVE".equals(vault.getStatus()) && !"EARLY_EXIT_PENDING".equals(vault.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,

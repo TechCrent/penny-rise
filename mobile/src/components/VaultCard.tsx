@@ -10,6 +10,7 @@ interface VaultCardProps {
 export function VaultCard({ vault, onPress }: VaultCardProps) {
   const isLocked = vault.vault_type === 'LOCKED';
   const isEarlyExit = vault.status === 'EARLY_EXIT_PENDING';
+  const isFrozen = vault.status === 'FROZEN';
   const balanceUnavailable = vault.balance_pesewas === null;
 
   const unlockLabel = buildUnlockLabel(vault);
@@ -48,7 +49,19 @@ export function VaultCard({ vault, onPress }: VaultCardProps) {
             <Text style={styles.earlyExitText}>EARLY EXIT</Text>
           </View>
         )}
+        {isFrozen && (
+          <View style={styles.frozenPill} testID={`vault-frozen-badge-${vault.id}`}>
+            <Text style={styles.frozenText}>FROZEN</Text>
+          </View>
+        )}
       </View>
+
+      {isFrozen && (
+        <Text style={styles.frozenNotice}>
+          Over your plan&apos;s limit — deposits, withdrawals, and unlock are blocked until you
+          upgrade.
+        </Text>
+      )}
 
       {isLocked && unlockLabel ? <Text style={styles.unlockLabel}>{unlockLabel}</Text> : null}
 
@@ -169,6 +182,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#92400E',
     letterSpacing: 0.4,
+  },
+  frozenPill: {
+    backgroundColor: '#DBEAFE',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginLeft: 6,
+    alignSelf: 'center',
+  },
+  frozenText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#1E40AF',
+    letterSpacing: 0.4,
+  },
+  frozenNotice: {
+    fontSize: 12,
+    color: '#1E40AF',
+    marginTop: 4,
+    marginBottom: 8,
+    lineHeight: 17,
   },
   unlockLabel: {
     fontSize: 12,

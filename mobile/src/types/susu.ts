@@ -1,7 +1,7 @@
 export interface SusuGroupListResponse {
   group_id: string;
   name: string;
-  status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'FROZEN';
   organiser_user_id: string;
   is_organiser: boolean;
   contribution_amount: number;
@@ -60,7 +60,7 @@ export interface CallerMembership {
 export interface SusuGroupDetailResponse {
   id: string;
   name: string;
-  status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'FROZEN';
   organiser_user_id: string;
   is_caller_organiser: boolean;
   contribution_amount: number;

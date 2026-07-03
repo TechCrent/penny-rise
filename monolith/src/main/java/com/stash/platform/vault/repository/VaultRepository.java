@@ -35,17 +35,26 @@ public interface VaultRepository extends JpaRepository<VaultEntity, UUID> {
      * Returns vaults for the authenticated user, supporting optional inclusion
      * of CLOSED and soft-deleted vaults.
      *
-     * <p>When {@code includeClosed = false}: returns ACTIVE and EARLY_EXIT_PENDING
-     * vaults that have not been soft-deleted (deleted_at IS NULL).
+     * <p>When {@code includeClosed = false}: returns ACTIVE, EARLY_EXIT_PENDING,
+     * and FROZEN vaults that have not been soft-deleted (deleted_at IS NULL).
      * When {@code includeClosed = true}: also returns CLOSED vaults, including
      * soft-deleted ones (for history display).
+     *
+     * <p><strong>FROZEN added in v0.5-032:</strong> when FROZEN shipped in
+     * v0.5-029, this query wasn't updated for it — a FROZEN vault (over the
+     * free-tier limit after downgrade) fell through to neither branch and
+     * was invisible in the default list, contradicting the downgrade flow's
+     * own requirement that frozen resources stay visible on the vault list,
+     * just marked as frozen. Unlike CLOSED (intentionally archived, hidden
+     * unless includeClosed=true), FROZEN is an active-but-blocked state and
+     * belongs in the default view.
      */
     @Query("""
             SELECT v FROM VaultEntity v
             WHERE v.ownerUserId = :userId
             AND (
                 :includeClosed = true
-                OR (v.status IN ('ACTIVE', 'EARLY_EXIT_PENDING') AND v.deletedAt IS NULL)
+                OR (v.status IN ('ACTIVE', 'EARLY_EXIT_PENDING', 'FROZEN') AND v.deletedAt IS NULL)
             )
             ORDER BY v.createdAt DESC
             """)

@@ -118,8 +118,9 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: alpha
 stash:
-  jwt:
-    signing-secret: ${JWT_SIGNING_SECRET}
+  security:
+    jwt:
+      signing-key: ${JWT_SIGNING_KEY}
   audit:
     app-role: ${AUDIT_APP_ROLE:audit_app}
     readonly-role: ${AUDIT_READONLY_ROLE:audit_dashboard_ro}

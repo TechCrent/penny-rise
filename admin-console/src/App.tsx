@@ -8,6 +8,7 @@ import UserSearchPage from './routes/users/UserSearchPage';
 import UserDetailPage from './routes/users/UserDetailPage';
 import DisputeQueuePage from './routes/disputes/DisputeQueuePage';
 import DisputeDetailPage from './routes/disputes/DisputeDetailPage';
+import AuditLogPage from './routes/audit-log/AuditLogPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <DisputeDetailPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/audit-log',
+    element: (
+      <ProtectedRoute>
+        <AuditLogPage />
       </ProtectedRoute>
     ),
   },

@@ -3,6 +3,7 @@ package com.stash.audit.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stash.audit.api.dto.AuditLogEntryResponse;
+import com.stash.audit.api.dto.AuditLogFacetsResponse;
 import com.stash.audit.api.dto.AuditLogPageResponse;
 import com.stash.audit.api.dto.AuditLogQueryFilter;
 import com.stash.audit.repository.AuditLogEntryRow;
@@ -44,6 +45,11 @@ public class AuditLogQueryService {
         String nextCursor = hasMore ? page.get(page.size() - 1).eventId() : null;
 
         return new AuditLogPageResponse(page.stream().map(this::toResponse).toList(), nextCursor, hasMore);
+    }
+
+    public AuditLogFacetsResponse getFacets() {
+        return new AuditLogFacetsResponse(
+                repository.findDistinctEventTypes(), repository.findDistinctTargetTypes());
     }
 
     private int clampLimit(Integer requested) {

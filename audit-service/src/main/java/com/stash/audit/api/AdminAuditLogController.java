@@ -1,5 +1,6 @@
 package com.stash.audit.api;
 
+import com.stash.audit.api.dto.AuditLogFacetsResponse;
 import com.stash.audit.api.dto.AuditLogPageResponse;
 import com.stash.audit.api.dto.AuditLogQueryFilter;
 import com.stash.audit.security.AdminAuditLogAccessGuard;
@@ -45,5 +46,11 @@ public class AdminAuditLogController {
                 actorId, actorType, targetEntityId, targetEntityType, eventType, fromDate, toDate);
 
         return service.list(filter, cursor, limit);
+    }
+
+    @GetMapping("/facets")
+    public AuditLogFacetsResponse facets(Authentication authentication) {
+        accessGuard.requireAccess(authentication);
+        return service.getFacets();
     }
 }

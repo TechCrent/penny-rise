@@ -6,12 +6,24 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.util.Base64;
 import java.util.UUID;
 
 /**
  * PROMOTE-TO-SHARED CANDIDATE — near-duplicate of the monolith's
  * AdminJwtService verification half (v0.5-003), minus token issuance.
- * Uses the same shared signing secret so cross-service verification works.
+ * Uses the same shared signing key so cross-service verification works.
+ *
+ * <p><strong>v0.5-033 fix:</strong> this previously read a different
+ * property ({@code stash.jwt.signing-secret} / env {@code JWT_SIGNING_SECRET})
+ * than monolith's {@code AdminJwtService} ({@code stash.security.jwt.signing-key}
+ * / env {@code JWT_SIGNING_KEY}), AND used the raw configured bytes directly
+ * instead of Base64-decoding them first. Different property name and
+ * different byte encoding meant a monolith-issued admin token could never
+ * actually verify here — the two services were never really sharing a key,
+ * despite the class comment saying they were. Fixed to match monolith's
+ * property name and decoding exactly, since monolith is the token issuer
+ * and audit-service only ever verifies.
  */
 @Component
 public class AdminJwtVerifier {
@@ -23,8 +35,8 @@ public class AdminJwtVerifier {
 
     private final SecretKey signingKey;
 
-    public AdminJwtVerifier(@Value("${stash.jwt.signing-secret}") String signingSecret) {
-        this.signingKey = Keys.hmacShaKeyFor(signingSecret.getBytes());
+    public AdminJwtVerifier(@Value("${stash.security.jwt.signing-key}") String signingKeyBase64) {
+        this.signingKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(signingKeyBase64));
     }
 
     public AdminTokenClaims parseAndValidate(String token) {

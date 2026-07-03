@@ -129,6 +129,12 @@ public enum ErrorCode {
     /** Vault has already been closed. */
     VAULT_ALREADY_CLOSED,
 
+    /** Vault creation would exceed the caller's subscription-tier vault limit. */
+    VAULT_TIER_LIMIT_EXCEEDED,
+
+    /** Vault is FROZEN (over the free-tier limit after downgrade) — deposits, withdrawals, and early-exit are blocked. */
+    VAULT_FROZEN,
+
     // ── SUSU domain ───────────────────────────────────────────────────────
 
     /** Susu group not found. */
@@ -142,6 +148,12 @@ public enum ErrorCode {
 
     /** Susu round is not in a state that permits this action. */
     SUSU_ROUND_INVALID_STATE,
+
+    /** Susu group creation would exceed the caller's subscription-tier organiser limit. */
+    SUSU_TIER_LIMIT_EXCEEDED,
+
+    /** Susu group is FROZEN (over the free-tier limit after downgrade) — new contribution prompts are blocked. */
+    SUSU_FROZEN,
 
     // ── TRANSFER domain ───────────────────────────────────────────────────
 

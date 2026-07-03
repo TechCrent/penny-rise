@@ -1,5 +1,7 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
 import com.stash.platform.vault.api.dto.VaultDepositRequest;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import com.stash.shared.apierrors.ErrorCode;
+import com.stash.shared.apierrors.StashApiException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -24,11 +28,13 @@ import static org.springframework.http.HttpStatus.*;
 
 class VaultDepositServiceTest {
 
-    private final VaultRepository       vaultRepo      = Mockito.mock(VaultRepository.class);
-    private final UserRepository        userRepo       = Mockito.mock(UserRepository.class);
-    private final PaymentsDepositClient paymentsClient = Mockito.mock(PaymentsDepositClient.class);
+    private final VaultRepository          vaultRepo      = Mockito.mock(VaultRepository.class);
+    private final UserRepository           userRepo       = Mockito.mock(UserRepository.class);
+    private final PaymentsDepositClient    paymentsClient = Mockito.mock(PaymentsDepositClient.class);
+    private final SubscriptionLimitChecker subscriptionLimitChecker =
+            new SubscriptionLimitChecker(new SubscriptionPolicy());
     private final VaultDepositService   service =
-            new VaultDepositService(vaultRepo, userRepo, paymentsClient);
+            new VaultDepositService(vaultRepo, userRepo, paymentsClient, subscriptionLimitChecker);
 
     private static final UUID   USER_ID   = UUID.randomUUID();
     private static final UUID   VAULT_ID  = UUID.randomUUID();
@@ -143,6 +149,21 @@ class VaultDepositServiceTest {
                         .isEqualTo(CONFLICT));
     }
 
+    @Test
+    @DisplayName("FROZEN vault returns 422 with VAULT_FROZEN (v0.5-030)")
+    void frozen_vault_returns_422() {
+        when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(frozenVault()));
+
+        assertThatThrownBy(() ->
+                service.initiateDeposit(VAULT_ID, USER_ID, momoRequest(), CORR, IDEM_KEY))
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> {
+                    var e = (StashApiException) ex;
+                    assertThat(e.getHttpStatus()).isEqualTo(UNPROCESSABLE_ENTITY);
+                    assertThat(e.getErrorCode()).isEqualTo(ErrorCode.VAULT_FROZEN);
+                });
+    }
+
     // ── Request validation ────────────────────────────────────────────────
 
     @Test
@@ -252,6 +273,13 @@ class VaultDepositServiceTest {
         VaultEntity v = VaultEntity.createStandard(USER_ID, "Closed", LEDGER_ID,
                 Instant.parse("2026-06-01T00:00:00Z"));
         setField(v, "status", "CLOSED");
+        return v;
+    }
+
+    private VaultEntity frozenVault() {
+        VaultEntity v = VaultEntity.createStandard(USER_ID, "Frozen", LEDGER_ID,
+                Instant.parse("2026-06-01T00:00:00Z"));
+        setField(v, "status", "FROZEN");
         return v;
     }
 

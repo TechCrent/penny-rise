@@ -1,12 +1,12 @@
 package com.stash.platform.susu.service;
 
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.susu.api.dto.CreateSusuGroupRequest;
 import com.stash.platform.susu.api.dto.SusuGroupResponse;
 import com.stash.platform.susu.domain.SusuGroupEntity;
 import com.stash.platform.susu.domain.SusuMembershipEntity;
 import com.stash.platform.susu.repository.SusuGroupRepository;
 import com.stash.platform.susu.repository.SusuMembershipRepository;
-import com.stash.platform.user.domain.SubscriptionTier;
 import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
 import org.slf4j.Logger;
@@ -34,11 +34,16 @@ import java.util.UUID;
  * join_code is the authoritative safety net for the rare race where two
  * concurrent requests generate the same code simultaneously.
  *
- * <p><strong>Free-tier limit:</strong> a FREE user may organise at most one
- * PENDING or ACTIVE group at a time. The formal {@code SubscriptionPolicy}
- * class ships in v0.5-030; for v0.4 the limit is enforced with an inline
- * count query. The limit check is done inside the transaction to be
- * consistent under concurrent creation attempts.
+ * <p><strong>Tier limit:</strong> enforced via {@code SubscriptionLimitChecker}
+ * (v0.5-030), reading numbers from {@code SubscriptionPolicy} (v0.5-029) —
+ * FREE may organise at most 1 PENDING/ACTIVE group, PREMIUM at most 3.
+ *
+ * <p><strong>Concurrency:</strong> {@code userRepo.lockUserRow(userId)}
+ * (SELECT FOR UPDATE) is acquired before the count-then-check, the same
+ * pattern {@code VaultCreationService} uses — added in v0.5-030 to close a
+ * real gap: before this, the count-check here had no lock, so two
+ * concurrent requests from the same user could both read the same
+ * under-limit count and both succeed.
  *
  * <p><strong>KYC check:</strong> requires {@code kyc_status = APPROVED}.
  *
@@ -54,8 +59,6 @@ public class SusuGroupCreationService {
 
     private static final Logger log = LoggerFactory.getLogger(SusuGroupCreationService.class);
 
-    static final int    FREE_TIER_ORGANISER_LIMIT = 1;
-    static final int    PREMIUM_TIER_ORGANISER_LIMIT = 3;
     static final Set<String> VALID_FREQUENCIES =
             Set.of("WEEKLY", "BIWEEKLY", "MONTHLY");
 
@@ -63,23 +66,29 @@ public class SusuGroupCreationService {
     private final SusuMembershipRepository membershipRepo;
     private final UserRepository           userRepo;
     private final JoinCodeGenerator        joinCodeGenerator;
+    private final SubscriptionLimitChecker subscriptionLimitChecker;
     private final Clock                    clock;
 
     public SusuGroupCreationService(SusuGroupRepository groupRepo,
                                      SusuMembershipRepository membershipRepo,
                                      UserRepository userRepo,
                                      JoinCodeGenerator joinCodeGenerator,
+                                     SubscriptionLimitChecker subscriptionLimitChecker,
                                      Clock clock) {
         this.groupRepo         = groupRepo;
         this.membershipRepo    = membershipRepo;
         this.userRepo          = userRepo;
         this.joinCodeGenerator = joinCodeGenerator;
+        this.subscriptionLimitChecker = subscriptionLimitChecker;
         this.clock             = clock;
     }
 
     @Transactional
     public SusuGroupResponse createGroup(UUID userId, CreateSusuGroupRequest request,
                                           String correlationId, String idempotencyKey) {
+        // ── Lock user row (v0.5-030: closes a pre-existing concurrency gap) ─
+        userRepo.lockUserRow(userId);
+
         // ── Load and validate user ────────────────────────────────────────
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -98,19 +107,10 @@ public class SusuGroupCreationService {
                     "frequency must be one of: WEEKLY, BIWEEKLY, MONTHLY.");
         }
 
-        // ── Free-tier limit check (inside transaction) ────────────────────
+        // ── Tier limit check (v0.5-030: centralized in SubscriptionLimitChecker) ──
         long activeGroupsAsOrganiser = groupRepo.countActiveGroupsByOrganiser(userId);
-        boolean isFree = SubscriptionTier.FREE.equals(user.getSubscriptionTier());
-        int     limit  = isFree ? FREE_TIER_ORGANISER_LIMIT : PREMIUM_TIER_ORGANISER_LIMIT;
-
-        if (activeGroupsAsOrganiser >= limit) {
-            log.info("SusuGroupCreation: {} user={} at organiser limit ({}/{})",
-                    isFree ? "free" : "premium", userId, activeGroupsAsOrganiser, limit);
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "SUSU_FREE_TIER_LIMIT_REACHED: You have reached the maximum number " +
-                    "of susu groups you can organise on your current plan. " +
-                    "Complete or cancel an existing group to create a new one.");
-        }
+        subscriptionLimitChecker.assertSusuOrganiserWithinLimit(
+                user.getSubscriptionTier(), activeGroupsAsOrganiser);
 
         // ── Generate join code ────────────────────────────────────────────
         String joinCode = joinCodeGenerator.generate();

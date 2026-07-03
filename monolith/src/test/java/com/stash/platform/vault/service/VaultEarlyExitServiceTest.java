@@ -1,5 +1,7 @@
 package com.stash.platform.vault.service;
 
+import com.stash.platform.subscription.policy.SubscriptionPolicy;
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.vault.api.dto.EarlyExitRequest;
 import com.stash.platform.vault.api.dto.EarlyExitResponse;
 import com.stash.platform.vault.client.PaymentsBalanceClient;
@@ -13,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.stash.shared.apierrors.ErrorCode;
+import com.stash.shared.apierrors.StashApiException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.*;
@@ -32,9 +36,11 @@ class VaultEarlyExitServiceTest {
     private final EarlyExitRequestRepository requestRepo       = Mockito.mock(EarlyExitRequestRepository.class);
     private final PaymentsBalanceClient      balanceClient     = Mockito.mock(PaymentsBalanceClient.class);
     private final EarlyExitPenaltyCalculator penaltyCalculator = new EarlyExitPenaltyCalculator();
+    private final SubscriptionLimitChecker   subscriptionLimitChecker =
+            new SubscriptionLimitChecker(new SubscriptionPolicy());
     private final VaultEarlyExitService      service           =
             new VaultEarlyExitService(vaultRepo, requestRepo, balanceClient,
-                    penaltyCalculator, FIXED_CLOCK);
+                    penaltyCalculator, subscriptionLimitChecker, FIXED_CLOCK);
 
     private static final UUID   USER_ID    = UUID.randomUUID();
     private static final UUID   VAULT_ID   = UUID.randomUUID();
@@ -161,6 +167,21 @@ class VaultEarlyExitServiceTest {
                     var e = (ResponseStatusException) ex;
                     assertThat(e.getStatusCode()).isEqualTo(CONFLICT);
                     assertThat(e.getReason()).contains("VAULT_EARLY_EXIT_NOT_APPLICABLE");
+                });
+    }
+
+    @Test
+    @DisplayName("FROZEN vault returns 422 with VAULT_FROZEN (v0.5-030)")
+    void frozen_vault_returns_422() {
+        when(vaultRepo.findById(VAULT_ID)).thenReturn(Optional.of(frozenLockedVault()));
+
+        assertThatThrownBy(() -> service.requestEarlyExit(
+                VAULT_ID, USER_ID, request("MEDICAL"), CORR))
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> {
+                    var e = (StashApiException) ex;
+                    assertThat(e.getHttpStatus()).isEqualTo(UNPROCESSABLE_ENTITY);
+                    assertThat(e.getErrorCode()).isEqualTo(ErrorCode.VAULT_FROZEN);
                 });
     }
 
@@ -309,6 +330,18 @@ class VaultEarlyExitServiceTest {
             var f = VaultEntity.class.getDeclaredField("status");
             f.setAccessible(true);
             f.set(v, "EARLY_EXIT_PENDING");
+        } catch (Exception e) { throw new RuntimeException(e); }
+        return v;
+    }
+
+    private VaultEntity frozenLockedVault() {
+        VaultEntity v = VaultEntity.createLocked(USER_ID, "Frozen Fund", LEDGER_ID,
+                Instant.parse("2028-01-01T00:00:00Z"), null, null,
+                Instant.parse("2026-06-24T09:00:00Z"));
+        try {
+            var f = VaultEntity.class.getDeclaredField("status");
+            f.setAccessible(true);
+            f.set(v, "FROZEN");
         } catch (Exception e) { throw new RuntimeException(e); }
         return v;
     }

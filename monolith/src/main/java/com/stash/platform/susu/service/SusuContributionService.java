@@ -1,5 +1,6 @@
 package com.stash.platform.susu.service;
 
+import com.stash.platform.subscription.service.SubscriptionLimitChecker;
 import com.stash.platform.susu.api.dto.SusuContributionResponse;
 import com.stash.platform.susu.client.SusuContributionTransferClient;
 import com.stash.platform.susu.client.SusuPaymentsException;
@@ -65,6 +66,7 @@ public class SusuContributionService {
     private final ApplicationEventPublisher      eventPublisher;
     private final Clock                          clock;
     private final SusuPotIntegrityChecker        integrityChecker;
+    private final SubscriptionLimitChecker       subscriptionLimitChecker;
 
     public SusuContributionService(
             SusuRoundRepository roundRepo,
@@ -74,7 +76,8 @@ public class SusuContributionService {
             SusuContributionTransferClient transferClient,
             ApplicationEventPublisher eventPublisher,
             Clock clock,
-            SusuPotIntegrityChecker integrityChecker) {
+            SusuPotIntegrityChecker integrityChecker,
+            SubscriptionLimitChecker subscriptionLimitChecker) {
         this.roundRepo        = roundRepo;
         this.contributionRepo = contributionRepo;
         this.groupRepo        = groupRepo;
@@ -83,6 +86,7 @@ public class SusuContributionService {
         this.eventPublisher   = eventPublisher;
         this.clock            = clock;
         this.integrityChecker = integrityChecker;
+        this.subscriptionLimitChecker = subscriptionLimitChecker;
     }
 
     @Transactional
@@ -104,6 +108,9 @@ public class SusuContributionService {
         SusuGroupEntity group = groupRepo.findById(round.getSusuGroupId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Group not found for round."));
+
+        // v0.5-030: blocks new contribution prompts on a FROZEN group.
+        subscriptionLimitChecker.assertSusuGroupNotFrozen(group.getStatus());
 
         if (!membershipRepo.isActiveMember(group.getId(), callerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,

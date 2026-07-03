@@ -6,7 +6,9 @@ import java.util.UUID;
 /**
  * Inbound mirror of kyc-service's {@code KycRejectedEvent} JSON payload.
  *
- * <p>Consumed by the monolith to set {@code users.kyc_status = REJECTED}.
+ * <p>Consumed by the monolith to set {@code users.kyc_status = REJECTED},
+ * or {@code RESUBMISSION_REQUIRED} if {@code rejectionCount >= 2}
+ * (v0.5-035) — see {@link com.stash.platform.kyc.service.KycUserSyncService}.
  */
 public record KycRejectedEvent(
         String eventId,
@@ -19,5 +21,5 @@ public record KycRejectedEvent(
 ) {
     public static final String EVENT_TYPE = "KycRejected";
 
-    public record Payload(UUID submissionId, UUID userId, String reason) {}
+    public record Payload(UUID submissionId, UUID userId, String reason, int rejectionCount) {}
 }

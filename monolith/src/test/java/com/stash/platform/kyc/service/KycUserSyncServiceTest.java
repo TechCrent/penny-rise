@@ -83,22 +83,52 @@ class KycUserSyncServiceTest {
     }
 
     @Test
-    @DisplayName("reject sets kyc_status REJECTED")
+    @DisplayName("reject with rejectionCount=1 sets kyc_status REJECTED")
     void reject_updates_user() {
-        kycUserSyncService.applyRejected(rejectedEvent("Document unreadable"));
+        kycUserSyncService.applyRejected(rejectedEvent("Document unreadable", 1));
 
         User updated = userRepository.findById(user.getId()).orElseThrow();
         assertThat(updated.getKycStatus()).isEqualTo(KycStatus.REJECTED);
     }
 
     @Test
-    @DisplayName("duplicate reject is idempotent")
+    @DisplayName("duplicate reject at the same rejectionCount is idempotent")
     void reject_idempotent() {
-        kycUserSyncService.applyRejected(rejectedEvent("First reason"));
-        kycUserSyncService.applyRejected(rejectedEvent("Second reason"));
+        kycUserSyncService.applyRejected(rejectedEvent("First reason", 1));
+        kycUserSyncService.applyRejected(rejectedEvent("Second reason", 1));
 
         User updated = userRepository.findById(user.getId()).orElseThrow();
         assertThat(updated.getKycStatus()).isEqualTo(KycStatus.REJECTED);
+    }
+
+    @Test
+    @DisplayName("v0.5-035: a second rejection (rejectionCount=2) transitions REJECTED to RESUBMISSION_REQUIRED")
+    void second_reject_flags_for_resubmission() {
+        kycUserSyncService.applyRejected(rejectedEvent("First reason", 1));
+        kycUserSyncService.applyRejected(rejectedEvent("Second reason", 2));
+
+        User updated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updated.getKycStatus()).isEqualTo(KycStatus.RESUBMISSION_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("v0.5-035: a single submission whose rejectionCount is already 2+ goes straight to RESUBMISSION_REQUIRED")
+    void reject_with_count_two_from_the_start_flags_directly() {
+        kycUserSyncService.applyRejected(rejectedEvent("Second reason", 2));
+
+        User updated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updated.getKycStatus()).isEqualTo(KycStatus.RESUBMISSION_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("v0.5-035: duplicate reject at rejectionCount=2 is idempotent")
+    void second_reject_idempotent() {
+        kycUserSyncService.applyRejected(rejectedEvent("First reason", 1));
+        kycUserSyncService.applyRejected(rejectedEvent("Second reason", 2));
+        kycUserSyncService.applyRejected(rejectedEvent("Replayed second reason", 2));
+
+        User updated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updated.getKycStatus()).isEqualTo(KycStatus.RESUBMISSION_REQUIRED);
     }
 
     private KycApprovedEvent approvedEvent(String ghanaCardNumber) {
@@ -112,7 +142,7 @@ class KycUserSyncServiceTest {
                 new KycApprovedEvent.Payload(submissionId, user.getId(), ghanaCardNumber));
     }
 
-    private KycRejectedEvent rejectedEvent(String reason) {
+    private KycRejectedEvent rejectedEvent(String reason, int rejectionCount) {
         return new KycRejectedEvent(
                 UUID.randomUUID().toString(),
                 KycRejectedEvent.EVENT_TYPE,
@@ -120,6 +150,6 @@ class KycUserSyncServiceTest {
                 "kyc-service",
                 Instant.now(),
                 "corr-2",
-                new KycRejectedEvent.Payload(submissionId, user.getId(), reason));
+                new KycRejectedEvent.Payload(submissionId, user.getId(), reason, rejectionCount));
     }
 }

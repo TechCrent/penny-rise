@@ -5,12 +5,14 @@ import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
 import com.stash.kyc.submission.api.dto.AdminQueuePageResponse;
 import com.stash.kyc.submission.domain.KycSubmission;
 import com.stash.kyc.submission.domain.ManualReviewQueueEntry;
+import com.stash.kyc.submission.event.KycRejectedEvent;
 import com.stash.kyc.submission.repository.KycSubmissionRepository;
 import com.stash.kyc.submission.repository.ManualReviewQueueRepository;
 import com.stash.kyc.submission.repository.ProviderDecisionRecordRepository;
 import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.shared.apierrors.StashApiException;
 import org.junit.jupiter.api.*;
+import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -64,8 +66,12 @@ class KycAdminReviewServiceTest {
     }
 
     private KycSubmission escalatedSubmission() {
+        return escalatedSubmission(UUID.randomUUID());
+    }
+
+    private KycSubmission escalatedSubmission(UUID userId) {
         KycSubmission s = new KycSubmission(
-                UUID.randomUUID(), "GHA-555555555-5", "Manual Review User", "corr-1");
+                userId, "GHA-555555555-5", "Manual Review User", "corr-1");
         s.setStatus(KycSubmission.STATUS_REVIEWING);
         s = submissionRepository.save(s);
 
@@ -195,5 +201,37 @@ class KycAdminReviewServiceTest {
 
         KycSubmission reloaded = submissionRepository.findById(submission.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(KycSubmission.STATUS_REVIEWING);
+    }
+
+    @Test
+    @DisplayName("v0.5-035: a user's first manual rejection publishes rejectionCount=1")
+    void first_manual_rejection_has_count_one() {
+        KycSubmission submission = escalatedSubmission();
+
+        adminReviewService.decide(
+                submission.getId(), KycAdminReviewService.DECIDE_REJECT, "Card image unreadable", ADMIN_ID);
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(rabbitTemplate).convertAndSend(eq("kyc.events"), eq("kyc.rejected"), captor.capture());
+        assertThat(((KycRejectedEvent) captor.getValue()).payload().rejectionCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("v0.5-035: a user's second manual rejection (across two submissions) publishes rejectionCount=2")
+    void second_manual_rejection_for_same_user_has_count_two() {
+        UUID userId = UUID.randomUUID();
+        KycSubmission first = escalatedSubmission(userId);
+        adminReviewService.decide(
+                first.getId(), KycAdminReviewService.DECIDE_REJECT, "Card image unreadable", ADMIN_ID);
+
+        KycSubmission second = escalatedSubmission(userId);
+        adminReviewService.decide(
+                second.getId(), KycAdminReviewService.DECIDE_REJECT, "Still unreadable", ADMIN_ID);
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(rabbitTemplate, times(2))
+                .convertAndSend(eq("kyc.events"), eq("kyc.rejected"), captor.capture());
+        int secondCallCount = ((KycRejectedEvent) captor.getAllValues().get(1)).payload().rejectionCount();
+        assertThat(secondCallCount).isEqualTo(2);
     }
 }

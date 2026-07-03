@@ -113,7 +113,7 @@ class DocumentDeletionSchedulerServiceTest {
         KycRejectedEvent event = new KycRejectedEvent(
                 UUID.randomUUID().toString(), "KycRejected", "1.0", "kyc-service",
                 rejectedAt, "corr-1",
-                new KycRejectedEvent.Payload(submission.getId(), submission.getUserId(), "Card unreadable"));
+                new KycRejectedEvent.Payload(submission.getId(), submission.getUserId(), "Card unreadable", 1));
 
         schedulerService.onKycRejected(event);
 

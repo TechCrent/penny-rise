@@ -41,6 +41,12 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
+      # v0.5-027: passed through for the alerting contact points
+      # (infra/grafana/provisioning/alerting/contact-points.yml) to expand
+      # via $__env{...}. Defaults keep the stack usable with alerting
+      # provisioned-but-inert if unset, rather than failing to start.
+      STASH_ALERT_SLACK_WEBHOOK_URL: ${STASH_ALERT_SLACK_WEBHOOK_URL:-}
+      STASH_ALERT_EMAIL_ADDRESSES: ${STASH_ALERT_EMAIL_ADDRESSES:-ops@stash.app}
     volumes:
       - grafana-data:/var/lib/grafana
       - type: bind

@@ -1,0 +1,51 @@
+{
+  "title": "KYC Document Deletion Failures",
+  "uid": "kyc-deletion-failures",
+  "tags": ["operational-alert", "kyc"],
+  "schemaVersion": 39,
+  "timezone": "utc",
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "title": "kyc_document_deletion_failures_total — cumulative",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "kyc_document_deletion_failures_total",
+          "legendFormat": "total failures"
+        }
+      ],
+      "description": "New metric as of v0.5-027 — before this issue, the only signal was DocumentEscalationService's [P0_ALERT] log line, fired once a single document reaches 5 failed attempts. This metric tracks every failed attempt across all documents, so a rising trend is visible earlier than any individual document's escalation."
+    },
+    {
+      "id": 2,
+      "title": "New failures per 10-minute window — alert fires when > 2 in 10m",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "increase(kyc_document_deletion_failures_total[10m])",
+          "legendFormat": "failures in window"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

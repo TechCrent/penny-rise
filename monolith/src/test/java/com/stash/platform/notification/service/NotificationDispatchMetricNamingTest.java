@@ -25,4 +25,17 @@ class NotificationDispatchMetricNamingTest {
         assertThat(registry.find("notification.dispatch.failure.rate").counter().count())
                 .isEqualTo(1.0);
     }
+
+    @Test
+    @DisplayName("notification.dispatch.attempts counter is registered and queryable (v0.5-027)")
+    void attemptsCounterIsRegistered() {
+        MeterRegistry registry = new SimpleMeterRegistry();
+        registry.counter("notification.dispatch.attempts").increment();
+        registry.counter("notification.dispatch.attempts").increment();
+
+        assertThat(registry.find("notification.dispatch.attempts").counter())
+                .isNotNull();
+        assertThat(registry.find("notification.dispatch.attempts").counter().count())
+                .isEqualTo(2.0);
+    }
 }

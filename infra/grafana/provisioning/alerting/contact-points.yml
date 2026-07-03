@@ -1,0 +1,34 @@
+# infra/grafana/provisioning/alerting/contact-points.yml
+#
+# STASH_ALERT_SLACK_WEBHOOK_URL / STASH_ALERT_EMAIL_ADDRESSES must be passed
+# into the grafana container's environment (see
+# infra/compose/observability.yml) — Grafana provisioning files support
+# ${VAR} / $__env{VAR} expansion of environment variables the Grafana
+# process itself was started with; this has been available since Grafana
+# ~9.1, so no extra feature toggle is needed on the 10.4.0 image pinned here.
+
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: team-ops-channel
+    receivers:
+      - uid: team-ops-slack
+        type: slack
+        settings:
+          url: $__env{STASH_ALERT_SLACK_WEBHOOK_URL}
+          title: "{{ .CommonAnnotations.summary }}"
+          text: "{{ .CommonAnnotations.summary }}\n{{ .CommonAnnotations.description }}"
+        disableResolveMessage: false
+      - uid: team-ops-email
+        type: email
+        settings:
+          addresses: $__env{STASH_ALERT_EMAIL_ADDRESSES}
+          singleEmail: true
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: team-ops-channel
+    group_by: ['alertname']
+    routes: []

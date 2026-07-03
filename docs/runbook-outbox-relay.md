@@ -22,8 +22,15 @@ database and all downstream event consumers (Audit, Notification, Challenge).
 |-----------|----------|--------|
 | `outbox_relay_lag_seconds > 60` for > 2 minutes | WARNING | Check RabbitMQ connectivity; check relay logs for repeated WARN entries. |
 | `outbox_relay_lag_seconds > 300` for > 1 minute | CRITICAL | Page on-call. RabbitMQ is likely down or the relay has crashed. |
-| `outbox_pending_count > 500` | WARNING | Relay is behind. Check batch throughput and RabbitMQ connection. |
+| `outbox_pending_count > 100` for 5+ minutes | CRITICAL | **Wired as a Grafana alert as of v0.5-027** — see below. Relay is behind; check batch throughput and RabbitMQ connection. Tightened from the previously-documented `> 500` (never actually enforced) to match this issue's AC. |
 | `outbox_events_dead_lettered_total` rate > 0 | WARNING | At least one event exhausted 5 retry attempts. Investigate immediately — money movement events must not be lost. |
+
+## Alert configuration (v0.5-027)
+
+Dashboard: `infra/grafana/provisioning/dashboards/outbox-lag.json` (Grafana UID `outbox-lag`).
+Alert rule: `infra/grafana/provisioning/alerting/rules.yml`, rule uid `alert-outbox-lag` — Grafana's own unified alerting (this stack has no Alertmanager container), evaluated against the Prometheus datasource.
+
+To demonstrate the alert firing locally: pause/kill the relay process (or the whole Payments Service container) with pending events still queued, generate more than 100 pending events, and wait 5+ minutes. Resolve by restarting the service — the relay drains `PENDING` rows automatically on startup, no manual replay needed.
 
 ## Querying dead-letter events
 

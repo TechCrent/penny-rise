@@ -2,6 +2,10 @@ apiVersion: 1
 
 datasources:
   - name: Prometheus
+    # Explicit uid (not previously set — Grafana would otherwise generate a
+    # random one) so v0.5-027's dashboards and alert rules can reference this
+    # datasource deterministically instead of by name.
+    uid: prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090

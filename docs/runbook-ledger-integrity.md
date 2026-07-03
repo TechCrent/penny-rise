@@ -23,6 +23,29 @@ deposit or withdrawal where the Paystack webhook never arrived.
 | `ledger_integrity_check_stale_pending_count` | Gauge | 0 | > 0 = investigate |
 | `ledger_integrity_check_transactions_checked` | Gauge | > 0 after run | 0 = job may not have run |
 
+**Scope note**: these metrics cover this general double-entry check only —
+lives in **Payments Service** (`LedgerIntegrityService`/`LedgerIntegrityJob`,
+daily 02:00 UTC). There is a **separate, additional** integrity check,
+`susu_pot_integrity_drift_count`, that lives in **monolith**
+(`SusuPotIntegrityChecker`/`SusuPotIntegrityJob`, daily 03:00 UTC) and checks
+a single susu group's pot balance against its contribution history. A clean
+`ledger_integrity_check_drift_count` does not mean the susu-pot check is also
+clean — both are zero-tolerance and alerted separately (v0.5-027). Do not
+apply this runbook's "check the Payments Service is up" step to a
+`susu_pot_integrity_drift_count` alert — that's the wrong service.
+
+## Alert configuration (v0.5-027)
+
+Dashboard: `infra/grafana/provisioning/dashboards/ledger-drift.json` (Grafana UID `ledger-drift`) — panel 1 is this general check, panel 2 is the separate susu-pot check.
+Alert rules: `infra/grafana/provisioning/alerting/rules.yml`, uids `alert-ledger-integrity-drift` (this check, `for: 0m` — fires immediately per the zero-tolerance AC) and `alert-susu-pot-drift` (the separate susu-pot check).
+
+To demonstrate the alert firing locally: **never do this against an
+environment with real user funds.** In a local/staging DB only, manually
+corrupt a single `ledger.ledger_entries.amount` value, then trigger
+`LedgerIntegrityJob`'s check (via its scheduled run or a manual bean
+invocation — see "Manual full-history check" below). Revert the corruption
+and confirm the alert resolves on the next check run.
+
 ---
 
 ## If drift is detected (`ledger_integrity_check_drift_count > 0`)

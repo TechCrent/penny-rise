@@ -24,6 +24,11 @@ public class SubscriptionController {
         return subscriptionService.getStatus(userId);
     }
 
+    @PostMapping("/upgrade/initiate")
+    public UpgradeInitiateResponse initiateUpgrade(@AuthenticationPrincipal UUID userId) {
+        return subscriptionService.initiateUpgrade(userId);
+    }
+
     @PostMapping("/upgrade")
     @ResponseStatus(HttpStatus.CREATED)
     public UpgradeResponse upgrade(@Valid @RequestBody UpgradeRequest request,

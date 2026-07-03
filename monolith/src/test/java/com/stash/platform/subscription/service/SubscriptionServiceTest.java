@@ -8,7 +8,6 @@ import com.stash.platform.subscription.repository.SubscriptionRepository;
 import com.stash.platform.transfer.domain.MonthlyTransferQuotaEntity;
 import com.stash.platform.transfer.repository.MonthlyTransferQuotaRepository;
 import com.stash.platform.user.domain.SubscriptionTier;
-import com.stash.platform.user.repository.RefreshTokenRepository;
 import com.stash.platform.user.repository.UserRepository;
 import com.stash.shared.apierrors.ErrorCode;
 import com.stash.shared.apierrors.StashApiException;
@@ -35,7 +34,6 @@ class SubscriptionServiceTest {
 
     private final SubscriptionRepository subscriptionRepository = mock(SubscriptionRepository.class);
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final MonthlyTransferQuotaRepository quotaRepository = mock(MonthlyTransferQuotaRepository.class);
     private final VaultFreezingService vaultFreezingService = mock(VaultFreezingService.class);
     private final SusuFreezingService susuFreezingService = mock(SusuFreezingService.class);
@@ -43,7 +41,7 @@ class SubscriptionServiceTest {
     private final SubscriptionPaystackClient paystackClient = mock(SubscriptionPaystackClient.class);
 
     private final SubscriptionService service = new SubscriptionService(
-            subscriptionRepository, userRepository, refreshTokenRepository, quotaRepository,
+            subscriptionRepository, userRepository, quotaRepository,
             vaultFreezingService, susuFreezingService, policy, paystackClient, FIXED_CLOCK);
 
     private Subscription freeSubscription() {
@@ -102,10 +100,40 @@ class SubscriptionServiceTest {
         verifyNoInteractions(quotaRepository);
     }
 
+    // ── upgrade initiate (v0.5-031) ─────────────────────────────────────
+
+    @Test
+    @DisplayName("initiateUpgrade returns the Paystack authorization URL and reference, commits nothing")
+    void initiateUpgradeReturnsAuthorizationUrl() {
+        when(subscriptionRepository.findByUserId(USER_ID)).thenReturn(Optional.of(freeSubscription()));
+        when(paystackClient.initializeTestSubscription(USER_ID))
+                .thenReturn(new SubscriptionPaystackClient.InitializeResult("https://paystack.com/checkout/xyz", "ref-123"));
+
+        var response = service.initiateUpgrade(USER_ID);
+
+        assertThat(response.authorizationUrl()).isEqualTo("https://paystack.com/checkout/xyz");
+        assertThat(response.reference()).isEqualTo("ref-123");
+        verify(subscriptionRepository, never()).save(any());
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("initiateUpgrade on an already-PREMIUM user throws SUBSCRIPTION_ALREADY_PREMIUM, no Paystack call")
+    void initiateUpgradeAlreadyPremiumThrows() {
+        when(subscriptionRepository.findByUserId(USER_ID)).thenReturn(Optional.of(premiumSubscription()));
+
+        assertThatThrownBy(() -> service.initiateUpgrade(USER_ID))
+                .isInstanceOf(StashApiException.class)
+                .satisfies(ex -> assertThat(((StashApiException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.SUBSCRIPTION_ALREADY_PREMIUM));
+
+        verifyNoInteractions(paystackClient);
+    }
+
     // ── upgrade ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("happy upgrade: FREE -> PREMIUM, users.subscription_tier synced, sessions revoked")
+    @DisplayName("happy upgrade: FREE -> PREMIUM, users.subscription_tier synced, no session revocation (v0.5-031 fix)")
     void happyUpgrade() {
         when(subscriptionRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(freeSubscription()));
         when(paystackClient.createTestSubscription(eq(USER_ID), anyString())).thenReturn("sub_test_new");
@@ -114,7 +142,6 @@ class SubscriptionServiceTest {
 
         assertThat(response.tier()).isEqualTo("PREMIUM");
         verify(userRepository).syncSubscriptionTier(USER_ID, SubscriptionTier.PREMIUM);
-        verify(refreshTokenRepository).revokeAllActiveForUser(eq(USER_ID), eq("SUBSCRIPTION_TIER_CHANGED"), any());
     }
 
     @Test
@@ -151,7 +178,6 @@ class SubscriptionServiceTest {
         assertThat(preview.vaultsToBeFrozen()).hasSize(1);
         assertThat(preview.susuGroupsToBeFrozen()).hasSize(1);
         verify(subscriptionRepository, never()).save(any());
-        verifyNoInteractions(refreshTokenRepository);
     }
 
     @Test
@@ -185,7 +211,7 @@ class SubscriptionServiceTest {
     // ── downgrade commit ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("happy downgrade commit: tier flips to FREE, vaults+susu frozen, sessions revoked, tier synced")
+    @DisplayName("happy downgrade commit: tier flips to FREE, vaults+susu frozen, tier synced, no session revocation (v0.5-031 fix)")
     void happyDowngradeCommit() {
         when(subscriptionRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(premiumSubscription()));
         when(vaultFreezingService.previewExcessVaults(USER_ID, 2, 1))
@@ -201,17 +227,16 @@ class SubscriptionServiceTest {
         verify(vaultFreezingService).freezeExcessVaults(USER_ID, 2, 1);
         verify(susuFreezingService).freezeExcessGroups(USER_ID, 1);
         verify(userRepository).syncSubscriptionTier(USER_ID, SubscriptionTier.FREE);
-        verify(refreshTokenRepository).revokeAllActiveForUser(eq(USER_ID), eq("SUBSCRIPTION_TIER_CHANGED"), any());
         verify(subscriptionRepository).save(argThat(s -> "FREE".equals(s.getTier())));
     }
 
     @Test
-    @DisplayName("downgrade commit on an already-FREE user throws, without touching freezing or sessions")
+    @DisplayName("downgrade commit on an already-FREE user throws, without touching freezing")
     void downgradeCommitAlreadyFreeThrows() {
         when(subscriptionRepository.findByUserIdForUpdate(USER_ID)).thenReturn(Optional.of(freeSubscription()));
 
         assertThatThrownBy(() -> service.commitDowngrade(USER_ID)).isInstanceOf(StashApiException.class);
 
-        verifyNoInteractions(vaultFreezingService, susuFreezingService, refreshTokenRepository);
+        verifyNoInteractions(vaultFreezingService, susuFreezingService);
     }
 }

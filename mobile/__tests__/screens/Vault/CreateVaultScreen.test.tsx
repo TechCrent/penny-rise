@@ -8,8 +8,10 @@ import CreateVaultScreen from '../../../src/screens/Vault/CreateVaultScreen';
 
 jest.mock('../../../src/api/hooks/useCreateVault');
 jest.mock('../../../src/api/hooks/useVaults');
+
+const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ goBack: jest.fn(), replace: jest.fn() }),
+  useNavigation: () => ({ goBack: jest.fn(), replace: jest.fn(), navigate: mockNavigate }),
 }));
 
 const { useCreateVault } = require('../../../src/api/hooks/useCreateVault');
@@ -253,6 +255,30 @@ describe('CreateVaultScreen', () => {
     await waitFor(() => {
       expect(screen.getByText(/Internal server error/)).toBeTruthy();
     });
+  });
+
+  it('shows an upgrade link on VAULT_TIER_LIMIT_EXCEEDED (v0.5-031 fix — was VAULT_FREE_TIER_LIMIT_REACHED, never matched)', async () => {
+    mockMutateAsync.mockRejectedValue(
+      new axios.AxiosError('Unprocessable Entity', '422', undefined, undefined, {
+        status: 422,
+        data: {
+          error: {
+            code: 'VAULT_TIER_LIMIT_EXCEEDED',
+            message: "You've reached your plan's limit of 2 STANDARD vault(s).",
+            details: { upgrade_url: 'stash://subscription/upgrade' },
+          },
+        },
+      } as AxiosResponse),
+    );
+
+    renderCreate();
+    fireEvent.changeText(screen.getByPlaceholderText(/Emergency fund/), 'Fund');
+    fireEvent.press(screen.getByRole('button', { name: /Create vault/ }));
+
+    const upgradeLink = await screen.findByLabelText('Upgrade to Premium');
+    fireEvent.press(upgradeLink);
+
+    expect(mockNavigate).toHaveBeenCalledWith('SubscriptionUpgrade');
   });
 
   it('shows KYC error when 403 returned', async () => {

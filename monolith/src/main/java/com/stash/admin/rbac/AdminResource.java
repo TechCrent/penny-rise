@@ -9,7 +9,11 @@ package com.stash.admin.rbac;
  * DISPUTES (A7/A8), AUDIT_LOG (A9), STAFF_MANAGEMENT (A10),
  * ACCOUNT_DELETION (A12), ANNOUNCEMENTS (A13), CHALLENGES (A11, v1.0 preset
  * only — full management is v1.5, but the resource exists now so a TAB
- * role_name can target it later without a migration).
+ * role_name can target it later without a migration). SUSU_GROUPS added
+ * v0.5-034 — no dedicated wireframe reference; a TAB scoped to susu-group
+ * review shouldn't also get user-management or dispute access, and
+ * vice versa, so this needs its own resource rather than reusing an
+ * existing one.
  */
 public enum AdminResource {
     USER_MANAGEMENT,
@@ -19,5 +23,6 @@ public enum AdminResource {
     STAFF_MANAGEMENT,
     ACCOUNT_DELETION,
     ANNOUNCEMENTS,
-    CHALLENGES
+    CHALLENGES,
+    SUSU_GROUPS
 }

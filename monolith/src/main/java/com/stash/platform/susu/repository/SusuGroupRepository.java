@@ -1,12 +1,14 @@
 package com.stash.platform.susu.repository;
 
 import com.stash.platform.susu.domain.SusuGroupEntity;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -71,4 +73,16 @@ public interface SusuGroupRepository extends JpaRepository<SusuGroupEntity, UUID
             WHERE g.id = :groupId AND g.status IN ('PENDING', 'ACTIVE')
             """)
     int freezeIfActive(@Param("groupId") UUID groupId);
+
+    // ── Flagged-for-review (v0.5-034) ───────────────────────────────────
+
+    Page<SusuGroupEntity> findByFlaggedForReview(boolean flaggedForReview, Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE SusuGroupEntity g SET g.flaggedForReview = true, g.flaggedAt = :now WHERE g.id = :groupId")
+    void flagForReview(@Param("groupId") UUID groupId, @Param("now") Instant now);
+
+    @Modifying
+    @Query("UPDATE SusuGroupEntity g SET g.flaggedForReview = false, g.flaggedAt = null WHERE g.id = :groupId")
+    void clearFlag(@Param("groupId") UUID groupId);
 }

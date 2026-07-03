@@ -174,6 +174,42 @@ class SusuGroupsSchemaTest {
                 .hasMessageContaining("susu_groups_status_check");
     }
 
+    @Test
+    @DisplayName("status = FROZEN is valid (V44, v0.5-029 — no prior test coverage for this value)")
+    void frozen_status_valid() {
+        assertThatCode(() ->
+                insertGroup("Frozen Group", 5_000L, "MONTHLY", 6, "FROZEN", uniqueCode()))
+                .doesNotThrowAnyException();
+    }
+
+    // ── flagged_for_review / flagged_at (V46, v0.5-034) ─────────────────────
+
+    @Test
+    @DisplayName("new group defaults to flagged_for_review = false, flagged_at = NULL")
+    void flagged_for_review_defaults_false() {
+        String id = insertGroup("Unflagged Group", 5_000L, "MONTHLY", 6, "PENDING", uniqueCode());
+
+        Boolean flagged = jdbc.queryForObject(
+                "SELECT flagged_for_review FROM susu.susu_groups WHERE id = ?::UUID", Boolean.class, id);
+        Object flaggedAt = jdbc.queryForObject(
+                "SELECT flagged_at FROM susu.susu_groups WHERE id = ?::UUID", Object.class, id);
+
+        assertThat(flagged).isFalse();
+        assertThat(flaggedAt).isNull();
+    }
+
+    @Test
+    @DisplayName("a group can be flagged with flagged_for_review = true and a flagged_at timestamp")
+    void group_can_be_flagged() {
+        String id = insertGroup("To Be Flagged", 5_000L, "MONTHLY", 6, "ACTIVE", uniqueCode());
+
+        jdbc.update("UPDATE susu.susu_groups SET flagged_for_review = true, flagged_at = now() WHERE id = ?::UUID", id);
+
+        Boolean flagged = jdbc.queryForObject(
+                "SELECT flagged_for_review FROM susu.susu_groups WHERE id = ?::UUID", Boolean.class, id);
+        assertThat(flagged).isTrue();
+    }
+
     // ── frequency CHECK ────────────────────────────────────────────────────
 
     @Test
@@ -230,7 +266,7 @@ class SusuGroupsSchemaTest {
                 SELECT COUNT(*) FROM information_schema.columns
                 WHERE table_schema = 'susu' AND table_name = 'susu_groups'
                 """, Integer.class);
-        assertThat(count).isEqualTo(12);  // 12 columns: 11 original + ledger_account_id (v0.4-008)
+        assertThat(count).isEqualTo(14);  // 12 prior + flagged_for_review + flagged_at (v0.5-034)
     }
 
     @Test

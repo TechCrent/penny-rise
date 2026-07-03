@@ -91,22 +91,36 @@ describe('UpgradeScreen', () => {
     expect(await screen.findByTestId('upgrade-success')).toBeTruthy();
   });
 
-  it('Paystack failure (cancelled in browser) shows failure screen with retry and back', async () => {
+  it('Paystack failure (payment not completed): confirm rejects with a non-5xx error, shows failure screen with retry and back', async () => {
+    // openBrowserAsync (unlike openAuthSessionAsync) can't tell us whether
+    // the payment succeeded — it reports type:'dismiss' whether the user
+    // paid or just closed the browser. The real failure signal is the
+    // confirm call itself rejecting (e.g. the reference was never actually
+    // completed on Paystack's side).
     subscriptionApi.fetchSubscriptionStatus.mockResolvedValue(freeStatus);
     subscriptionApi.initiateUpgrade.mockResolvedValue({
       authorization_url: 'https://paystack.com/checkout/xyz',
       reference: 'ref-123',
     });
-    WebBrowser.openBrowserAsync.mockResolvedValue({ type: 'cancel' });
+    WebBrowser.openBrowserAsync.mockResolvedValue({ type: 'dismiss' });
+    const axiosError: any = new Error('payment not completed');
+    axiosError.isAxiosError = true;
+    axiosError.response = {
+      status: 422,
+      data: {
+        error: { code: 'SUBSCRIPTION_UPGRADE_FAILED', message: 'Payment was not completed.' },
+      },
+    };
+    subscriptionApi.confirmUpgrade.mockRejectedValue(axiosError);
 
     renderScreen();
 
     fireEvent.press(await screen.findByLabelText('Upgrade to Premium'));
 
     expect(await screen.findByTestId('upgrade-error-title')).toBeTruthy();
+    expect(screen.getByText('Payment was not completed.')).toBeTruthy();
     expect(screen.getByLabelText('Retry upgrade')).toBeTruthy();
     expect(screen.getByLabelText('Go back')).toBeTruthy();
-    expect(subscriptionApi.confirmUpgrade).not.toHaveBeenCalled();
   });
 
   it('network error during initiate shows the network error state, not a silent failure', async () => {

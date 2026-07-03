@@ -1,5 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { useNavigation } from '@react-navigation/native';
@@ -34,7 +41,6 @@ const MUTED = '#6B7280';
 const INDIGO = '#4F46E5';
 const BACKGROUND = '#F8F9FF';
 const GREEN = '#059669';
-const RED = '#DC2626';
 
 export function UpgradeScreen() {
   const navigation = useNavigation<Nav>();
@@ -59,9 +65,15 @@ export function UpgradeScreen() {
     }
 
     setPhase('authorising');
-    let browserResult;
     try {
-      browserResult = await WebBrowser.openBrowserAsync(initiateResponse.authorization_url, {
+      // openBrowserAsync (unlike openAuthSessionAsync) has no way to detect
+      // a successful redirect — it only reports how the browser was
+      // dismissed, and closing normally after a genuinely successful
+      // payment ALSO reports type:'dismiss'. Matching DepositScreen.tsx's
+      // established pattern: treat the browser closing as "the user is
+      // done looking at it", then ask the server what actually happened —
+      // don't try to infer success/failure from the browser result itself.
+      await WebBrowser.openBrowserAsync(initiateResponse.authorization_url, {
         toolbarColor: DARK,
         showTitle: false,
         enableBarCollapsing: false,
@@ -69,12 +81,6 @@ export function UpgradeScreen() {
     } catch {
       setPhase('paystack_failure');
       setErrorMessage("Something went wrong opening the payment page. Let's try again.");
-      return;
-    }
-
-    if (browserResult.type === 'cancel' || browserResult.type === 'dismiss') {
-      setPhase('paystack_failure');
-      setErrorMessage('The upgrade was cancelled before completing.');
       return;
     }
 
@@ -92,7 +98,9 @@ export function UpgradeScreen() {
         setErrorMessage("Couldn't reach Stash to confirm your upgrade. Please try again.");
       } else {
         setPhase('paystack_failure');
-        setErrorMessage(apiError?.message ?? "Something went wrong confirming your upgrade. Let's try again.");
+        setErrorMessage(
+          apiError?.message ?? "Something went wrong confirming your upgrade. Let's try again.",
+        );
       }
     }
   }, [queryClient]);

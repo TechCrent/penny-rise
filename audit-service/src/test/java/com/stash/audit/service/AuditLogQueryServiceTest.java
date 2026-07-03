@@ -128,4 +128,15 @@ class AuditLogQueryServiceTest {
 
         org.mockito.Mockito.verify(repository).query(eq(EMPTY_FILTER), isNull(), eq(26));
     }
+
+    @Test
+    void facetsReturnsDistinctValuesFromTheRepository() {
+        when(repository.findDistinctEventTypes()).thenReturn(List.of("PAYMENT_INITIATED", "USER_SUSPENDED"));
+        when(repository.findDistinctTargetTypes()).thenReturn(List.of("USER", "WALLET"));
+
+        var facets = service.getFacets();
+
+        assertThat(facets.eventTypes()).containsExactly("PAYMENT_INITIATED", "USER_SUSPENDED");
+        assertThat(facets.targetEntityTypes()).containsExactly("USER", "WALLET");
+    }
 }

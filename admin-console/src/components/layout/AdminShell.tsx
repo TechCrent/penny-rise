@@ -38,6 +38,12 @@ export function AdminShell({ children, title }: AdminShellProps) {
               >
                 Disputes
               </Link>
+              <Link
+                to="/audit-log"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Audit Log
+              </Link>
             </nav>
           </div>
           <button

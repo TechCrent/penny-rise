@@ -73,4 +73,20 @@ public class AuditLogQueryRepository {
                         (UUID) rs.getObject("id")),
                 params.toArray());
     }
+
+    /**
+     * v0.5-033: distinct values actually present in the data, not a
+     * maintained hardcoded list — self-updates as new event types get
+     * wired into the mapper registry elsewhere, rather than drifting out
+     * of sync with one.
+     */
+    public List<String> findDistinctEventTypes() {
+        return readOnlyJdbcTemplate.queryForList(
+                "SELECT DISTINCT event_type FROM audit.audit_log_entries ORDER BY event_type", String.class);
+    }
+
+    public List<String> findDistinctTargetTypes() {
+        return readOnlyJdbcTemplate.queryForList(
+                "SELECT DISTINCT target_type FROM audit.audit_log_entries ORDER BY target_type", String.class);
+    }
 }

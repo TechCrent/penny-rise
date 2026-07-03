@@ -36,6 +36,7 @@ import { NotificationInboxScreen } from '../screens/NotificationInbox/Notificati
 import { TransactionHistoryScreen } from '../screens/TransactionHistory/TransactionHistoryScreen';
 import { ChallengesListScreen } from '../screens/Challenges/ChallengesListScreen';
 import { ChallengeDetailScreen } from '../screens/Challenges/ChallengeDetailScreen';
+import { DeleteAccountScreen } from '../screens/DeleteAccount/DeleteAccountScreen';
 import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
@@ -56,6 +57,7 @@ export type RootStackParamList = {
   TransactionHistory: undefined;
   ChallengesList: undefined;
   ChallengeDetail: { challengeId: string };
+  DeleteAccount: undefined;
   KycCardDetails: undefined;
   KycDocumentUpload: {
     submissionId: string;
@@ -143,6 +145,7 @@ export default function RootNavigator() {
           <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
           <Stack.Screen name="ChallengesList" component={ChallengesListScreen} />
           <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} />
+          <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
         </>
       ) : (
         <>

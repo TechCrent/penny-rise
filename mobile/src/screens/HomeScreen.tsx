@@ -209,6 +209,15 @@ export default function HomeScreen() {
             <Text style={styles.fabIcon}>＋</Text>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity
+          style={styles.deleteAccountLink}
+          onPress={() => navigation.navigate('DeleteAccount')}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+        >
+          <Text style={styles.deleteAccountLinkText}>Delete account</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -417,5 +426,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 30,
     marginTop: -2,
+  },
+  deleteAccountLink: {
+    alignSelf: 'center',
+    marginTop: 32,
+  },
+  deleteAccountLinkText: {
+    fontSize: 12,
+    color: '#9CA3AF',
   },
 });

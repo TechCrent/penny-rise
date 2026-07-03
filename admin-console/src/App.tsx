@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdminAuthProvider, useAdminAuth } from './auth/AdminAuthContext';
 import LoginPage from './routes/login';
 import KycQueuePage from './routes/kyc-queue/KycQueuePage';
+import UserSearchPage from './routes/users/UserSearchPage';
+import UserDetailPage from './routes/users/UserDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +28,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <KycQueuePage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/users',
+    element: (
+      <ProtectedRoute>
+        <UserSearchPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/users/:userId',
+    element: (
+      <ProtectedRoute>
+        <UserDetailPage />
       </ProtectedRoute>
     ),
   },

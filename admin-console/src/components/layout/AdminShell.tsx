@@ -44,6 +44,12 @@ export function AdminShell({ children, title }: AdminShellProps) {
               >
                 Audit Log
               </Link>
+              <Link
+                to="/susu-groups"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Susu Groups
+              </Link>
             </nav>
           </div>
           <button

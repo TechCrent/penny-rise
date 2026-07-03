@@ -1,6 +1,7 @@
 package com.stash.platform.susu.repository;
 
 import com.stash.platform.susu.domain.SusuContributionEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -96,4 +97,23 @@ public interface SusuContributionRepository extends JpaRepository<SusuContributi
             @Param("windowStart") Instant windowStart,
             @Param("windowEnd")   Instant windowEnd,
             @Param("batchSize")   int     batchSize);
+
+    /**
+     * v0.5-034: contributions whose late penalty was waived (isLate=true,
+     * penaltyAmount=0) — the real shortfall signal SusuGroupFlaggingListener
+     * acts on. Ordered newest-first by createdAt as an approximation of
+     * "most recent shortfall" — this is the round's collection start time,
+     * not the exact moment the penalty was waived (no dedicated timestamp
+     * exists for that), but contributions are normally processed close to
+     * their round's schedule, so this is a reasonable proxy.
+     */
+    @Query("""
+            SELECT c FROM SusuContributionEntity c
+            WHERE c.susuGroupId  = :groupId
+              AND c.isLate       = true
+              AND c.penaltyAmount = 0
+            ORDER BY c.createdAt DESC
+            """)
+    List<SusuContributionEntity> findWaivedPenaltyContributions(
+            @Param("groupId") UUID groupId, Pageable pageable);
 }

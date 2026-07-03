@@ -9,6 +9,7 @@ import UserDetailPage from './routes/users/UserDetailPage';
 import DisputeQueuePage from './routes/disputes/DisputeQueuePage';
 import DisputeDetailPage from './routes/disputes/DisputeDetailPage';
 import AuditLogPage from './routes/audit-log/AuditLogPage';
+import FlaggedSusuGroupsPage from './routes/susu-groups/FlaggedSusuGroupsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AuditLogPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/susu-groups',
+    element: (
+      <ProtectedRoute>
+        <FlaggedSusuGroupsPage />
       </ProtectedRoute>
     ),
   },

@@ -48,6 +48,12 @@ public class SusuGroupEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "flagged_for_review", nullable = false)
+    private boolean flaggedForReview;
+
+    @Column(name = "flagged_at")
+    private Instant flaggedAt;
+
     protected SusuGroupEntity() {}
 
     public static SusuGroupEntity create(UUID organiserUserId, String name,
@@ -79,6 +85,8 @@ public class SusuGroupEntity {
     public String    getJoinCode()           { return joinCode; }
     public UUID      getLedgerAccountId()    { return ledgerAccountId; }
     public Instant   getCreatedAt()          { return createdAt; }
+    public boolean   isFlaggedForReview()    { return flaggedForReview; }
+    public Instant   getFlaggedAt()          { return flaggedAt; }
 
     void setLedgerAccountId(UUID id)         { this.ledgerAccountId = id; }
 }

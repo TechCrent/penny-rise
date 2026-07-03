@@ -60,4 +60,20 @@ public class IntegrationPaymentsClient {
         log.debug("IntegrationPaymentsClient is a stub — returning empty transaction history for user {}", userId);
         return new UnifiedTransactionPage(List.of(), null, false);
     }
+
+    /**
+     * Returns a ledger account's current balance in pesewas (v0.5-034).
+     *
+     * <p>STUB — matches {@link #toVaultSummary} in AdminUserService, which
+     * already hardcodes vault balances to 0L for the exact same reason:
+     * no real balance-lookup endpoint exists in this client at all yet.
+     * Requires a new Payments Service endpoint (proposed:
+     * GET /api/v1/accounts/{id}/balance) that does not yet exist in the
+     * documented public API surface.
+     */
+    public long getLedgerAccountBalance(UUID ledgerAccountId) {
+        log.debug("IntegrationPaymentsClient is a stub — returning 0 balance for ledger account {}",
+                ledgerAccountId);
+        return 0L;
+    }
 }

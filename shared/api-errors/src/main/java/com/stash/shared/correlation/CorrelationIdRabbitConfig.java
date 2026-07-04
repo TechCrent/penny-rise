@@ -6,7 +6,9 @@ import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFacto
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -32,27 +34,37 @@ import org.springframework.context.annotation.Primary;
 public class CorrelationIdRabbitConfig {
 
     @Bean
-    public Jackson2JsonMessageConverter jackson2JsonMessageConverter(ObjectMapper objectMapper) {
+    public Jackson2JsonMessageConverter jackson2JsonMessageConverter(
+        ObjectMapper objectMapper
+    ) {
         return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     @Bean
     @Primary
+    @ConditionalOnBean(ConnectionFactory.class)
     public RabbitTemplate correlationAwareRabbitTemplate(
-            ConnectionFactory connectionFactory,
-            Jackson2JsonMessageConverter messageConverter) {
+        ConnectionFactory connectionFactory,
+        Jackson2JsonMessageConverter messageConverter
+    ) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
-        template.setBeforePublishPostProcessors(correlationMessagePostProcessor());
+        template.setBeforePublishPostProcessors(
+            correlationMessagePostProcessor()
+        );
         return template;
     }
 
     @Bean
     @Primary
+    @ConditionalOnBean(ConnectionFactory.class)
+    @ConditionalOnMissingBean(name = "rabbitListenerContainerFactory")
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
-            ConnectionFactory connectionFactory,
-            Jackson2JsonMessageConverter messageConverter) {
-        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        ConnectionFactory connectionFactory,
+        Jackson2JsonMessageConverter messageConverter
+    ) {
+        SimpleRabbitListenerContainerFactory factory =
+            new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(messageConverter);
         return factory;
@@ -63,9 +75,10 @@ public class CorrelationIdRabbitConfig {
             String correlationId = CorrelationContext.get();
             if (correlationId != null && !correlationId.isBlank()) {
                 message.getMessageProperties().setCorrelationId(correlationId);
-                message.getMessageProperties()
-                        .getHeaders()
-                        .put(CorrelationContext.MDC_KEY, correlationId);
+                message
+                    .getMessageProperties()
+                    .getHeaders()
+                    .put(CorrelationContext.MDC_KEY, correlationId);
             }
             return message;
         };

@@ -147,6 +147,7 @@ export default function EarlyExitScreen() {
       setExitResult(result);
       setPhase('done');
     } catch (err: unknown) {
+      console.error(err);
       const apiError = extractApiError(err);
       const code = apiError?.code;
       const message = apiError?.message;
@@ -541,6 +542,7 @@ export function EarlyExitStatusPanel({
           try {
             await cancelExit();
           } catch (err: unknown) {
+            console.error(err);
             const code = extractApiError(err)?.code;
             if (code === 'VAULT_NO_PENDING_EARLY_EXIT') {
               setCancelError(

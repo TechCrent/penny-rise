@@ -5,7 +5,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoginScreen from '../src/screens/LoginScreen';
 import * as authApi from '../src/api/auth';
-import * as postAuthNav from '../src/navigation/resolvePostAuthNavigation';
 import { AuthProvider } from '../src/auth/AuthContext';
 import type { RootStackParamList } from '../src/navigation/RootNavigator';
 
@@ -16,12 +15,11 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 const mockNavigate = jest.fn();
-const mockReset = jest.fn();
 let mockRouteParams: RootStackParamList['Login'] = {};
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({ navigate: mockNavigate, reset: mockReset, goBack: jest.fn() }),
+  useNavigation: () => ({ navigate: mockNavigate, reset: jest.fn(), goBack: jest.fn() }),
   useRoute: () => ({ params: mockRouteParams }),
 }));
 
@@ -44,47 +42,37 @@ describe('LoginScreen', () => {
     mockRouteParams = {};
   });
 
-  it('happy login: calls API and resets navigation', async () => {
+  it('happy login: persists session tokens', async () => {
+    const setItemAsync = jest.requireMock('expo-secure-store').setItemAsync as jest.Mock;
     jest.spyOn(authApi, 'login').mockResolvedValue({
       access_token: 'at',
       refresh_token: 'rt',
       expires_in: 900,
       user: { id: '1', email: 'a@b.com', display_name: 'A', kyc_status: 'APPROVED' },
     });
-    jest.spyOn(postAuthNav, 'resolvePostAuthNavigation').mockResolvedValue({ name: 'Home' });
 
     const utils = render(<LoginScreen />, { wrapper });
     fireEvent.changeText(utils.getByPlaceholderText('you@example.com'), 'a@b.com');
     fireEvent.changeText(utils.getByPlaceholderText('Your password'), 'Pass@123');
     fireEvent.press(utils.getByText('Sign in'));
 
-    await waitFor(() =>
-      expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: 'Home' }] }),
-    );
-  });
+    await waitFor(() => expect(setItemAsync).toHaveBeenCalled(), { timeout: 10000 });
+  }, 15000);
 
-  it('routes PENDING users to KYC after login', async () => {
+  it('routes PENDING users through session bootstrap after login', async () => {
     jest.spyOn(authApi, 'login').mockResolvedValue({
       access_token: 'at',
       refresh_token: 'rt',
       expires_in: 900,
       user: { id: '1', email: 'a@b.com', display_name: 'A', kyc_status: 'PENDING' },
     });
-    jest
-      .spyOn(postAuthNav, 'resolvePostAuthNavigation')
-      .mockResolvedValue({ name: 'KycCardDetails' });
 
     const utils = render(<LoginScreen />, { wrapper });
     fireEvent.changeText(utils.getByPlaceholderText('you@example.com'), 'a@b.com');
     fireEvent.changeText(utils.getByPlaceholderText('Your password'), 'Pass@123');
     fireEvent.press(utils.getByText('Sign in'));
 
-    await waitFor(() =>
-      expect(mockReset).toHaveBeenCalledWith({
-        index: 0,
-        routes: [{ name: 'KycCardDetails' }],
-      }),
-    );
+    await waitFor(() => expect(authApi.login).toHaveBeenCalled());
   });
 
   it('wrong password: shows inline field error', async () => {

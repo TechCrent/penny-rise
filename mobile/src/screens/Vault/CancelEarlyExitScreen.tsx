@@ -37,6 +37,7 @@ export default function CancelEarlyExitScreen() {
       await cancelExit();
       navigation.navigate('VaultDetail', { vaultId, successMessage: 'Early exit cancelled.' });
     } catch (err: unknown) {
+      console.error(err);
       const apiError = extractApiError(err);
       if (apiError?.code === 'VAULT_NO_PENDING_EARLY_EXIT') {
         setServerError('This exit request has already been processed and cannot be cancelled.');

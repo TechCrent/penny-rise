@@ -4,6 +4,7 @@ const KYC_SUBMISSION_KEY = 'stash_kyc_submission';
 
 export interface StoredKycSubmission {
   submissionId: string;
+  ownerUserId?: string;
   uploadUrls: {
     FRONT_OF_CARD: string;
     BACK_OF_CARD: string;
@@ -20,7 +21,8 @@ export async function loadKycSubmission(): Promise<StoredKycSubmission | null> {
   try {
     const raw = await SecureStore.getItemAsync(KYC_SUBMISSION_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch {
+  } catch (err) {
+    console.error(err);
     return null;
   }
 }

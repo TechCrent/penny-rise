@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { clearKycSubmission } from '../storage/kycStorage';
 
 const ACCESS_TOKEN_KEY = 'stash_access_token';
 const REFRESH_TOKEN_KEY = 'stash_refresh_token';
@@ -55,5 +56,6 @@ export async function clearSession(): Promise<void> {
   await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
   await SecureStore.deleteItemAsync(KYC_STATUS_KEY);
+  await clearKycSubmission();
   sessionListener?.(null);
 }

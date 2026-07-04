@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getAccessToken } from '../auth/authSession';
+import { decodeUserIdFromJwt } from '../auth/jwt';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getMySubmission } from '../api/kyc';
-import { loadKycSubmission } from '../storage/kycStorage';
+import { clearKycSubmission, loadKycSubmission } from '../storage/kycStorage';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -19,16 +21,27 @@ export function useKycResumability(options?: UseKycResumabilityOptions) {
     if (!enabled) return;
 
     async function check() {
-      const stored = await loadKycSubmission();
+      const [stored, accessToken] = await Promise.all([loadKycSubmission(), getAccessToken()]);
+      const currentUserId = accessToken ? decodeUserIdFromJwt(accessToken) : null;
+      const submission = await getMySubmission();
+
       if (stored) {
-        navigation.replace('KycDocumentUpload', {
-          submissionId: stored.submissionId,
-          uploadUrls: stored.uploadUrls,
-        });
-        return;
+        const belongsToCurrentUser =
+          !!stored.ownerUserId && !!currentUserId && stored.ownerUserId === currentUserId;
+        const matchesActivePendingSubmission =
+          submission?.id === stored.submissionId && submission.status === 'PENDING_DOCUMENTS';
+
+        if (belongsToCurrentUser && matchesActivePendingSubmission) {
+          navigation.replace('KycDocumentUpload', {
+            submissionId: stored.submissionId,
+            uploadUrls: stored.uploadUrls,
+          });
+          return;
+        }
+
+        await clearKycSubmission();
       }
 
-      const submission = await getMySubmission();
       if (submission && ['REVIEWING', 'SUBMITTED'].includes(submission.status)) {
         navigation.replace('KycSubmissionPending', { submissionId: submission.id });
       }

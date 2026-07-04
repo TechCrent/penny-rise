@@ -64,7 +64,8 @@ export function useWalletStatement(accountId: string | null) {
         cursor.current = page.next_cursor;
         setEntries(page.entries.map(toActivity));
         setHasMore(page.has_more);
-      } catch {
+      } catch (err) {
+        console.error(err);
         setError('Could not load transaction history.');
       } finally {
         setLoading(false);
@@ -82,7 +83,8 @@ export function useWalletStatement(accountId: string | null) {
       cursor.current = page.next_cursor;
       setEntries(prev => [...prev, ...page.entries.map(toActivity)]);
       setHasMore(page.has_more);
-    } catch {
+    } catch (err) {
+      console.error(err);
       // Silently fail on load-more; user can scroll up and retry
     } finally {
       setLoadingMore(false);

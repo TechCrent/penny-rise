@@ -22,7 +22,6 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { login } from '../api/auth';
 import { extractApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { resolvePostAuthNavigation } from '../navigation/resolvePostAuthNavigation';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 type Route = RouteProp<RootStackParamList, 'Login'>;
@@ -81,10 +80,10 @@ export default function LoginScreen() {
     try {
       const response = await login({ email: values.email, password: values.password });
       await setTokens(response.access_token, response.refresh_token, response.user.kyc_status);
-
-      const route = await resolvePostAuthNavigation(response.user.kyc_status);
-      navigation.reset({ index: 0, routes: [route] });
+      // RootNavigator switches to the authenticated stack; AuthenticatedBootstrap
+      // resolves the correct post-login destination.
     } catch (error) {
+      console.error(error);
       const apiError = extractApiError(error);
 
       if (apiError?.code === 'AUTH_ACCOUNT_LOCKED') {

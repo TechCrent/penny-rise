@@ -24,7 +24,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const QUICK_ACTIONS = [
   { id: 'deposit', label: 'Deposit', icon: '↓', screen: 'VaultList' as const },
-  { id: 'send', label: 'Send', icon: '→', screen: 'Transfer' as const },
+  { id: 'send', label: 'Send', icon: '→', screen: 'RecipientPicker' as const },
   { id: 'withdraw', label: 'Withdraw', icon: '↑', screen: 'VaultList' as const },
   { id: 'challenges', label: 'Challenges', icon: '🏆', screen: 'ChallengesList' as const },
 ];
@@ -91,24 +91,9 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>{greeting()}</Text>
             <Text style={styles.subhead}>Here&apos;s how your savings are doing</Text>
           </View>
-          <TouchableOpacity
-            style={styles.bellButton}
-            onPress={() => navigation.navigate('Notifications')}
-            accessibilityLabel={
-              unreadNotificationsCount > 0
-                ? `Notifications, ${unreadNotificationsCount} unread`
-                : 'Notifications'
-            }
-          >
+          <View style={styles.bellButton} accessibilityLabel="Notifications">
             <Text style={styles.bellIcon}>🔔</Text>
-            {unreadNotificationsCount > 0 && (
-              <View style={styles.bellBadge} testID="bell-unread-badge">
-                <Text style={styles.bellBadgeText}>
-                  {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.heroCard}>

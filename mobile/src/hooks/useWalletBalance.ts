@@ -17,7 +17,8 @@ export function useWalletBalance() {
         balancePesewas: data.balance_pesewas,
         balanceCedis: data.balance_cedis,
       });
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError('Could not load wallet balance.');
     } finally {
       setLoading(false);

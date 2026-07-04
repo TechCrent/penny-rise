@@ -8,15 +8,35 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { DocumentUploadSlot, type UploadState } from '../components/DocumentUploadSlot';
+import {
+  DocumentUploadSlot,
+  type SelectedImage,
+  type UploadState,
+} from '../components/DocumentUploadSlot';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { extractApiError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { decodeUserIdFromJwt } from '../auth/jwt';
 import { uploadDocumentToSignedUrl, confirmDocumentUpload } from '../api/kyc';
-import { saveKycSubmission, loadKycSubmission } from '../storage/kycStorage';
+import { saveKycSubmission, loadKycSubmission, clearKycSubmission } from '../storage/kycStorage';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycDocumentUpload'>;
 type Route = RouteProp<RootStackParamList, 'KycDocumentUpload'>;
 
 type DocType = 'FRONT_OF_CARD' | 'BACK_OF_CARD' | 'SELFIE';
+
+function inferImageContentType(image: SelectedImage): string {
+  if (image.mimeType?.startsWith('image/')) {
+    return image.mimeType;
+  }
+
+  const lowerName = image.fileName?.toLowerCase() ?? image.uri.toLowerCase();
+  if (lowerName.endsWith('.png')) return 'image/png';
+  if (lowerName.endsWith('.webp')) return 'image/webp';
+  if (lowerName.endsWith('.heic')) return 'image/heic';
+  if (lowerName.endsWith('.heif')) return 'image/heif';
+  return 'image/jpeg';
+}
 
 interface DocumentState {
   state: UploadState;
@@ -53,6 +73,7 @@ const DOC_CONFIG: Array<{ type: DocType; label: string; description: string }> =
 export default function KycDocumentUploadScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
+  const { accessToken } = useAuth();
   const { submissionId, uploadUrls } = route.params;
 
   const [docStates, setDocStates] = useState<Record<DocType, DocumentState>>({
@@ -62,8 +83,19 @@ export default function KycDocumentUploadScreen() {
   });
 
   useEffect(() => {
-    loadKycSubmission().then(stored => {
-      if (!stored?.uploadedTypes.length) return;
+    const currentUserId = accessToken ? decodeUserIdFromJwt(accessToken) : null;
+
+    loadKycSubmission().then(async stored => {
+      const isSameSubmission = stored?.submissionId === submissionId;
+      const isSameUser =
+        !!stored?.ownerUserId && !!currentUserId && stored.ownerUserId === currentUserId;
+
+      if (!stored) return;
+      if (!isSameSubmission || !isSameUser) {
+        await clearKycSubmission();
+        return;
+      }
+      if (!stored.uploadedTypes.length) return;
 
       setDocStates(prev => {
         const next = { ...prev };
@@ -78,7 +110,7 @@ export default function KycDocumentUploadScreen() {
         return next;
       });
     });
-  }, []);
+  }, [accessToken, submissionId]);
 
   const allUploaded = Object.values(docStates).every(d => d.state === 'success');
 
@@ -90,18 +122,23 @@ export default function KycDocumentUploadScreen() {
   }, []);
 
   const handleDocumentSelected = useCallback(
-    async (type: DocType, uri: string) => {
-      updateDocState(type, { state: 'uploading', progress: 0, previewUri: uri, error: undefined });
+    async (type: DocType, image: SelectedImage) => {
+      updateDocState(type, {
+        state: 'uploading',
+        progress: 0,
+        previewUri: image.uri,
+        error: undefined,
+      });
 
       try {
         const signedUrl = uploadUrls[type];
-        const contentType = 'image/jpeg';
+        const contentType = inferImageContentType(image);
 
-        await uploadDocumentToSignedUrl(signedUrl, uri, contentType, progress => {
+        await uploadDocumentToSignedUrl(signedUrl, image.uri, contentType, progress => {
           updateDocState(type, { progress });
         });
 
-        const base64Content = await FileSystem.readAsStringAsync(uri, {
+        const base64Content = await FileSystem.readAsStringAsync(image.uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
         const sha256Hash = await Crypto.digestStringAsync(
@@ -109,7 +146,7 @@ export default function KycDocumentUploadScreen() {
           base64Content,
         );
 
-        const fileInfo = await FileSystem.getInfoAsync(uri);
+        const fileInfo = await FileSystem.getInfoAsync(image.uri);
         const sizeBytes = fileInfo.exists ? fileInfo.size : 0;
 
         const url = new URL(signedUrl);
@@ -127,16 +164,26 @@ export default function KycDocumentUploadScreen() {
         updateDocState(type, { state: 'success', progress: 1 });
 
         const stored = await loadKycSubmission();
-        if (stored) {
+        if (stored && stored.submissionId === submissionId) {
           const uploadedTypes = [...new Set([...stored.uploadedTypes, type])] as DocType[];
-          await saveKycSubmission({ ...stored, uploadedTypes });
+          await saveKycSubmission({
+            ...stored,
+            ownerUserId: accessToken
+              ? (decodeUserIdFromJwt(accessToken) ?? stored.ownerUserId)
+              : stored.ownerUserId,
+            uploadedTypes,
+          });
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Upload failed. Please retry.';
+        console.error(err);
+        const apiError = extractApiError(err);
+        const message =
+          apiError?.message ??
+          (err instanceof Error ? err.message : 'Upload failed. Please retry.');
         updateDocState(type, { state: 'error', error: message });
       }
     },
-    [submissionId, uploadUrls, updateDocState],
+    [accessToken, submissionId, uploadUrls, updateDocState],
   );
 
   const handleContinue = () => {

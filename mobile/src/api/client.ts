@@ -63,7 +63,8 @@ async function refreshAccessToken(): Promise<string | null> {
         kycStatus,
       });
       return response.access_token;
-    } catch {
+    } catch (err) {
+      console.error(err);
       await clearSession();
       return null;
     } finally {

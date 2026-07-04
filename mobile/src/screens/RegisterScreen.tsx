@@ -55,6 +55,7 @@ export default function RegisterScreen() {
 
       navigation.navigate('EmailVerificationPending', { email: values.email });
     } catch (error) {
+      console.error(error);
       const apiError = extractApiError(error);
 
       if (apiError?.code === 'AUTH_EMAIL_ALREADY_REGISTERED') {

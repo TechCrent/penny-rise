@@ -12,12 +12,18 @@ import * as ImagePicker from 'expo-image-picker';
 
 export type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 
+export interface SelectedImage {
+  uri: string;
+  mimeType?: string;
+  fileName?: string;
+}
+
 interface DocumentUploadSlotProps {
   label: string;
   description: string;
   state: UploadState;
   progress: number;
-  onImageSelected: (uri: string) => void;
+  onImageSelected: (image: SelectedImage) => void;
   previewUri?: string;
   error?: string;
 }
@@ -43,7 +49,11 @@ export function DocumentUploadSlot({
       quality: 0.85,
     });
     if (!result.canceled && result.assets[0]) {
-      onImageSelected(result.assets[0].uri);
+      onImageSelected({
+        uri: result.assets[0].uri,
+        mimeType: result.assets[0].mimeType ?? undefined,
+        fileName: result.assets[0].fileName ?? undefined,
+      });
     }
   };
 
@@ -58,7 +68,11 @@ export function DocumentUploadSlot({
       quality: 0.85,
     });
     if (!result.canceled && result.assets[0]) {
-      onImageSelected(result.assets[0].uri);
+      onImageSelected({
+        uri: result.assets[0].uri,
+        mimeType: result.assets[0].mimeType ?? undefined,
+        fileName: result.assets[0].fileName ?? undefined,
+      });
     }
   };
 
@@ -72,7 +86,7 @@ export function DocumentUploadSlot({
 
       {state === 'success' && previewUri ? (
         <View style={styles.successSlot}>
-          <Image source={{ uri: previewUri }} style={styles.preview} />
+          <Image source={{ uri: previewUri }} style={styles.preview} resizeMode="cover" />
           <Text style={styles.successBadge}>Uploaded</Text>
           <TouchableOpacity onPress={pickImage} style={styles.retakeButton}>
             <Text style={styles.retakeText}>Retake</Text>
@@ -152,7 +166,7 @@ const styles = StyleSheet.create({
     transformOrigin: 'left',
   },
   successSlot: { alignItems: 'center', gap: 10 },
-  preview: { width: '100%', height: 150, borderRadius: 10, resizeMode: 'cover' },
+  preview: { width: '100%', height: 150, borderRadius: 10 },
   successBadge: { fontSize: 13, color: '#059669', fontWeight: '600' },
   retakeButton: { padding: 6 },
   retakeText: { fontSize: 13, color: '#6B7280', textDecorationLine: 'underline' },

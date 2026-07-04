@@ -53,6 +53,7 @@ export default function EmailVerificationPendingScreen() {
           ],
         });
       } catch (error) {
+        console.error(error);
         const apiError = extractApiError(error);
         setVerifyState('error');
         setVerifyError(apiError?.message ?? 'Verification link is invalid or has expired.');
@@ -80,7 +81,8 @@ export default function EmailVerificationPendingScreen() {
       await resendVerification(email);
       setResendState('sent');
       startCooldown();
-    } catch {
+    } catch (err) {
+      console.error(err);
       setResendState('error');
     }
   };

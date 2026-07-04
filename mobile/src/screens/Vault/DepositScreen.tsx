@@ -152,6 +152,7 @@ export default function DepositScreen() {
         setPhase('polling');
       }
     } catch (err: unknown) {
+      console.error(err);
       const apiError = extractApiError(err);
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
       const code = apiError?.code;
@@ -161,6 +162,22 @@ export default function DepositScreen() {
         setServerError('This vault is closed and cannot accept deposits.');
       } else if (status === 403) {
         setServerError("You don't have permission to deposit into this vault.");
+      } else if (
+        status === 409 &&
+        message?.toLowerCase().includes('paystack subaccount')
+      ) {
+        setServerError(
+          'Payments are not set up for your account yet. Complete KYC approval and ensure Paystack/RabbitMQ are running, then try again.',
+        );
+      } else if (status === 502 || status === 503) {
+        setServerError(
+          'Payment service is unavailable. Make sure the payments service is running on port 8081.',
+        );
+      } else if (status === 500) {
+        setServerError(
+          message ??
+            'Payment service error. Check PAYSTACK_SECRET_KEY in .env and that payments-service is running.',
+        );
       } else if (message) {
         setServerError(message);
       } else {

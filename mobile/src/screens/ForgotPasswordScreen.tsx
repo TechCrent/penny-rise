@@ -43,7 +43,8 @@ export default function ForgotPasswordScreen() {
     setIsSubmitting(true);
     try {
       await forgotPassword(values.email);
-    } catch {
+    } catch (err) {
+      console.error(err);
       // Show confirmation regardless to prevent enumeration.
     } finally {
       setIsSubmitting(false);

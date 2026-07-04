@@ -96,6 +96,7 @@ export function JoinSusuScreen() {
       const data = await susuApi.joinGroup(code, idempotencyKey.current);
       setResult(data);
     } catch (e) {
+      console.error(e);
       const err = e as { code?: string; message?: string; status?: number } | null;
       const errCode = err?.code ?? '';
       if (errCode === 'SUSU_GROUP_FULL') {

@@ -2,8 +2,10 @@ package com.stash.platform.kyc.api;
 
 import com.stash.platform.kyc.client.KycServiceClient;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,10 +39,29 @@ public class KycLocalStorageProxyController {
         }
 
         return kycServiceClient.forwardPublic(
-                org.springframework.http.HttpMethod.PUT,
+                HttpMethod.PUT,
                 proxyPath,
                 request.getInputStream().readAllBytes(),
                 contentType,
+                null
+        );
+    }
+
+    @GetMapping("/view/{*path}")
+    public ResponseEntity<byte[]> view(@PathVariable("path") String path,
+                                       HttpServletRequest request) {
+        String relativePath = path.startsWith("/") ? path.substring(1) : path;
+        String proxyPath = "/internal/local-storage/view/" + relativePath;
+        String query = request.getQueryString();
+        if (query != null && !query.isBlank()) {
+            proxyPath += "?" + query;
+        }
+
+        return kycServiceClient.forwardPublic(
+                HttpMethod.GET,
+                proxyPath,
+                null,
+                null,
                 null
         );
     }

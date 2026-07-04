@@ -121,8 +121,20 @@ public class DepositService {
                     " is not ACTIVE (current status: " + account.getStatus() + ").");
         }
 
-        // ── Validate ownership (account must belong to the requesting user) ──
-        if (!request.userId().equals(account.getOwnerId())) {
+        // ── Validate ownership ────────────────────────────────────────────
+        // USER-owned accounts (direct wallet deposits) carry owner_id = the user
+        // themselves, so ownership can be verified directly here. VAULT (and other
+        // entity) accounts carry owner_id = the ENTITY's id (e.g. the vault UUID),
+        // NOT the user's — see PaymentsServiceClient#provisionVaultLedgerAccount.
+        // For those, the monolith is the authority on whether the user owns the
+        // entity and has already validated it (VaultDepositService) before calling
+        // this internal endpoint; Payments cannot independently re-derive the
+        // vault→user mapping (it doesn't hold that data). So the direct
+        // owner_id == userId check only applies to USER-owned accounts — applying
+        // it to VAULT accounts compared userId against vaultId and rejected every
+        // vault deposit with a 403.
+        if ("USER".equals(account.getOwnerType())
+                && !request.userId().equals(account.getOwnerId())) {
             log.warn("Deposit ownership mismatch: requesting user={} account owner={}",
                     request.userId(), account.getOwnerId());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,

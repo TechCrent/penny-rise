@@ -10,8 +10,10 @@ import { apiClient } from '../../api/client';
  * here swallows and logs, never throws or surfaces UI.
  */
 export async function registerPushToken(): Promise<void> {
-  // Remote push notifications are not supported in Expo Go (SDK 53+).
-  if (Constants.appOwnership === 'expo') return;
+  // Remote push notifications removed from Expo Go in SDK 53+.
+  // executionEnvironment === 'storeClient' is the reliable SDK 53+ check;
+  // appOwnership === 'expo' kept as fallback for older Expo Go versions.
+  if (Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo') return;
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;

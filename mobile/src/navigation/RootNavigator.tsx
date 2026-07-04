@@ -70,7 +70,7 @@ export type RootStackParamList = {
     };
   };
   KycSubmissionPending: { submissionId: string };
-  Deposit: { vaultId: string };
+  Deposit: { vaultId?: string };
   Withdraw: { vaultId: string };
   EarlyExit: { vaultId: string };
   CancelEarlyExit: { vaultId: string };

@@ -36,8 +36,17 @@ public class KycAdminClient {
     }
 
     public ResponseEntity<byte[]> forward(HttpMethod method, String pathAndQuery, byte[] body) {
+        return forward(method, pathAndQuery, body, null);
+    }
+
+    public ResponseEntity<byte[]> forward(HttpMethod method, String pathAndQuery, byte[] body,
+                                          HttpHeaders extraHeaders) {
         WebClient.RequestBodySpec request = webClient.method(method).uri(pathAndQuery);
         request.header("X-Admin-Token", placeholderAdminToken);
+        if (extraHeaders != null) {
+            extraHeaders.forEach((name, values) ->
+                    values.forEach(value -> request.header(name, value)));
+        }
 
         WebClient.RequestHeadersSpec<?> spec =
                 body != null && body.length > 0

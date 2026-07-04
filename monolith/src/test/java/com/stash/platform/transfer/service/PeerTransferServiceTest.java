@@ -3,6 +3,7 @@ package com.stash.platform.transfer.service;
 import com.stash.platform.transfer.api.dto.CreateTransferRequest;
 import com.stash.platform.transfer.api.dto.CreateTransferResponse;
 import com.stash.platform.transfer.client.PeerTransferPaymentsClient;
+import com.stash.platform.transfer.client.TransferLegResult;
 import com.stash.platform.transfer.client.TransferPaymentsException;
 import com.stash.platform.transfer.domain.MonthlyTransferQuotaEntity;
 import com.stash.platform.transfer.domain.PeerTransferEntity;
@@ -45,7 +46,9 @@ class PeerTransferServiceTest {
     private static final UUID   RECIP_WALLET = UUID.randomUUID();
     private static final String CORR              = "corr-transfer-001";
     private static final String IDEM_KEY          = "idem-transfer-001";
-    private static final String PRINCIPAL_TXN_REF = "a1b2c3d4-0000-0000-0000-000000000001";
+    private static final String PRINCIPAL_TXN_REF = "STSH-202606-TRANSFER01";
+    private static final UUID   PRINCIPAL_LEDGER_TXN_ID =
+            UUID.fromString("a1b2c3d4-0000-0000-0000-000000000001");
 
     @BeforeEach
     void setUp() {
@@ -63,7 +66,7 @@ class PeerTransferServiceTest {
         when(paymentsClient.resolveUserWallet(SENDER_ID, CORR)).thenReturn(SENDER_WALLET);
         when(paymentsClient.resolveUserWallet(RECIPIENT_ID, CORR)).thenReturn(RECIP_WALLET);
         when(paymentsClient.transferPrincipal(any(), any(), anyLong(), any(), any(), any(), any()))
-                .thenReturn(PRINCIPAL_TXN_REF);
+                .thenReturn(new TransferLegResult(PRINCIPAL_TXN_REF, PRINCIPAL_LEDGER_TXN_ID));
     }
 
     // ── Happy: free transfer ───────────────────────────────────────────────

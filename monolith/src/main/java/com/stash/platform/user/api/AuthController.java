@@ -19,14 +19,18 @@ import com.stash.platform.user.service.LogoutService;
 import com.stash.platform.user.service.ResetPasswordService;
 import com.stash.platform.user.service.SignupService;
 import com.stash.platform.user.service.TokenRefreshService;
+import com.stash.shared.apierrors.StashApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+
+import java.util.Map;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -109,15 +113,91 @@ public class AuthController {
     @GetMapping("/verify-email")
     @Operation(
         summary     = "Verify email address",
-        description = "Consumes the token from the verification link. " +
-                      "Sets email_verified_at on the user.")
-    @ApiResponse(responseCode = "200", description = "Email verified successfully")
-    @ApiResponse(responseCode = "404", description = "Token not found")
-    @ApiResponse(responseCode = "409", description = "Token already used")
-    @ApiResponse(responseCode = "410", description = "Token expired")
-    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
-        emailVerificationService.verify(token);
-        return ResponseEntity.ok().build();
+        description = "Consumes the token from the verification link. Reached by the user "
+                      + "clicking the link directly in their email client (desktop or mobile), "
+                      + "so it renders an HTML confirmation page rather than a JSON body — the "
+                      + "mobile app's own pending-verification screen separately polls "
+                      + "GET /auth/email-verified rather than hitting this endpoint.")
+    @ApiResponse(responseCode = "200", description = "HTML page — verified or a friendly error")
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+        try {
+            emailVerificationService.verify(token);
+            return htmlPage(HttpStatus.OK, "Email verified",
+                    "You're all set — your email address has been verified.",
+                    "You can close this tab and return to the Stash app to sign in.");
+        } catch (StashApiException e) {
+            return htmlPage(e.getHttpStatus(), "Verification link problem",
+                    e.getMessage(),
+                    "Go back to the Stash app and request a new verification email if needed.");
+        }
+    }
+
+    /**
+     * Minimal, self-contained HTML confirmation page for links opened directly in a
+     * browser (email client "Verify" click) rather than consumed by the mobile app.
+     */
+    private ResponseEntity<String> htmlPage(HttpStatus status, String title,
+                                            String message, String subtext) {
+        String html = """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>%s · Stash</title>
+                <style>
+                  body { margin: 0; min-height: 100vh; display: flex; align-items: center;
+                         justify-content: center; background: #F5F5F7;
+                         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+                  .card { max-width: 420px; margin: 24px; padding: 40px 32px; background: #FFFFFF;
+                          border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); text-align: center; }
+                  .badge { width: 56px; height: 56px; border-radius: 50%%; margin: 0 auto 20px;
+                           display: flex; align-items: center; justify-content: center;
+                           font-size: 28px; background: %s; color: #FFFFFF; }
+                  h1 { font-size: 20px; margin: 0 0 8px; color: #111827; }
+                  p.message { font-size: 15px; color: #374151; margin: 0 0 4px; }
+                  p.subtext { font-size: 13px; color: #6B7280; margin: 16px 0 0; }
+                </style>
+                </head>
+                <body>
+                  <div class="card">
+                    <div class="badge">%s</div>
+                    <h1>%s</h1>
+                    <p class="message">%s</p>
+                    <p class="subtext">%s</p>
+                  </div>
+                </body>
+                </html>
+                """.formatted(
+                        escapeHtml(title),
+                        status == HttpStatus.OK ? "#4F46E5" : "#DC2626",
+                        status == HttpStatus.OK ? "&#10003;" : "&#33;",
+                        escapeHtml(title),
+                        escapeHtml(message),
+                        escapeHtml(subtext));
+
+        return ResponseEntity.status(status)
+                .contentType(MediaType.TEXT_HTML)
+                .body(html);
+    }
+
+    private static String escapeHtml(String s) {
+        return s == null ? "" : s
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
+    }
+
+    @GetMapping("/email-verified")
+    @Operation(
+        summary     = "Check whether an email address has been verified",
+        description = "Polled by the mobile app while the user is on the verification-pending screen. " +
+                      "Returns false for unknown emails to prevent enumeration.")
+    @ApiResponse(responseCode = "200", description = "Verification status returned")
+    public ResponseEntity<Map<String, Boolean>> checkEmailVerified(@RequestParam String email) {
+        boolean verified = emailVerificationService.isEmailVerified(email);
+        return ResponseEntity.ok(Map.of("verified", verified));
     }
 
     @PostMapping("/resend-verification")

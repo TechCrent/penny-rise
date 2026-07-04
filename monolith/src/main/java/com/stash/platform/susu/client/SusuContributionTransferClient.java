@@ -50,12 +50,13 @@ public class SusuContributionTransferClient {
         try {
             Map<?, ?> resp = webClient.post()
                     .uri("/internal/v1/ledger/accounts")
+                    .header("Idempotency-Key", "provision-user-wallet:v2:" + userId)
                     .header("X-Correlation-Id", correlationId)
                     .bodyValue(Map.of(
                             "owner_type",   "USER",
                             "owner_id",     userId.toString(),
                             "account_type", "USER_WALLET",
-                            "description",  "USER_WALLET for user: " + userId
+                            "description",  "USER_WALLET:" + userId
                     ))
                     .retrieve()
                     .bodyToMono(Map.class)

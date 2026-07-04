@@ -117,9 +117,12 @@ class KycProxyControllerTest {
     @Test
     @DisplayName("GET /submissions/me requires authentication")
     void getMySubmission_requiresAuth() throws Exception {
+        // SecurityConfig wires an explicit HttpStatusEntryPoint(UNAUTHORIZED) for
+        // missing/invalid credentials — 401, not 403 (403 is reserved for
+        // authenticated-but-forbidden, via AdminAccessDeniedHandler).
         mockMvc
             .perform(get("/api/v1/kyc/submissions/me"))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -10,4 +10,8 @@ public record WithdrawalInitiateResponse(
     public static WithdrawalInitiateResponse pending(String ref, String transferCode) {
         return new WithdrawalInitiateResponse(ref, transferCode, "PENDING");
     }
+
+    public static WithdrawalInitiateResponse completed(String ref, String transferCode) {
+        return new WithdrawalInitiateResponse(ref, transferCode, "COMPLETED");
+    }
 }

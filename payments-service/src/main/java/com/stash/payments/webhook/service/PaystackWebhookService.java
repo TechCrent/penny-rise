@@ -93,7 +93,7 @@ public class PaystackWebhookService {
             UUID resultingTransactionId = route(eventType, data, correlationId);
 
             dedupRow.markCompleted(resultingTransactionId, Instant.now(clock));
-            webhookEventRepo.save(dedupRow);
+            // dedupRow is already managed after saveAndFlush — dirty state flushes on commit.
 
             log.info("Webhook processed: type={} eventId={} correlationId={}",
                     eventType, eventId, correlationId);

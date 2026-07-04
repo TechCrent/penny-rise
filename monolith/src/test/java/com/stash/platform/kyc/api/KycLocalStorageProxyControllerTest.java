@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.stash.admin.rbac.AdminAccessDeniedHandler;
@@ -87,6 +89,47 @@ class KycLocalStorageProxyControllerTest {
                 return true;
             }),
             eq(MediaType.IMAGE_JPEG),
+            org.mockito.ArgumentMatchers.isNull()
+        );
+    }
+
+    @Test
+    @DisplayName(
+        "GET /internal/local-storage/view proxies document download without auth"
+    )
+    void view_proxied() throws Exception {
+        byte[] imageBytes = "jpeg-bytes".getBytes();
+        when(
+            kycServiceClient.forwardPublic(
+                eq(HttpMethod.GET),
+                eq(
+                    "/internal/local-storage/view/submissions/123/front.jpg?expires=123"
+                ),
+                org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull()
+            )
+        ).thenReturn(
+            ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(imageBytes)
+        );
+
+        mockMvc
+            .perform(
+                get(
+                    "/internal/local-storage/view/submissions/123/front.jpg?expires=123"
+                )
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.IMAGE_JPEG))
+            .andExpect(content().bytes(imageBytes));
+
+        verify(kycServiceClient).forwardPublic(
+            eq(HttpMethod.GET),
+            eq(
+                "/internal/local-storage/view/submissions/123/front.jpg?expires=123"
+            ),
+            org.mockito.ArgumentMatchers.isNull(),
+            org.mockito.ArgumentMatchers.isNull(),
             org.mockito.ArgumentMatchers.isNull()
         );
     }

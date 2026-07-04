@@ -6,7 +6,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { resendVerification, verifyEmail } from '../api/auth';
-import { extractApiError } from '../api/client';
+import { extractApiError, apiClient } from '../api/client';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EmailVerificationPending'>;
 type Route = RouteProp<RootStackParamList, 'EmailVerificationPending'>;
@@ -25,13 +25,40 @@ export default function EmailVerificationPendingScreen() {
   const [cooldownRemaining, setCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const verifyAttemptedRef = useRef(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(
     () => () => {
       if (cooldownRef.current) clearInterval(cooldownRef.current);
+      if (pollRef.current) clearInterval(pollRef.current);
     },
     [],
   );
+
+  // Poll every 3 s while the user is on this screen so that clicking the link
+  // in Mailpit (on a laptop) automatically redirects the phone to sign-in.
+  useEffect(() => {
+    if (!email || verifyToken) return; // token path handles itself; no email = nothing to poll
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await apiClient.get<{ verified: boolean }>(
+          `/api/v1/auth/email-verified?email=${encodeURIComponent(email)}`,
+        );
+        if (data.verified) {
+          clearInterval(pollRef.current!);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login', params: { successBanner: 'Email verified! You can sign in now.' } }],
+          });
+        }
+      } catch {
+        // Silently ignore — poll will retry next tick
+      }
+    }, 3000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [email, verifyToken, navigation]);
 
   useEffect(() => {
     if (!verifyToken || verifyAttemptedRef.current) return;

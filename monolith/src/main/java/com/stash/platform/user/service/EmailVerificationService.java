@@ -187,6 +187,18 @@ public class EmailVerificationService {
         // Note: email address NOT logged.
     }
 
+    // ── Status check ─────────────────────────────────────────────────────
+
+    /**
+     * Returns whether the given email address has been verified.
+     * Returns false (not true) when the email is not found — no enumeration leak.
+     */
+    public boolean isEmailVerified(String email) {
+        return userRepository.findByEmail(email.toLowerCase().strip())
+                .map(User::isEmailVerified)
+                .orElse(false);
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────
 
     private static String sha256Hex(String input) {

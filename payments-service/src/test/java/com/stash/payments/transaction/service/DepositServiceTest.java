@@ -134,6 +134,24 @@ class DepositServiceTest {
     }
 
     @Test
+    @DisplayName("VAULT account (owner_id = vaultId, not userId) does NOT 403 — " +
+                 "the monolith is the authority on vault ownership")
+    void vault_account_deposit_does_not_403() {
+        // A vault ledger account: owner_type=VAULT, owner_id=vaultId (never the user).
+        // The old check compared userId against this vaultId and 403'd every vault deposit.
+        LedgerAccountEntity vaultAccount = new LedgerAccountEntity(
+                "VAULT", "VAULT", UUID.randomUUID(), "vault ledger", Instant.now(FIXED_CLOCK));
+        when(ledgerRepo.findById(ACCOUNT_ID)).thenReturn(Optional.of(vaultAccount));
+        stubSubaccount();
+        stubPaystackSuccess();
+
+        var result = service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
+
+        assertThat(result.status()).isEqualTo("PENDING");
+        assertThat(result.transactionReference()).isEqualTo(REF);
+    }
+
+    @Test
     @DisplayName("no Paystack subaccount for user returns 409")
     void no_subaccount_returns_409() {
         stubActiveAccount();

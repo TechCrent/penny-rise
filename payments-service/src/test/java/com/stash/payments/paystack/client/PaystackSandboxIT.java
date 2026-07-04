@@ -29,9 +29,9 @@ class PaystackSandboxIT {
     @Tag("paystack-sandbox")
     void sandbox_charge_initiation_returns_reference() {
         var request = new ChargeInitiateRequest(
-                "sandbox@stash.test",
+                "customer@email.com",
                 10_000L,
-                new ChargeInitiateRequest.MobileMoneyChannel("0241234567", "mtn"),
+                new ChargeInitiateRequest.MobileMoneyChannel("0551234987", "mtn"),
                 "GHS",
                 null   // no subaccount for this smoke test
         );
@@ -48,8 +48,8 @@ class PaystackSandboxIT {
     void sandbox_subaccount_creation_returns_code() {
         var request = new SubaccountCreateRequest(
                 "Stash Test User " + System.currentTimeMillis(),
-                "TEST",         // Paystack test bank code
-                "0000000000",   // Paystack test account number
+                "002",          // Paystack sandbox test bank code (not "TEST")
+                "0000000000",   // Paystack sandbox test account number
                 0.0,
                 "Sandbox smoke test"
         );

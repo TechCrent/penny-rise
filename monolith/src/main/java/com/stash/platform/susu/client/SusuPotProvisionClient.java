@@ -53,6 +53,7 @@ public class SusuPotProvisionClient {
         try {
             Map<?, ?> response = webClient.post()
                     .uri("/internal/v1/ledger/accounts")
+                    .header("Idempotency-Key", "provision-susu-pot:" + groupId)
                     .header("X-Correlation-Id", correlationId)
                     .bodyValue(Map.of(
                             "owner_type",   "SUSU_GROUP",

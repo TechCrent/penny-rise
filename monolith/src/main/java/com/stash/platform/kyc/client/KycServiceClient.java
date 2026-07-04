@@ -22,6 +22,15 @@ public class KycServiceClient {
 
     static final String USER_ID_HEADER = "X-Authenticated-User-Id";
 
+    /**
+     * Spring's WebClient defaults to a 256KB in-memory buffer limit for the response
+     * body, which is fine for JSON but far too small for a document photo forwarded
+     * byte-for-byte from kyc-service (a real phone-camera JPEG is routinely 1-5MB) —
+     * every document view request failed with DataBufferLimitException until this
+     * was raised.
+     */
+    private static final int MAX_RESPONSE_BUFFER_BYTES = 10 * 1024 * 1024;
+
     private final WebClient webClient;
 
     public KycServiceClient(
@@ -31,6 +40,8 @@ public class KycServiceClient {
         this.webClient = correlationAwareWebClient
             .mutate()
             .baseUrl(serviceUrl)
+            .codecs(configurer -> configurer.defaultCodecs()
+                    .maxInMemorySize(MAX_RESPONSE_BUFFER_BYTES))
             .build();
     }
 

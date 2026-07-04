@@ -44,3 +44,12 @@ Thumbs.db
 
 # Local PR notes (never commit unless explicitly requested)
 PRs/
+
+# Local service run logs / debug output (never commit)
+*-run.log
+*-run.err
+*-debug.log
+*-debug.err
+
+# Git account switching tool (git-account-tokens holds real PATs)
+git-account-tokens

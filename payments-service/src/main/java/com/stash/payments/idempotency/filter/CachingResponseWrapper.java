@@ -49,7 +49,13 @@ public class CachingResponseWrapper extends HttpServletResponseWrapper {
      * Called after the idempotency row is updated.
      */
     public void copyBodyToResponse() throws IOException {
+        if (getResponse().isCommitted()) {
+            return;
+        }
         byte[] body = capture.toByteArray();
+        if (body.length == 0) {
+            return;
+        }
         getResponse().setContentLength(body.length);
         getResponse().getOutputStream().write(body);
     }

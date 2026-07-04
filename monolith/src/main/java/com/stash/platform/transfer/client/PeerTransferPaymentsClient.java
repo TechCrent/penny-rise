@@ -43,18 +43,27 @@ public class PeerTransferPaymentsClient {
         this.feeRevenueAccountId = UUID.fromString(feeRevenueAccountId);
     }
 
+    private static String userWalletProvisionKey(UUID userId) {
+        return "provision-user-wallet:v2:" + userId;
+    }
+
+    private static Map<String, String> userWalletProvisionBody(UUID userId) {
+        return Map.of(
+                "owner_type",   "USER",
+                "owner_id",     userId.toString(),
+                "account_type", "USER_WALLET",
+                "description",  "USER_WALLET:" + userId
+        );
+    }
+
     /** Resolves (or provisions) a user's USER_WALLET ledger account ID. */
     public UUID resolveUserWallet(UUID userId, String correlationId) {
         try {
             Map<?, ?> resp = webClient.post()
                     .uri("/internal/v1/ledger/accounts")
+                    .header("Idempotency-Key", userWalletProvisionKey(userId))
                     .header("X-Correlation-Id", correlationId)
-                    .bodyValue(Map.of(
-                            "owner_type",   "USER",
-                            "owner_id",     userId.toString(),
-                            "account_type", "USER_WALLET",
-                            "description",  "USER_WALLET for user: " + userId
-                    ))
+                    .bodyValue(userWalletProvisionBody(userId))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .timeout(TIMEOUT)
@@ -71,12 +80,12 @@ public class PeerTransferPaymentsClient {
      *
      * @return the Payments Service transaction reference
      */
-    public String transferPrincipal(UUID senderWalletId, UUID recipientWalletId,
+    public TransferLegResult transferPrincipal(UUID senderWalletId, UUID recipientWalletId,
                                      long amount, UUID transferId, String note,
                                      String correlationId, String idempotencyKey) {
         return internalTransfer(
                 senderWalletId, recipientWalletId, amount,
-                "PEER_TRANSFER", transferId, "PEER_TRANSFER",
+                "TRANSFER", transferId, "PEER_TRANSFER",
                 note != null ? note : "Peer transfer",
                 correlationId, idempotencyKey);
     }
@@ -85,16 +94,16 @@ public class PeerTransferPaymentsClient {
      * Executes the fee transfer: sender → FEE_REVENUE.
      * Only called when the sender has exhausted their free quota.
      */
-    public String transferFee(UUID senderWalletId, long feeAmount, UUID transferId,
+    public TransferLegResult transferFee(UUID senderWalletId, long feeAmount, UUID transferId,
                                String correlationId, String idempotencyKey) {
         return internalTransfer(
                 senderWalletId, feeRevenueAccountId, feeAmount,
-                "PEER_TRANSFER_FEE", transferId, "PEER_TRANSFER_FEE",
+                "FEE_COLLECTION", transferId, "PEER_TRANSFER",
                 "Peer transfer fee",
                 correlationId, idempotencyKey);
     }
 
-    private String internalTransfer(UUID source, UUID destination, long amount,
+    private TransferLegResult internalTransfer(UUID source, UUID destination, long amount,
                                      String transactionType, UUID businessRefId,
                                      String businessRefType, String narrative,
                                      String correlationId, String idempotencyKey) {
@@ -119,7 +128,12 @@ public class PeerTransferPaymentsClient {
                     .timeout(TIMEOUT)
                     .block();
 
-            return (String) resp.get("transaction_reference");
+            String txnRef = (String) resp.get("transaction_reference");
+            Object ledgerTxnIdRaw = resp.get("ledger_transaction_id");
+            UUID ledgerTxnId = ledgerTxnIdRaw instanceof UUID u
+                    ? u
+                    : UUID.fromString(String.valueOf(ledgerTxnIdRaw));
+            return new TransferLegResult(txnRef, ledgerTxnId);
 
         } catch (WebClientResponseException e) {
             throw new TransferPaymentsException(

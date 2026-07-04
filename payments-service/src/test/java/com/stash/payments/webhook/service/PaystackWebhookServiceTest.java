@@ -88,7 +88,6 @@ class PaystackWebhookServiceTest {
 
         assertThat(result).isTrue();
         verify(webhookEventRepo).saveAndFlush(any());
-        verify(webhookEventRepo).save(any());
         verify(chargeSuccessHandler).handle(any(), eq(CORRELATION));
     }
 

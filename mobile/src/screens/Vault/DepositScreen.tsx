@@ -21,6 +21,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
 import { useVaultDeposit } from '../../api/hooks/useVaultDeposit';
+import { useWalletDeposit } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -81,9 +82,10 @@ export default function DepositScreen() {
   const route = useRoute<Route>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { vaultId } = route.params;
+  const { vaultId } = route.params ?? {};
+  const isWalletDeposit = !vaultId;
 
-  const { data: vault } = useVaultDetail(vaultId);
+  const { data: vault } = useVaultDetail(vaultId ?? '');
 
   const idempotencyKeyRef = useRef<string>(generateKey());
 
@@ -98,7 +100,9 @@ export default function DepositScreen() {
 
   const amountPesewas = ghsToPesewas(amountGhs);
 
-  const { mutateAsync, isPending } = useVaultDeposit(vaultId);
+  const vaultDeposit = useVaultDeposit(vaultId ?? '');
+  const walletDeposit = useWalletDeposit();
+  const { mutateAsync, isPending } = isWalletDeposit ? walletDeposit : vaultDeposit;
 
   const { data: polledTxn } = useTransactionPoll(txnRef, phase === 'polling');
 
@@ -107,6 +111,7 @@ export default function DepositScreen() {
     if (polledTxn.status === 'COMPLETED') {
       queryClient.invalidateQueries({ queryKey: ['statement'] });
       queryClient.invalidateQueries({ queryKey: ['vaults'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
       setPhase('success');
     } else if (polledTxn.status === 'FAILED') {
       setPhase('failure');
@@ -416,7 +421,7 @@ export default function DepositScreen() {
             <Text style={styles.summaryHeading}>You&apos;re depositing</Text>
             <Text style={styles.summaryAmount}>GHS {formatCedis(amountPesewas)}</Text>
             <View style={styles.summaryDivider} />
-            <SummaryRow label="Into" value={vault?.name ?? '—'} />
+            <SummaryRow label="Into" value={isWalletDeposit ? 'Wallet' : (vault?.name ?? '—')} />
             <SummaryRow
               label="Via"
               value={method === 'MOMO' ? `${providerLabel} · ${momoNumber}` : 'Card'}
@@ -509,7 +514,7 @@ export default function DepositScreen() {
           <Text style={styles.resultAmount}>GHS {formatCedis(amountPesewas)}</Text>
           <Text style={styles.resultSubtitle}>
             has been added to{'\n'}
-            <Text style={styles.resultVaultName}>{vault?.name}</Text>
+            <Text style={styles.resultVaultName}>{isWalletDeposit ? 'your wallet' : vault?.name}</Text>
           </Text>
           {txnRef && (
             <Text style={styles.refText} selectable>
@@ -520,12 +525,16 @@ export default function DepositScreen() {
             style={styles.ctaSuccess}
             onPress={() => {
               idempotencyKeyRef.current = generateKey();
-              navigation.navigate('VaultDetail', { vaultId });
+              if (isWalletDeposit) {
+                navigation.navigate('Wallet');
+              } else {
+                navigation.navigate('VaultDetail', { vaultId: vaultId! });
+              }
             }}
             accessibilityRole="button"
-            accessibilityLabel="Back to vault"
+            accessibilityLabel={isWalletDeposit ? 'Back to wallet' : 'Back to vault'}
           >
-            <Text style={styles.ctaText}>Back to vault</Text>
+            <Text style={styles.ctaText}>{isWalletDeposit ? 'Back to wallet' : 'Back to vault'}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -564,10 +573,18 @@ export default function DepositScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.cancelLink}
-          onPress={() => navigation.navigate('VaultDetail', { vaultId })}
+          onPress={() => {
+            if (isWalletDeposit) {
+              navigation.navigate('Wallet');
+            } else {
+              navigation.navigate('VaultDetail', { vaultId: vaultId! });
+            }
+          }}
           accessibilityRole="button"
         >
-          <Text style={styles.cancelLinkText}>Cancel — go back to vault</Text>
+          <Text style={styles.cancelLinkText}>
+            {isWalletDeposit ? 'Cancel — go back to wallet' : 'Cancel — go back to vault'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

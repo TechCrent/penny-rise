@@ -1,5 +1,8 @@
 package com.stash.kyc.submission.service;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.stash.kyc.document.domain.KycSubmissionDocument;
 import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
 import com.stash.kyc.submission.api.dto.AdminQueuePageResponse;
@@ -11,6 +14,7 @@ import com.stash.kyc.submission.repository.ManualReviewQueueRepository;
 import com.stash.kyc.submission.repository.ProviderDecisionRecordRepository;
 import com.stash.kyc.support.KycIntegrationTestSupport;
 import com.stash.shared.apierrors.StashApiException;
+import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -25,11 +29,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @SpringBootTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -37,23 +36,35 @@ import static org.mockito.Mockito.*;
 class KycAdminReviewServiceTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16")
-                    .withDatabaseName("kyc_test")
-                    .withUsername("test")
-                    .withPassword("test");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+        "postgres:16"
+    )
+        .withDatabaseName("kyc_test")
+        .withUsername("test")
+        .withPassword("test");
 
     @DynamicPropertySource
     static void configure(DynamicPropertyRegistry registry) {
         KycIntegrationTestSupport.registerPostgres(registry, postgres);
     }
 
-    @Autowired KycAdminReviewService adminReviewService;
-    @Autowired KycSubmissionRepository submissionRepository;
-    @Autowired KycSubmissionDocumentRepository documentRepository;
-    @Autowired ManualReviewQueueRepository manualReviewQueueRepository;
-    @Autowired ProviderDecisionRecordRepository decisionRecordRepository;
-    @MockBean  RabbitTemplate rabbitTemplate;
+    @Autowired
+    KycAdminReviewService adminReviewService;
+
+    @Autowired
+    KycSubmissionRepository submissionRepository;
+
+    @Autowired
+    KycSubmissionDocumentRepository documentRepository;
+
+    @Autowired
+    ManualReviewQueueRepository manualReviewQueueRepository;
+
+    @Autowired
+    ProviderDecisionRecordRepository decisionRecordRepository;
+
+    @MockBean
+    RabbitTemplate rabbitTemplate;
 
     private static final UUID ADMIN_ID = UUID.randomUUID();
 
@@ -71,15 +82,27 @@ class KycAdminReviewServiceTest {
 
     private KycSubmission escalatedSubmission(UUID userId) {
         KycSubmission s = new KycSubmission(
-                userId, "GHA-555555555-5", "Manual Review User", "corr-1");
+            userId,
+            "GHA-555555555-5",
+            "Manual Review User",
+            "corr-1"
+        );
         s.setStatus(KycSubmission.STATUS_REVIEWING);
         s = submissionRepository.save(s);
 
         manualReviewQueueRepository.save(
-                new ManualReviewQueueEntry(s.getId(), "Auto-flagged for review"));
+            new ManualReviewQueueEntry(s.getId(), "Auto-flagged for review")
+        );
 
-        var doc = new KycSubmissionDocument(s.getId(), "FRONT_OF_CARD", "LOCAL",
-                "key1", "image/jpeg", 1000L, "hash1");
+        var doc = new KycSubmissionDocument(
+            s.getId(),
+            "FRONT_OF_CARD",
+            "LOCAL",
+            "key1",
+            "image/jpeg",
+            1000L,
+            "hash1"
+        );
         documentRepository.save(doc);
 
         return s;
@@ -93,7 +116,9 @@ class KycAdminReviewServiceTest {
         AdminQueuePageResponse page = adminReviewService.getQueue(null, 20);
 
         assertThat(page.items()).hasSize(1);
-        assertThat(page.items().get(0).submissionId()).isEqualTo(submission.getId());
+        assertThat(page.items().get(0).submissionId()).isEqualTo(
+            submission.getId()
+        );
     }
 
     @Test
@@ -103,7 +128,24 @@ class KycAdminReviewServiceTest {
 
         AdminQueuePageResponse page = adminReviewService.getQueue(null, 20);
 
-        assertThat(page.items().get(0).documentViewUrls()).containsKey("FRONT_OF_CARD");
+        assertThat(page.items().get(0).documentViewUrls()).containsKey(
+            "FRONT_OF_CARD"
+        );
+    }
+
+    @Test
+    @DisplayName("queue ignores entries already removed from the review queue")
+    void queue_ignores_removed_entries() {
+        KycSubmission submission = escalatedSubmission();
+        ManualReviewQueueEntry entry = manualReviewQueueRepository
+            .findAll()
+            .get(0);
+        entry.setRemovedFromQueueAt(java.time.Instant.now());
+        manualReviewQueueRepository.save(entry);
+
+        AdminQueuePageResponse page = adminReviewService.getQueue(null, 20);
+
+        assertThat(page.items()).isEmpty();
     }
 
     @Test
@@ -121,10 +163,19 @@ class KycAdminReviewServiceTest {
     void approve_happy_path() {
         KycSubmission submission = escalatedSubmission();
 
-        adminReviewService.decide(submission.getId(), KycAdminReviewService.DECIDE_APPROVE, null, ADMIN_ID);
+        adminReviewService.decide(
+            submission.getId(),
+            KycAdminReviewService.DECIDE_APPROVE,
+            null,
+            ADMIN_ID
+        );
 
-        KycSubmission reloaded = submissionRepository.findById(submission.getId()).orElseThrow();
-        assertThat(reloaded.getStatus()).isEqualTo(KycSubmission.DECISION_APPROVED);
+        KycSubmission reloaded = submissionRepository
+            .findById(submission.getId())
+            .orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(
+            KycSubmission.DECISION_APPROVED
+        );
         assertThat(reloaded.getReviewerAdminId()).isEqualTo(ADMIN_ID);
         assertThat(reloaded.getReviewPath()).isEqualTo("MANUAL");
     }
@@ -134,18 +185,36 @@ class KycAdminReviewServiceTest {
     void approve_publishes_event() {
         KycSubmission submission = escalatedSubmission();
 
-        adminReviewService.decide(submission.getId(), KycAdminReviewService.DECIDE_APPROVE, null, ADMIN_ID);
+        adminReviewService.decide(
+            submission.getId(),
+            KycAdminReviewService.DECIDE_APPROVE,
+            null,
+            ADMIN_ID
+        );
 
-        verify(rabbitTemplate).convertAndSend(eq("kyc.events"), eq("kyc.approved"), any(Object.class));
+        verify(rabbitTemplate).convertAndSend(
+            eq("kyc.events"),
+            eq("kyc.approved"),
+            any(Object.class)
+        );
     }
 
     @Test
-    @DisplayName("approve does not schedule document deletion inline — event consumer handles it")
+    @DisplayName(
+        "approve does not schedule document deletion inline — event consumer handles it"
+    )
     void approve_does_not_schedule_deletion_inline() {
         KycSubmission submission = escalatedSubmission();
-        var doc = documentRepository.findBySubmissionId(submission.getId()).get(0);
+        var doc = documentRepository
+            .findBySubmissionId(submission.getId())
+            .get(0);
 
-        adminReviewService.decide(submission.getId(), KycAdminReviewService.DECIDE_APPROVE, null, ADMIN_ID);
+        adminReviewService.decide(
+            submission.getId(),
+            KycAdminReviewService.DECIDE_APPROVE,
+            null,
+            ADMIN_ID
+        );
 
         var reloaded = documentRepository.findById(doc.getId()).orElseThrow();
         assertThat(reloaded.getDeletionStatus()).isEqualTo("RETAINED");
@@ -157,7 +226,12 @@ class KycAdminReviewServiceTest {
     void decided_submission_leaves_queue() {
         KycSubmission submission = escalatedSubmission();
 
-        adminReviewService.decide(submission.getId(), KycAdminReviewService.DECIDE_APPROVE, null, ADMIN_ID);
+        adminReviewService.decide(
+            submission.getId(),
+            KycAdminReviewService.DECIDE_APPROVE,
+            null,
+            ADMIN_ID
+        );
 
         AdminQueuePageResponse page = adminReviewService.getQueue(null, 20);
         assertThat(page.items()).isEmpty();
@@ -169,25 +243,47 @@ class KycAdminReviewServiceTest {
         KycSubmission submission = escalatedSubmission();
 
         adminReviewService.decide(
-                submission.getId(), KycAdminReviewService.DECIDE_REJECT, "Card image unreadable", ADMIN_ID);
+            submission.getId(),
+            KycAdminReviewService.DECIDE_REJECT,
+            "Card image unreadable",
+            ADMIN_ID
+        );
 
-        KycSubmission reloaded = submissionRepository.findById(submission.getId()).orElseThrow();
-        assertThat(reloaded.getStatus()).isEqualTo(KycSubmission.DECISION_REJECTED);
-        assertThat(reloaded.getDecisionReason()).isEqualTo("Card image unreadable");
+        KycSubmission reloaded = submissionRepository
+            .findById(submission.getId())
+            .orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(
+            KycSubmission.DECISION_REJECTED
+        );
+        assertThat(reloaded.getDecisionReason()).isEqualTo(
+            "Card image unreadable"
+        );
     }
 
     @Test
-    @DisplayName("reject without reason throws 422 KYC_REJECTION_REASON_REQUIRED")
+    @DisplayName(
+        "reject without reason throws 422 KYC_REJECTION_REASON_REQUIRED"
+    )
     void reject_without_reason_throws_422() {
         KycSubmission submission = escalatedSubmission();
 
         assertThatExceptionOfType(StashApiException.class)
-                .isThrownBy(() -> adminReviewService.decide(
-                        submission.getId(), KycAdminReviewService.DECIDE_REJECT, null, ADMIN_ID))
-                .satisfies(ex -> {
-                    assertThat(ex.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-                    assertThat(ex.getErrorCode().name()).isEqualTo("KYC_REJECTION_REASON_REQUIRED");
-                });
+            .isThrownBy(() ->
+                adminReviewService.decide(
+                    submission.getId(),
+                    KycAdminReviewService.DECIDE_REJECT,
+                    null,
+                    ADMIN_ID
+                )
+            )
+            .satisfies(ex -> {
+                assertThat(ex.getHttpStatus()).isEqualTo(
+                    HttpStatus.UNPROCESSABLE_ENTITY
+                );
+                assertThat(ex.getErrorCode().name()).isEqualTo(
+                    "KYC_REJECTION_REASON_REQUIRED"
+                );
+            });
     }
 
     @Test
@@ -196,11 +292,20 @@ class KycAdminReviewServiceTest {
         KycSubmission submission = escalatedSubmission();
 
         try {
-            adminReviewService.decide(submission.getId(), KycAdminReviewService.DECIDE_REJECT, null, ADMIN_ID);
+            adminReviewService.decide(
+                submission.getId(),
+                KycAdminReviewService.DECIDE_REJECT,
+                null,
+                ADMIN_ID
+            );
         } catch (StashApiException ignored) {}
 
-        KycSubmission reloaded = submissionRepository.findById(submission.getId()).orElseThrow();
-        assertThat(reloaded.getStatus()).isEqualTo(KycSubmission.STATUS_REVIEWING);
+        KycSubmission reloaded = submissionRepository
+            .findById(submission.getId())
+            .orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(
+            KycSubmission.STATUS_REVIEWING
+        );
     }
 
     @Test

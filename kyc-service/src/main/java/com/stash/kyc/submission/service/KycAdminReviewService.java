@@ -112,9 +112,21 @@ public class KycAdminReviewService {
     }
 
     private AdminQueueItemResponse toQueueItemResponse(ManualReviewQueueEntry entry) {
-        KycSubmission submission = submissionRepository.findById(entry.getSubmissionId())
-                .orElseThrow(() -> notFound(entry.getSubmissionId()));
+        Optional<KycSubmission> submissionOpt = submissionRepository.findById(entry.getSubmissionId());
+        if (submissionOpt.isEmpty()) {
+            log.warn("Queue entry references missing submission; omitting from queue entryId={} submissionId={}",
+                    entry.getId(), entry.getSubmissionId());
+            return new AdminQueueItemResponse(
+                    entry.getSubmissionId(),
+                    null,
+                    "[Missing submission]",
+                    entry.getEnteredQueueAt(),
+                    entry.getFlagReason(),
+                    Collections.emptyMap()
+            );
+        }
 
+        KycSubmission submission = submissionOpt.get();
         Map<String, String> viewUrls = buildDocumentViewUrls(submission.getId());
 
         return new AdminQueueItemResponse(

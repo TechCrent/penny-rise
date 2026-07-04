@@ -72,7 +72,9 @@ public class GhanaCardEncryptionConverter implements AttributeConverter<String, 
     @Override
     public String convertToEntityAttribute(String encoded) {
         if (encoded == null) return null;
-        requireKey();
+        if (staticKey == null) {
+            return "[unable to decrypt]";
+        }
 
         try {
             byte[] combined = Base64.getDecoder().decode(encoded);
@@ -89,7 +91,7 @@ public class GhanaCardEncryptionConverter implements AttributeConverter<String, 
             return new String(plaintextBytes, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to decrypt Ghana Card number", e);
+            return "[unable to decrypt]";
         }
     }
 

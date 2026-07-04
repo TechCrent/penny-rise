@@ -104,9 +104,13 @@ public class KycAdminController {
     }
 
     private UUID requireAdmin(HttpServletRequest request) {
-        Boolean authenticated = (Boolean) request.getAttribute(
-                PlaceholderAdminAuthFilter.ADMIN_AUTH_ATTRIBUTE);
-        if (authenticated == null || !authenticated) {
+        Object authAttr = request.getAttribute(PlaceholderAdminAuthFilter.ADMIN_AUTH_ATTRIBUTE);
+        boolean authenticated = switch (authAttr) {
+            case Boolean b -> b;
+            case String s -> Boolean.parseBoolean(s);
+            case null, default -> false;
+        };
+        if (!authenticated) {
             throw new StashApiException(
                     ErrorCode.FORBIDDEN,
                     "Admin authentication required.",

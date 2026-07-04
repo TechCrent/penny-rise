@@ -8,6 +8,19 @@
 $root = $PSScriptRoot
 
 Write-Host "Starting infra (Postgres x4, RabbitMQ, Mailpit)..." -ForegroundColor Cyan
+
+# Remove any containers with our expected names that were started outside this
+# compose project (e.g. by a manual docker run or a differently-named compose
+# session). docker compose up -d errors with "Conflict" in that case.
+$expectedContainers = @("stash-monolith-db","stash-payments-db","stash-kyc-db","stash-audit-db","stash-rabbitmq","stash-mailpit")
+foreach ($c in $expectedContainers) {
+    $project = docker inspect $c --format '{{index .Config.Labels "com.docker.compose.project"}}' 2>$null
+    if ($project -and $project -ne "stash") {
+        Write-Host "  Removing orphan container '$c' (compose project: '$project')..." -ForegroundColor Yellow
+        docker rm -f $c 2>$null | Out-Null
+    }
+}
+
 docker compose up -d
 
 $containers = @(

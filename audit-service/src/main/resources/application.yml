@@ -33,6 +33,8 @@ spring:
     enabled: true
     locations:
       - classpath:db/migration/audit
+    schemas: audit
+    create-schemas: true
     baseline-on-migrate: true
     baseline-version: 0
     out-of-order: false

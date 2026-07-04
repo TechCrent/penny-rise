@@ -121,6 +121,57 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {}
+    },
+    {
+      "name": "notification.events.incoming",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "notification.events.dlx",
+        "x-dead-letter-routing-key": "notification.events.failed"
+      }
+    },
+    {
+      "name": "notification.events.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "challenge.deposit.progress",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "challenge.deposit.progress.dlx",
+        "x-dead-letter-routing-key": "challenge.deposit.progress.failed"
+      }
+    },
+    {
+      "name": "challenge.deposit.progress.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.incoming",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "audit.events.dlx",
+        "x-dead-letter-routing-key": "audit.events.failed"
+      }
+    },
+    {
+      "name": "audit.events.dlq",
+      "vhost": "stash",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
     }
   ],
   "exchanges": [
@@ -154,7 +205,7 @@
     {
       "name": "kyc.events",
       "vhost": "stash",
-      "type": "direct",
+      "type": "topic",
       "durable": true,
       "auto_delete": false,
       "internal": false,
@@ -182,6 +233,51 @@
       "name": "susu.events",
       "vhost": "stash",
       "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "admin.events",
+      "vhost": "stash",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "transfer.events",
+      "vhost": "stash",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.events.dlx",
+      "vhost": "stash",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "challenge.deposit.progress.dlx",
+      "vhost": "stash",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "audit.events.dlx",
+      "vhost": "stash",
+      "type": "direct",
       "durable": true,
       "auto_delete": false,
       "internal": false,
@@ -251,6 +347,158 @@
       "destination": "susu.disbursement.queue",
       "destination_type": "queue",
       "routing_key": "susu.round.fully_collected",
+      "arguments": {}
+    },
+    {
+      "source": "notification.events.dlx",
+      "vhost": "stash",
+      "destination": "notification.events.dlq",
+      "destination_type": "queue",
+      "routing_key": "notification.events.failed",
+      "arguments": {}
+    },
+    {
+      "source": "payments.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "monolith.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "user.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "admin.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "susu.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "vault.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "transfer.events",
+      "vhost": "stash",
+      "destination": "notification.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "challenge.deposit.progress.dlx",
+      "vhost": "stash",
+      "destination": "challenge.deposit.progress.dlq",
+      "destination_type": "queue",
+      "routing_key": "challenge.deposit.progress.failed",
+      "arguments": {}
+    },
+    {
+      "source": "payments.events",
+      "vhost": "stash",
+      "destination": "challenge.deposit.progress",
+      "destination_type": "queue",
+      "routing_key": "deposit.completed",
+      "arguments": {}
+    },
+    {
+      "source": "audit.events.dlx",
+      "vhost": "stash",
+      "destination": "audit.events.dlq",
+      "destination_type": "queue",
+      "routing_key": "audit.events.failed",
+      "arguments": {}
+    },
+    {
+      "source": "payments.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "kyc.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "user.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "admin.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "susu.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "vault.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "transfer.events",
+      "vhost": "stash",
+      "destination": "audit.events.incoming",
+      "destination_type": "queue",
+      "routing_key": "#",
       "arguments": {}
     }
   ]

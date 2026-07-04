@@ -37,11 +37,6 @@ export default function KycQueuePage() {
 
   return (
     <AdminShell title="KYC Review Queue">
-      <div className="mb-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-        <strong>Placeholder authentication active.</strong> This console uses a shared token for
-        local dev and staging only. Real admin auth ships in v0.5.
-      </div>
-
       <div className="mb-6 flex gap-1 border-b border-slate-200">
         <button
           type="button"

@@ -152,8 +152,13 @@ stash:
   kyc:
     # Internal kyc-service base URL — mobile hits the monolith proxy on :8080
     service-url: ${KYC_SERVICE_URL:http://localhost:8082}
+    # Shared admin token for the KYC service's placeholder admin filter (pre-v0.5)
+    placeholder-admin-token: ${KYC_PLACEHOLDER_ADMIN_TOKEN:admin_password}
+  audit:
+    # Internal audit-service base URL — admin console routes through monolith proxy
+    service-url: ${AUDIT_SERVICE_URL:http://localhost:8083}
   beta:
-    allowlist-enabled: ${STASH_BETA_ALLOWLIST_ENABLED:true}
+    allowlist-enabled: ${STASH_BETA_ALLOWLIST_ENABLED:false}
   email:
     # Switch between Resend (production) and SMTP (local/staging)
     # Set STASH_EMAIL_PROVIDER=resend to use Resend; default uses SMTP
@@ -162,6 +167,11 @@ stash:
     from-name: ${STASH_EMAIL_FROM_NAME:Stash}
     resend-api-key: ${RESEND_API_KEY:}
     base-url: ${STASH_BASE_URL:http://localhost:8080}
+  admin:
+    jwt:
+      # Admin JWT access-token TTL. ISO-8601 duration. Default is 8 hours for
+      # local dev; production deployments should override to PT5M or shorter.
+      access-token-ttl: ${ADMIN_JWT_TTL:PT8H}
   security:
     jwt:
       # Active signing key — base64-encoded HS256 secret (min 32 bytes decoded)

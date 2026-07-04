@@ -1,25 +1,6 @@
 package com.stash.platform.kyc.api;
 
-import com.stash.admin.rbac.AdminAccessDeniedHandler;
-import com.stash.admin.service.AdminJwtService;
-import com.stash.config.SecurityConfig;
-import com.stash.platform.kyc.client.KycServiceClient;
-import com.stash.platform.user.domain.User;
-import com.stash.platform.user.service.JwtTokenService;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.UUID;
-
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,77 +9,145 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.stash.admin.rbac.AdminAccessDeniedHandler;
+import com.stash.admin.service.AdminJwtService;
+import com.stash.config.SecurityConfig;
+import com.stash.platform.kyc.client.KycServiceClient;
+import com.stash.platform.user.domain.User;
+import com.stash.platform.user.service.JwtTokenService;
+import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+
 @WebMvcTest(controllers = KycProxyController.class)
-@Import({SecurityConfig.class, JwtTokenService.class})
-@TestPropertySource(properties = {
+@Import({ SecurityConfig.class, JwtTokenService.class })
+@TestPropertySource(
+    properties = {
         "stash.security.jwt.signing-key=dGVzdC1zaWduaW5nLWtleS1mb3ItdGVzdHMtb25seS0zMi1jaGFycw==",
         "stash.security.jwt.verification-keys=",
-        "stash.security.jwt.access-token-expiry-minutes=15"
-})
+        "stash.security.jwt.access-token-expiry-minutes=15",
+    }
+)
 @DisplayName("KycProxyController")
 class KycProxyControllerTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired JwtTokenService jwtTokenService;
-    @MockBean KycServiceClient kycServiceClient;
-    @MockBean AdminJwtService adminJwtService;
-    @MockBean AdminAccessDeniedHandler adminAccessDeniedHandler;
+    @Autowired
+    MockMvc mockMvc;
 
-    private static final UUID USER_ID = UUID.fromString("018f1234-5678-7abc-8000-000000000001");
+    @Autowired
+    JwtTokenService jwtTokenService;
+
+    @MockBean
+    KycServiceClient kycServiceClient;
+
+    @MockBean
+    AdminJwtService adminJwtService;
+
+    @MockBean
+    AdminAccessDeniedHandler adminAccessDeniedHandler;
+
+    private static final UUID USER_ID = UUID.fromString(
+        "018f1234-5678-7abc-8000-000000000001"
+    );
 
     @Test
-    @DisplayName("POST /submissions forwards to kyc-service with user header")
+    @DisplayName(
+        "POST /submissions forwards public host headers to kyc-service"
+    )
     void createSubmission_proxied() throws Exception {
         byte[] responseBody = "{\"id\":\"sub-1\"}".getBytes();
-        when(kycServiceClient.forward(
+        when(
+            kycServiceClient.forward(
                 eq(HttpMethod.POST),
                 eq("/api/v1/kyc/submissions"),
                 eq(USER_ID),
                 any(byte[].class),
-                isNull()))
-                .thenReturn(ResponseEntity.status(201)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(responseBody));
+                any(HttpHeaders.class)
+            )
+        ).thenReturn(
+            ResponseEntity.status(201)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(responseBody)
+        );
 
-        mockMvc.perform(post("/api/v1/kyc/submissions")
-                        .header("Authorization", bearerToken())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"ghana_card_number\":\"GHA-123456789-0\",\"full_name\":\"Test\"}"))
-                .andExpect(status().isCreated())
-                .andExpect(content().json("{\"id\":\"sub-1\"}"));
+        mockMvc
+            .perform(
+                post("/api/v1/kyc/submissions")
+                    .header("Authorization", bearerToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .secure(false)
+                    .header("Host", "10.0.2.2:8080")
+                    .content(
+                        "{\"ghana_card_number\":\"GHA-123456789-0\",\"full_name\":\"Test\"}"
+                    )
+            )
+            .andExpect(status().isCreated())
+            .andExpect(content().json("{\"id\":\"sub-1\"}"));
 
         verify(kycServiceClient).forward(
-                eq(HttpMethod.POST),
-                eq("/api/v1/kyc/submissions"),
-                eq(USER_ID),
-                any(byte[].class),
-                isNull());
+            eq(HttpMethod.POST),
+            eq("/api/v1/kyc/submissions"),
+            eq(USER_ID),
+            any(byte[].class),
+            argThat(headers -> {
+                assertThat(headers.getFirst("X-Forwarded-Host")).isEqualTo(
+                    "10.0.2.2:8080"
+                );
+                assertThat(headers.getFirst("X-Forwarded-Proto")).isEqualTo(
+                    "http"
+                );
+                assertThat(headers.getFirst("X-Forwarded-Port")).isEqualTo(
+                    "8080"
+                );
+                return true;
+            })
+        );
     }
 
     @Test
     @DisplayName("GET /submissions/me requires authentication")
     void getMySubmission_requiresAuth() throws Exception {
-        mockMvc.perform(get("/api/v1/kyc/submissions/me"))
-                .andExpect(status().isForbidden());
+        mockMvc
+            .perform(get("/api/v1/kyc/submissions/me"))
+            .andExpect(status().isForbidden());
     }
 
     @Test
     @DisplayName("GET /submissions/me forwards when authenticated")
     void getMySubmission_proxied() throws Exception {
-        when(kycServiceClient.forward(
+        when(
+            kycServiceClient.forward(
                 eq(HttpMethod.GET),
                 eq("/api/v1/kyc/submissions/me"),
                 eq(USER_ID),
                 isNull(),
-                isNull()))
-                .thenReturn(ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"status\":\"REVIEWING\"}".getBytes()));
+                any(HttpHeaders.class)
+            )
+        ).thenReturn(
+            ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"status\":\"REVIEWING\"}".getBytes())
+        );
 
-        mockMvc.perform(get("/api/v1/kyc/submissions/me")
-                        .header("Authorization", bearerToken()))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{\"status\":\"REVIEWING\"}"));
+        mockMvc
+            .perform(
+                get("/api/v1/kyc/submissions/me").header(
+                    "Authorization",
+                    bearerToken()
+                )
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().json("{\"status\":\"REVIEWING\"}"));
     }
 
     private String bearerToken() {

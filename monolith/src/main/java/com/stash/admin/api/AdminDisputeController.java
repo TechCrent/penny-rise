@@ -3,13 +3,12 @@ package com.stash.admin.api;
 import com.stash.admin.api.dto.AdminDisputeListResponse;
 import com.stash.admin.api.dto.CloseDisputeRequest;
 import com.stash.admin.api.dto.ResolveDisputeRequest;
-import com.stash.admin.rbac.AdminResource;
-import com.stash.admin.rbac.RequiresAdminResource;
 import com.stash.admin.service.AdminDisputeService;
 import com.stash.admin.service.AdminJwtService.AdminTokenClaims;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +24,7 @@ public class AdminDisputeController {
         this.disputeService = disputeService;
     }
 
-    @RequiresAdminResource(AdminResource.DISPUTES)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).DISPUTES)")
     @GetMapping
     public AdminDisputeListResponse list(
             @RequestParam(required = false) String status,
@@ -34,14 +33,14 @@ public class AdminDisputeController {
         return disputeService.listQueue(status, PageRequest.of(page, size));
     }
 
-    @RequiresAdminResource(AdminResource.DISPUTES)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).DISPUTES)")
     @PostMapping("/{id}/assign")
     public ResponseEntity<Void> assign(@PathVariable UUID id, Authentication authentication) {
         disputeService.assign(id, adminIdOf(authentication));
         return ResponseEntity.noContent().build();
     }
 
-    @RequiresAdminResource(AdminResource.DISPUTES)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).DISPUTES)")
     @PostMapping("/{id}/resolve")
     public ResponseEntity<Void> resolve(@PathVariable UUID id,
                                          @Valid @RequestBody ResolveDisputeRequest request,
@@ -50,7 +49,7 @@ public class AdminDisputeController {
         return ResponseEntity.ok().build();
     }
 
-    @RequiresAdminResource(AdminResource.DISPUTES)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).DISPUTES)")
     @PostMapping("/{id}/close-no-action")
     public ResponseEntity<Void> closeNoAction(@PathVariable UUID id,
                                                @Valid @RequestBody CloseDisputeRequest request,

@@ -2,12 +2,11 @@ package com.stash.admin.api;
 
 import com.stash.admin.api.dto.AdminSusuGroupDetailResponse;
 import com.stash.admin.api.dto.FlaggedSusuGroupListResponse;
-import com.stash.admin.rbac.AdminResource;
-import com.stash.admin.rbac.RequiresAdminResource;
 import com.stash.admin.service.AdminJwtService.AdminTokenClaims;
 import com.stash.admin.service.AdminSusuGroupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,7 +29,7 @@ public class AdminSusuGroupController {
      * rather than silently defaulting to "all groups."
      */
     @GetMapping
-    @RequiresAdminResource(AdminResource.SUSU_GROUPS)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).SUSU_GROUPS)")
     public FlaggedSusuGroupListResponse listFlagged(
             @RequestParam(required = false, defaultValue = "false") boolean flagged,
             @RequestParam(defaultValue = "0") int page,
@@ -43,13 +42,13 @@ public class AdminSusuGroupController {
     }
 
     @GetMapping("/{id}")
-    @RequiresAdminResource(AdminResource.SUSU_GROUPS)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).SUSU_GROUPS)")
     public AdminSusuGroupDetailResponse getDetail(@PathVariable UUID id) {
         return service.getDetail(id);
     }
 
     @PostMapping("/{id}/clear-flag")
-    @RequiresAdminResource(AdminResource.SUSU_GROUPS)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).SUSU_GROUPS)")
     public ResponseEntity<Void> clearFlag(@PathVariable UUID id, Authentication authentication) {
         service.clearFlag(id, adminIdOf(authentication));
         return ResponseEntity.noContent().build();

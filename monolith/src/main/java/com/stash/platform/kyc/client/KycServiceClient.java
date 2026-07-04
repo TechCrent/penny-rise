@@ -1,5 +1,6 @@
 package com.stash.platform.kyc.client;
 
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -8,8 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.util.UUID;
 
 /**
  * Forwards authenticated customer KYC requests to kyc-service.
@@ -25,43 +24,87 @@ public class KycServiceClient {
 
     private final WebClient webClient;
 
-    public KycServiceClient(@Value("${stash.kyc.service-url}") String serviceUrl,
-                            WebClient correlationAwareWebClient) {
-        this.webClient = correlationAwareWebClient.mutate()
-                .baseUrl(serviceUrl)
-                .build();
+    public KycServiceClient(
+        @Value("${stash.kyc.service-url}") String serviceUrl,
+        WebClient correlationAwareWebClient
+    ) {
+        this.webClient = correlationAwareWebClient
+            .mutate()
+            .baseUrl(serviceUrl)
+            .build();
     }
 
-    public ResponseEntity<byte[]> forward(HttpMethod method,
-                                          String path,
-                                          UUID userId,
-                                          byte[] body,
-                                          HttpHeaders extraHeaders) {
-        WebClient.RequestBodySpec request = webClient.method(method)
-                .uri(path)
-                .header(USER_ID_HEADER, userId.toString())
-                .contentType(MediaType.APPLICATION_JSON);
-
+    public ResponseEntity<byte[]> forward(
+        HttpMethod method,
+        String path,
+        UUID userId,
+        byte[] body,
+        HttpHeaders extraHeaders
+    ) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(USER_ID_HEADER, userId.toString());
         if (extraHeaders != null) {
-            extraHeaders.forEach((name, values) ->
-                    values.forEach(value -> request.header(name, value)));
+            headers.addAll(extraHeaders);
+        }
+        return exchange(
+            method,
+            path,
+            body,
+            MediaType.APPLICATION_JSON,
+            headers
+        );
+    }
+
+    public ResponseEntity<byte[]> forwardPublic(
+        HttpMethod method,
+        String path,
+        byte[] body,
+        MediaType contentType,
+        HttpHeaders extraHeaders
+    ) {
+        return exchange(method, path, body, contentType, extraHeaders);
+    }
+
+    private ResponseEntity<byte[]> exchange(
+        HttpMethod method,
+        String path,
+        byte[] body,
+        MediaType contentType,
+        HttpHeaders headers
+    ) {
+        WebClient.RequestBodySpec request = webClient.method(method).uri(path);
+
+        if (contentType != null) {
+            request.contentType(contentType);
         }
 
-        WebClient.RequestHeadersSpec<?> spec = body != null && body.length > 0
+        if (headers != null) {
+            headers.forEach((name, values) ->
+                values.forEach(value -> request.header(name, value))
+            );
+        }
+
+        WebClient.RequestHeadersSpec<?> spec =
+            body != null && body.length > 0
                 ? request.body(BodyInserters.fromValue(body))
                 : request;
 
-        return spec.exchangeToMono(response ->
-                response.bodyToMono(byte[].class)
-                        .defaultIfEmpty(new byte[0])
-                        .map(responseBody -> {
-                            HttpHeaders headers = new HttpHeaders();
-                            response.headers().contentType().ifPresent(contentType ->
-                                    headers.setContentType(MediaType.parseMediaType(contentType.toString())));
-                            return ResponseEntity.status(response.statusCode())
-                                    .headers(headers)
-                                    .body(responseBody);
-                        }))
-                .block();
+        return spec
+            .exchangeToMono(response ->
+                response
+                    .bodyToMono(byte[].class)
+                    .defaultIfEmpty(new byte[0])
+                    .map(responseBody -> {
+                        HttpHeaders responseHeaders = new HttpHeaders();
+                        response
+                            .headers()
+                            .contentType()
+                            .ifPresent(responseHeaders::setContentType);
+                        return ResponseEntity.status(response.statusCode())
+                            .headers(responseHeaders)
+                            .body(responseBody);
+                    })
+            )
+            .block();
     }
 }

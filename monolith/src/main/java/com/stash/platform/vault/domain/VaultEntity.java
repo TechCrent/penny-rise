@@ -1,10 +1,9 @@
 package com.stash.platform.vault.domain;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
-
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "vaults", schema = "vault")
@@ -14,19 +13,19 @@ public class VaultEntity {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @Column(name = "owner_user_id",          nullable = false)
+    @Column(name = "owner_user_id", nullable = false)
     private UUID ownerUserId;
 
-    @Column(name = "name",                   nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "vault_type",             nullable = false, length = 20)
+    @Column(name = "vault_type", nullable = false, length = 20)
     private String vaultType;
 
-    @Column(name = "status",                 nullable = false, length = 50)
+    @Column(name = "status", nullable = false, length = 50)
     private String status;
 
-    @Column(name = "ledger_account_id",      nullable = false)
+    @Column(name = "ledger_account_id", nullable = false)
     private UUID ledgerAccountId;
 
     @Column(name = "unlock_by_date")
@@ -41,7 +40,7 @@ public class VaultEntity {
     @Column(name = "early_exit_in_progress", nullable = false)
     private boolean earlyExitInProgress;
 
-    @Column(name = "created_at",             nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @Column(name = "deleted_at")
@@ -52,51 +51,136 @@ public class VaultEntity {
 
     protected VaultEntity() {}
 
-    public static VaultEntity createStandard(UUID ownerUserId, String name,
-                                              UUID ledgerAccountId, Instant now) {
+    public static VaultEntity createStandard(
+        UUID id,
+        UUID ownerUserId,
+        String name,
+        UUID ledgerAccountId,
+        Instant now
+    ) {
         VaultEntity v = new VaultEntity();
-        v.ownerUserId       = ownerUserId;
-        v.name              = name;
-        v.vaultType         = "STANDARD";
-        v.status            = "ACTIVE";
-        v.ledgerAccountId   = ledgerAccountId;
+        v.id = id;
+        v.ownerUserId = ownerUserId;
+        v.name = name;
+        v.vaultType = "STANDARD";
+        v.status = "ACTIVE";
+        v.ledgerAccountId = ledgerAccountId;
         v.earlyExitInProgress = false;
-        v.createdAt         = now;
+        v.createdAt = now;
         return v;
     }
 
-    public static VaultEntity createLocked(UUID ownerUserId, String name,
-                                            UUID ledgerAccountId,
-                                            Instant unlockByDate,
-                                            Long unlockTargetAmount,
-                                            String unlockConditionLogic,
-                                            Instant now) {
+    public static VaultEntity createStandard(
+        UUID ownerUserId,
+        String name,
+        UUID ledgerAccountId,
+        Instant now
+    ) {
+        return createStandard(
+            UUID.randomUUID(),
+            ownerUserId,
+            name,
+            ledgerAccountId,
+            now
+        );
+    }
+
+    public static VaultEntity createLocked(
+        UUID id,
+        UUID ownerUserId,
+        String name,
+        UUID ledgerAccountId,
+        Instant unlockByDate,
+        Long unlockTargetAmount,
+        String unlockConditionLogic,
+        Instant now
+    ) {
         VaultEntity v = new VaultEntity();
-        v.ownerUserId           = ownerUserId;
-        v.name                  = name;
-        v.vaultType             = "LOCKED";
-        v.status                = "ACTIVE";
-        v.ledgerAccountId       = ledgerAccountId;
-        v.unlockByDate          = unlockByDate;
-        v.unlockTargetAmount    = unlockTargetAmount;
-        v.unlockConditionLogic  = unlockConditionLogic;
-        v.earlyExitInProgress   = false;
-        v.createdAt             = now;
+        v.id = id;
+        v.ownerUserId = ownerUserId;
+        v.name = name;
+        v.vaultType = "LOCKED";
+        v.status = "ACTIVE";
+        v.ledgerAccountId = ledgerAccountId;
+        v.unlockByDate = unlockByDate;
+        v.unlockTargetAmount = unlockTargetAmount;
+        v.unlockConditionLogic = unlockConditionLogic;
+        v.earlyExitInProgress = false;
+        v.createdAt = now;
         return v;
+    }
+
+    public static VaultEntity createLocked(
+        UUID ownerUserId,
+        String name,
+        UUID ledgerAccountId,
+        Instant unlockByDate,
+        Long unlockTargetAmount,
+        String unlockConditionLogic,
+        Instant now
+    ) {
+        return createLocked(
+            UUID.randomUUID(),
+            ownerUserId,
+            name,
+            ledgerAccountId,
+            unlockByDate,
+            unlockTargetAmount,
+            unlockConditionLogic,
+            now
+        );
     }
 
     // Getters
-    public UUID    getId()                    { return id; }
-    public UUID    getOwnerUserId()           { return ownerUserId; }
-    public String  getName()                  { return name; }
-    public String  getVaultType()             { return vaultType; }
-    public String  getStatus()                { return status; }
-    public UUID    getLedgerAccountId()       { return ledgerAccountId; }
-    public Instant getUnlockByDate()          { return unlockByDate; }
-    public Long    getUnlockTargetAmount()    { return unlockTargetAmount; }
-    public String  getUnlockConditionLogic()  { return unlockConditionLogic; }
-    public boolean isEarlyExitInProgress()    { return earlyExitInProgress; }
-    public Instant getCreatedAt()             { return createdAt; }
-    public Instant getDeletedAt()             { return deletedAt; }
-    public Instant getUnlockedAt()            { return unlockedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getOwnerUserId() {
+        return ownerUserId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getVaultType() {
+        return vaultType;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public UUID getLedgerAccountId() {
+        return ledgerAccountId;
+    }
+
+    public Instant getUnlockByDate() {
+        return unlockByDate;
+    }
+
+    public Long getUnlockTargetAmount() {
+        return unlockTargetAmount;
+    }
+
+    public String getUnlockConditionLogic() {
+        return unlockConditionLogic;
+    }
+
+    public boolean isEarlyExitInProgress() {
+        return earlyExitInProgress;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public Instant getUnlockedAt() {
+        return unlockedAt;
+    }
 }

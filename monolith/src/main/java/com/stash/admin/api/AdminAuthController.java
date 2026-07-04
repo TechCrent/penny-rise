@@ -3,6 +3,7 @@ package com.stash.admin.api;
 import com.stash.admin.api.dto.AdminLoginRequest;
 import com.stash.admin.api.dto.AdminLoginResponse;
 import com.stash.admin.service.AdminAuthService;
+import com.stash.admin.service.AdminJwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 public class AdminAuthController {
 
     private final AdminAuthService authService;
+    private final AdminJwtService  jwtService;
 
-    public AdminAuthController(AdminAuthService authService) {
+    public AdminAuthController(AdminAuthService authService, AdminJwtService jwtService) {
         this.authService = authService;
+        this.jwtService  = jwtService;
     }
 
     @PostMapping("/login")
@@ -23,7 +26,8 @@ public class AdminAuthController {
         String sourceIp = resolveClientIp(httpRequest);
         var result = authService.login(request.email(), request.password(), sourceIp);
         return new AdminLoginResponse(
-                result.accessToken(), result.refreshToken(), result.accountType(), 300);
+                result.accessToken(), result.refreshToken(), result.accountType(),
+                (int) jwtService.getAccessTokenTtl().toSeconds());
     }
 
     @PostMapping("/refresh")
@@ -32,7 +36,8 @@ public class AdminAuthController {
         String sourceIp = resolveClientIp(httpRequest);
         var result = authService.refresh(refreshToken, sourceIp);
         return new AdminLoginResponse(
-                result.accessToken(), result.refreshToken(), result.accountType(), 300);
+                result.accessToken(), result.refreshToken(), result.accountType(),
+                (int) jwtService.getAccessTokenTtl().toSeconds());
     }
 
     private String resolveClientIp(HttpServletRequest request) {

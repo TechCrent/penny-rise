@@ -150,7 +150,7 @@ export default function KycDocumentUploadScreen() {
         const sizeBytes = fileInfo.exists ? fileInfo.size : 0;
 
         const url = new URL(signedUrl);
-        const storageKey = url.pathname.replace('/storage/v1/object/sign/', '');
+        const storageKey = url.pathname.replace(/^\/internal\/local-storage\/upload\//, '');
 
         await confirmDocumentUpload(submissionId, {
           provider_event_id: `mobile-${submissionId}-${type}-${Date.now()}`,

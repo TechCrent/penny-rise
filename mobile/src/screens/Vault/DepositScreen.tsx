@@ -88,6 +88,7 @@ export default function DepositScreen() {
   const { data: vault } = useVaultDetail(vaultId ?? '');
 
   const idempotencyKeyRef = useRef<string>(generateKey());
+  const lastKeyedPayloadRef = useRef<string | null>(null);
 
   const [phase, setPhase] = useState<Phase>('amount');
   const [amountGhs, setAmountGhs] = useState('');
@@ -130,16 +131,30 @@ export default function DepositScreen() {
 
   const handleConfirm = useCallback(async () => {
     setServerError(null);
+
+    const payload = {
+      amount: amountPesewas,
+      payment_method: method,
+      ...(method === 'MOMO' && {
+        mobile_number: momoNumber,
+        mobile_provider: provider,
+      }),
+    };
+
+    // Only reuse the idempotency key for a byte-for-byte identical retry (e.g.
+    // resubmitting after a network hiccup). Any change to the deposit itself
+    // (amount, method, MoMo number/provider) must get a fresh key, otherwise
+    // payments-service's IdempotencyFilter sees the same key with a different
+    // request hash and rejects it with 422 IDEMPOTENCY_KEY_REUSED.
+    const payloadSignature = JSON.stringify(payload);
+    if (lastKeyedPayloadRef.current !== payloadSignature) {
+      idempotencyKeyRef.current = generateKey();
+      lastKeyedPayloadRef.current = payloadSignature;
+    }
+
     try {
       const resp = await mutateAsync({
-        payload: {
-          amount: amountPesewas,
-          payment_method: method,
-          ...(method === 'MOMO' && {
-            mobile_number: momoNumber,
-            mobile_provider: provider,
-          }),
-        },
+        payload,
         idempotencyKey: idempotencyKeyRef.current,
       });
 
@@ -525,6 +540,7 @@ export default function DepositScreen() {
             style={styles.ctaSuccess}
             onPress={() => {
               idempotencyKeyRef.current = generateKey();
+              lastKeyedPayloadRef.current = null;
               if (isWalletDeposit) {
                 navigation.navigate('Wallet');
               } else {

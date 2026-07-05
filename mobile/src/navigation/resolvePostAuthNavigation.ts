@@ -1,7 +1,11 @@
 import { getAccessToken } from '../auth/authSession';
 import { decodeUserIdFromJwt } from '../auth/jwt';
 import { getMySubmission } from '../api/kyc';
-import { clearKycSubmission, loadKycSubmission } from '../storage/kycStorage';
+import {
+  clearKycSubmission,
+  hasAcknowledgedKycApproval,
+  loadKycSubmission,
+} from '../storage/kycStorage';
 import type { RootStackParamList } from './RootNavigator';
 
 type PostAuthRoute = {
@@ -42,6 +46,10 @@ export async function resolvePostAuthNavigation(kycStatus: string): Promise<Post
   }
 
   if (kycStatus === 'APPROVED') {
+    const acknowledged = await hasAcknowledgedKycApproval();
+    if (!acknowledged && submission) {
+      return { name: 'KycSubmissionPending', params: { submissionId: submission.id } };
+    }
     return { name: 'Home' };
   }
 

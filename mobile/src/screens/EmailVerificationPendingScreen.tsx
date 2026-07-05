@@ -82,6 +82,24 @@ export default function EmailVerificationPendingScreen() {
       } catch (error) {
         console.error(error);
         const apiError = extractApiError(error);
+
+        if (apiError?.code === 'AUTH_VERIFICATION_TOKEN_ALREADY_USED') {
+          // The token was already consumed by an earlier hit on this same link (e.g. a
+          // duplicate deep-link delivery or a mail-client link scanner) — the email is
+          // still genuinely verified, so treat this the same as a fresh success.
+          setVerifyState('success');
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: 'Login',
+                params: { successBanner: 'Email verified! You can sign in now.' },
+              },
+            ],
+          });
+          return;
+        }
+
         setVerifyState('error');
         setVerifyError(apiError?.message ?? 'Verification link is invalid or has expired.');
       }

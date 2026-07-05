@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getSubmissionStatus } from '../api/kyc';
-import { clearKycSubmission } from '../storage/kycStorage';
+import { clearKycSubmission, markKycApprovalAcknowledged } from '../storage/kycStorage';
 import { supportMailtoUrl } from '../constants/support';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycSubmissionPending'>;
@@ -39,6 +39,7 @@ export default function KycSubmissionPendingScreen() {
   const handleApproved = useCallback(async () => {
     stopPolling();
     await clearKycSubmission();
+    await markKycApprovalAcknowledged();
     setScreenState({ kind: 'approved' });
 
     setTimeout(() => {

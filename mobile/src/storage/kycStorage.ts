@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 const KYC_SUBMISSION_KEY = 'stash_kyc_submission';
+const KYC_APPROVAL_ACKNOWLEDGED_KEY = 'stash_kyc_approval_acknowledged';
 
 export interface StoredKycSubmission {
   submissionId: string;
@@ -29,4 +30,18 @@ export async function loadKycSubmission(): Promise<StoredKycSubmission | null> {
 
 export async function clearKycSubmission(): Promise<void> {
   await SecureStore.deleteItemAsync(KYC_SUBMISSION_KEY);
+}
+
+export async function hasAcknowledgedKycApproval(): Promise<boolean> {
+  try {
+    const raw = await SecureStore.getItemAsync(KYC_APPROVAL_ACKNOWLEDGED_KEY);
+    return raw === 'true';
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+export async function markKycApprovalAcknowledged(): Promise<void> {
+  await SecureStore.setItemAsync(KYC_APPROVAL_ACKNOWLEDGED_KEY, 'true');
 }

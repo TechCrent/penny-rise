@@ -19,6 +19,7 @@ import com.stash.platform.user.service.LogoutService;
 import com.stash.platform.user.service.ResetPasswordService;
 import com.stash.platform.user.service.SignupService;
 import com.stash.platform.user.service.TokenRefreshService;
+import com.stash.shared.apierrors.ErrorCode;
 import com.stash.shared.apierrors.StashApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -126,6 +127,15 @@ public class AuthController {
                     "You're all set — your email address has been verified.",
                     "You can close this tab and return to the Stash app to sign in.");
         } catch (StashApiException e) {
+            if (e.getErrorCode() == ErrorCode.AUTH_VERIFICATION_TOKEN_ALREADY_USED) {
+                // The token was already consumed by an earlier hit on this same link (a
+                // duplicate deep-link delivery, mail-client link scanner/prefetch, or the
+                // user tapping the link twice) — the email is still genuinely verified, so
+                // show the same success page rather than a scary "problem" page.
+                return htmlPage(HttpStatus.OK, "Email verified",
+                        "You're all set — your email address has been verified.",
+                        "You can close this tab and return to the Stash app to sign in.");
+            }
             return htmlPage(e.getHttpStatus(), "Verification link problem",
                     e.getMessage(),
                     "Go back to the Stash app and request a new verification email if needed.");
@@ -170,7 +180,7 @@ public class AuthController {
                 </html>
                 """.formatted(
                         escapeHtml(title),
-                        status == HttpStatus.OK ? "#4F46E5" : "#DC2626",
+                        status == HttpStatus.OK ? "#059669" : "#DC2626",
                         status == HttpStatus.OK ? "&#10003;" : "&#33;",
                         escapeHtml(title),
                         escapeHtml(message),

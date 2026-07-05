@@ -37,6 +37,7 @@ admin-console/.env.local
 .env
 **/.env
 !**/.env.example
+.git-account-tokens
 
 # OS
 .DS_Store
@@ -51,5 +52,8 @@ PRs/
 *-debug.log
 *-debug.err
 
-# Git account switching tool (git-account-tokens holds real PATs)
+# Git**
 git-account-tokens
+sw.ps1
+sw.sh
+f1.md

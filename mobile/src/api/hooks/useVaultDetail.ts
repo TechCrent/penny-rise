@@ -5,6 +5,7 @@ import type { VaultListItem } from './useVaults';
 export function useVaultDetail(vaultId: string) {
   return useQuery<VaultListItem>({
     queryKey: ['vault', vaultId],
+    enabled: vaultId.length > 0,
     queryFn: async () => {
       const { data } = await apiClient.get<{ vaults: VaultListItem[] }>('/api/v1/vaults');
       const found = data.vaults.find(v => v.id === vaultId);

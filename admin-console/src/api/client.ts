@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL =
-  import.meta.env.VITE_KYC_API_URL ?? import.meta.env.VITE_API_URL ?? 'http://localhost:8082';
-
+// All admin-console calls go through the monolith, which routes internally to
+// KYC, audit, payments, etc.
 export const adminApiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080',
   timeout: 15_000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -12,21 +11,25 @@ export const adminApiClient = axios.create({
 adminApiClient.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('stash_admin_token');
   if (token) {
-    // v0.5-033 fix: monolith's AdminJwtAuthenticationFilter and audit-service's
-    // AuditAdminJwtAuthenticationFilter both only read Authorization: Bearer
-    // <token> — neither ever checked X-Admin-Token, so every existing
-    // admin-console call to either has been silently unauthenticated against
-    // a real backend (masked by mocked API calls in every existing test, so
-    // nothing failed loudly). kyc-service's filter is explicitly named
-    // PlaceholderAdminAuthFilter and still only checks X-Admin-Token, so
-    // that header is kept too rather than dropped — sending both is
-    // harmless and keeps every backend working without picking a side in a
-    // migration that isn't this issue's to finish.
     config.headers.Authorization = `Bearer ${token}`;
     config.headers['X-Admin-Token'] = token;
   }
   return config;
 });
+
+// When the server returns 401 the stored JWT has expired or been revoked.
+// Clear the session and redirect to login so the user sees the login page
+// instead of every section showing a red error banner.
+adminApiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      sessionStorage.removeItem('stash_admin_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  },
+);
 
 export interface StashApiError {
   code: string;

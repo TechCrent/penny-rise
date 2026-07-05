@@ -2,11 +2,10 @@ package com.stash.admin.api;
 
 import com.stash.admin.api.dto.AdminUserDetailResponse;
 import com.stash.admin.api.dto.AdminUserListResponse;
-import com.stash.admin.rbac.AdminResource;
-import com.stash.admin.rbac.RequiresAdminResource;
 import com.stash.admin.service.AdminUserService;
 import com.stash.platform.user.api.dto.AdminUserSearchCriteria;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +25,7 @@ public class AdminUserController {
     }
 
     @GetMapping
-    @RequiresAdminResource(AdminResource.USER_MANAGEMENT)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).USER_MANAGEMENT)")
     public AdminUserListResponse listUsers(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String kycStatus,
@@ -39,7 +38,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
-    @RequiresAdminResource(AdminResource.USER_MANAGEMENT)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).USER_MANAGEMENT)")
     public AdminUserDetailResponse getUserDetail(@PathVariable UUID id) {
         return adminUserService.getDetail(id);
     }

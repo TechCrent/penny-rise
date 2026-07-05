@@ -95,12 +95,13 @@ public class ChargeSuccessHandler {
 
         UUID userId = txn.getInitiatingUserId();
         UUID destinationAccountId = resolveDestinationAccount(txn, userId);
+        String businessRefType = resolveDepositBusinessReferenceType(destinationAccountId);
 
         LedgerWriteCommand command = new LedgerWriteCommand(
                 "DEPOSIT",
                 txn.getReference(),
                 txn.getId(),
-                "TRANSACTION",
+                businessRefType,
                 List.of(
                     EntryRequest.of(destinationAccountId, EntryDirection.CREDIT, amountPesewas),
                     EntryRequest.of(paystackSettlementAccountId, EntryDirection.DEBIT, amountPesewas)
@@ -143,6 +144,14 @@ public class ChargeSuccessHandler {
      * resolving USER_WALLET only for legacy rows created before this column existed —
      * this fallback should not be hit for any deposit initiated after V3.
      */
+    private String resolveDepositBusinessReferenceType(UUID destinationAccountId) {
+        return ledgerAccountRepository.findById(destinationAccountId)
+                .map(account -> "USER_WALLET".equals(account.getAccountType())
+                        ? "WALLET_DEPOSIT"
+                        : "VAULT_DEPOSIT")
+                .orElse("VAULT_DEPOSIT");
+    }
+
     private UUID resolveDestinationAccount(TransactionEntity txn, UUID userId) {
         UUID destination = txn.getDestinationLedgerAccountId();
         if (destination != null) {

@@ -137,6 +137,7 @@ export default function CreateVaultScreen() {
         successMessage: `${created.name} created successfully!`,
       });
     } catch (err: unknown) {
+      console.error(err);
       const apiError = extractApiError(err);
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
       setUpgradeUrl(null);

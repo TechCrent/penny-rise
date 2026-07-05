@@ -48,6 +48,7 @@ export function RecipientPickerScreen() {
       .searchRecipients(debouncedQuery.trim())
       .then(data => setResults(data))
       .catch(e => {
+        console.error(e);
         const err = e as { message?: string } | null;
         if (err?.message !== 'canceled') {
           setError('Could not load results.');

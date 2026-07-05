@@ -39,7 +39,9 @@ export function SendMoneyScreen() {
     transferApi
       .getQuota()
       .then(setQuota)
-      .catch(() => null);
+      .catch(err => {
+        console.error(err);
+      });
   }, [fetchBalance]);
 
   const amountPesewas = Math.round(parseFloat(amountCedis || '0') * 100);
@@ -62,6 +64,7 @@ export function SendMoneyScreen() {
       });
       navigation.replace('TransferSuccess', { result, recipientName: recipient.displayName });
     } catch (e) {
+      console.error(e);
       const err = e as { code?: string; message?: string } | null;
       const code = err?.code ?? '';
       if (code === 'TRANSFER_INSUFFICIENT_BALANCE') {

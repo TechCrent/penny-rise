@@ -53,7 +53,16 @@ class WithdrawalServiceTest {
 
     private final WithdrawalService service = new WithdrawalService(
             accountRepo, balanceService, ledgerService, txnRepo,
-            paystack, outbox, refGen, FIXED_CLOCK, SETTLEMENT_ID);
+            paystack, outbox, refGen, FIXED_CLOCK, SETTLEMENT_ID, false);
+
+    // Separate instance with the sandbox-simulation flag on, for the two tests below.
+    private final WithdrawalService sandboxSimulatingService = new WithdrawalService(
+            accountRepo, balanceService, ledgerService, txnRepo,
+            paystack, outbox, refGen, FIXED_CLOCK, SETTLEMENT_ID, true);
+
+    private static final String SANDBOX_STARTER_BUSINESS_MESSAGE =
+            "{\"status\":false,\"message\":\"You cannot initiate third party payouts as a "
+            + "starter business\",\"type\":\"api_error\"}";
 
     private static final UUID   USER_ID    = UUID.randomUUID();
     private static final UUID   ACCOUNT_ID = UUID.randomUUID();
@@ -202,6 +211,65 @@ class WithdrawalServiceTest {
                         .isEqualTo(UNPROCESSABLE_ENTITY));
 
         verify(ledgerService, times(2)).writeTransaction(any());
+    }
+
+    // ── Sandbox-simulated completion (stash.paystack.sandbox.simulate-blocked-transfers) ──
+
+    @Test
+    @DisplayName("flag disabled: sandbox 'starter business' rejection reverses like any other failure")
+    void sandbox_marker_ignored_when_flag_disabled() {
+        stubActiveAccount(USER_ID);
+        when(balanceService.computeBalanceWithLock(ACCOUNT_ID)).thenReturn(50_000L);
+        stubRecipientSuccess();
+        when(paystack.initiateTransfer(any()))
+                .thenThrow(new PaystackClientException(SANDBOX_STARTER_BUSINESS_MESSAGE, 400));
+        when(refGen.generate()).thenReturn(REF, "STSH-202606-REV003");
+
+        assertThatThrownBy(() -> service.initiateWithdrawal(request(10_000L), IDEM_KEY))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
+
+        verify(ledgerService, times(2)).writeTransaction(any()); // reservation + reversal
+        verifyNoInteractions(outbox);
+    }
+
+    @Test
+    @DisplayName("flag enabled: sandbox 'starter business' rejection completes without reversal")
+    void sandbox_marker_completes_when_flag_enabled() {
+        stubActiveAccount(USER_ID);
+        when(balanceService.computeBalanceWithLock(ACCOUNT_ID)).thenReturn(50_000L);
+        stubRecipientSuccess();
+        when(paystack.initiateTransfer(any()))
+                .thenThrow(new PaystackClientException(SANDBOX_STARTER_BUSINESS_MESSAGE, 400));
+
+        var result = sandboxSimulatingService.initiateWithdrawal(request(10_000L), IDEM_KEY);
+
+        assertThat(result.status()).isEqualTo("COMPLETED");
+        assertThat(result.transactionReference()).isEqualTo(REF);
+        assertThat(result.paystackTransferCode()).isEqualTo("SANDBOX-SIMULATED");
+
+        // Only the original reservation was written — no compensating reversal.
+        verify(ledgerService, times(1)).writeTransaction(any());
+        verify(outbox).publish(any(WithdrawalCompletedEvent.class), eq("corr-001"));
+    }
+
+    @Test
+    @DisplayName("flag enabled: an unrelated Paystack rejection still reverses normally")
+    void sandbox_flag_does_not_affect_other_paystack_errors() {
+        stubActiveAccount(USER_ID);
+        when(balanceService.computeBalanceWithLock(ACCOUNT_ID)).thenReturn(50_000L);
+        stubRecipientSuccess();
+        when(paystack.initiateTransfer(any()))
+                .thenThrow(new PaystackClientException("Account blocked", 400));
+        when(refGen.generate()).thenReturn(REF, "STSH-202606-REV004");
+
+        assertThatThrownBy(() -> sandboxSimulatingService.initiateWithdrawal(request(10_000L), IDEM_KEY))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
+
+        verify(ledgerService, times(2)).writeTransaction(any()); // reservation + reversal
     }
 
     // ── Concurrent withdrawal race condition ──────────────────────────────

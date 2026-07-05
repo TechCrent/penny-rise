@@ -21,6 +21,7 @@ import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
 import { useVaultDeposit } from '../../api/hooks/useVaultDeposit';
+import { useWalletDeposit } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -81,11 +82,13 @@ export default function DepositScreen() {
   const route = useRoute<Route>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { vaultId } = route.params;
+  const { vaultId } = route.params ?? {};
+  const isWalletDeposit = !vaultId;
 
-  const { data: vault } = useVaultDetail(vaultId);
+  const { data: vault } = useVaultDetail(vaultId ?? '');
 
   const idempotencyKeyRef = useRef<string>(generateKey());
+  const lastKeyedPayloadRef = useRef<string | null>(null);
 
   const [phase, setPhase] = useState<Phase>('amount');
   const [amountGhs, setAmountGhs] = useState('');
@@ -98,7 +101,9 @@ export default function DepositScreen() {
 
   const amountPesewas = ghsToPesewas(amountGhs);
 
-  const { mutateAsync, isPending } = useVaultDeposit(vaultId);
+  const vaultDeposit = useVaultDeposit(vaultId ?? '');
+  const walletDeposit = useWalletDeposit();
+  const { mutateAsync, isPending } = isWalletDeposit ? walletDeposit : vaultDeposit;
 
   const { data: polledTxn } = useTransactionPoll(txnRef, phase === 'polling');
 
@@ -107,6 +112,7 @@ export default function DepositScreen() {
     if (polledTxn.status === 'COMPLETED') {
       queryClient.invalidateQueries({ queryKey: ['statement'] });
       queryClient.invalidateQueries({ queryKey: ['vaults'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
       setPhase('success');
     } else if (polledTxn.status === 'FAILED') {
       setPhase('failure');
@@ -125,16 +131,30 @@ export default function DepositScreen() {
 
   const handleConfirm = useCallback(async () => {
     setServerError(null);
+
+    const payload = {
+      amount: amountPesewas,
+      payment_method: method,
+      ...(method === 'MOMO' && {
+        mobile_number: momoNumber,
+        mobile_provider: provider,
+      }),
+    };
+
+    // Only reuse the idempotency key for a byte-for-byte identical retry (e.g.
+    // resubmitting after a network hiccup). Any change to the deposit itself
+    // (amount, method, MoMo number/provider) must get a fresh key, otherwise
+    // payments-service's IdempotencyFilter sees the same key with a different
+    // request hash and rejects it with 422 IDEMPOTENCY_KEY_REUSED.
+    const payloadSignature = JSON.stringify(payload);
+    if (lastKeyedPayloadRef.current !== payloadSignature) {
+      idempotencyKeyRef.current = generateKey();
+      lastKeyedPayloadRef.current = payloadSignature;
+    }
+
     try {
       const resp = await mutateAsync({
-        payload: {
-          amount: amountPesewas,
-          payment_method: method,
-          ...(method === 'MOMO' && {
-            mobile_number: momoNumber,
-            mobile_provider: provider,
-          }),
-        },
+        payload,
         idempotencyKey: idempotencyKeyRef.current,
       });
 
@@ -152,6 +172,7 @@ export default function DepositScreen() {
         setPhase('polling');
       }
     } catch (err: unknown) {
+      console.error(err);
       const apiError = extractApiError(err);
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
       const code = apiError?.code;
@@ -161,6 +182,22 @@ export default function DepositScreen() {
         setServerError('This vault is closed and cannot accept deposits.');
       } else if (status === 403) {
         setServerError("You don't have permission to deposit into this vault.");
+      } else if (
+        status === 409 &&
+        message?.toLowerCase().includes('paystack subaccount')
+      ) {
+        setServerError(
+          'Payments are not set up for your account yet. Complete KYC approval and ensure Paystack/RabbitMQ are running, then try again.',
+        );
+      } else if (status === 502 || status === 503) {
+        setServerError(
+          'Payment service is unavailable. Make sure the payments service is running on port 8081.',
+        );
+      } else if (status === 500) {
+        setServerError(
+          message ??
+            'Payment service error. Check PAYSTACK_SECRET_KEY in .env and that payments-service is running.',
+        );
       } else if (message) {
         setServerError(message);
       } else {
@@ -399,7 +436,7 @@ export default function DepositScreen() {
             <Text style={styles.summaryHeading}>You&apos;re depositing</Text>
             <Text style={styles.summaryAmount}>GHS {formatCedis(amountPesewas)}</Text>
             <View style={styles.summaryDivider} />
-            <SummaryRow label="Into" value={vault?.name ?? '—'} />
+            <SummaryRow label="Into" value={isWalletDeposit ? 'Wallet' : (vault?.name ?? '—')} />
             <SummaryRow
               label="Via"
               value={method === 'MOMO' ? `${providerLabel} · ${momoNumber}` : 'Card'}
@@ -492,7 +529,7 @@ export default function DepositScreen() {
           <Text style={styles.resultAmount}>GHS {formatCedis(amountPesewas)}</Text>
           <Text style={styles.resultSubtitle}>
             has been added to{'\n'}
-            <Text style={styles.resultVaultName}>{vault?.name}</Text>
+            <Text style={styles.resultVaultName}>{isWalletDeposit ? 'your wallet' : vault?.name}</Text>
           </Text>
           {txnRef && (
             <Text style={styles.refText} selectable>
@@ -503,12 +540,17 @@ export default function DepositScreen() {
             style={styles.ctaSuccess}
             onPress={() => {
               idempotencyKeyRef.current = generateKey();
-              navigation.navigate('VaultDetail', { vaultId });
+              lastKeyedPayloadRef.current = null;
+              if (isWalletDeposit) {
+                navigation.navigate('Wallet');
+              } else {
+                navigation.navigate('VaultDetail', { vaultId: vaultId! });
+              }
             }}
             accessibilityRole="button"
-            accessibilityLabel="Back to vault"
+            accessibilityLabel={isWalletDeposit ? 'Back to wallet' : 'Back to vault'}
           >
-            <Text style={styles.ctaText}>Back to vault</Text>
+            <Text style={styles.ctaText}>{isWalletDeposit ? 'Back to wallet' : 'Back to vault'}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -547,10 +589,18 @@ export default function DepositScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.cancelLink}
-          onPress={() => navigation.navigate('VaultDetail', { vaultId })}
+          onPress={() => {
+            if (isWalletDeposit) {
+              navigation.navigate('Wallet');
+            } else {
+              navigation.navigate('VaultDetail', { vaultId: vaultId! });
+            }
+          }}
           accessibilityRole="button"
         >
-          <Text style={styles.cancelLinkText}>Cancel — go back to vault</Text>
+          <Text style={styles.cancelLinkText}>
+            {isWalletDeposit ? 'Cancel — go back to wallet' : 'Cancel — go back to vault'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

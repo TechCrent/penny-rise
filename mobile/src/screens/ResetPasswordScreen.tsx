@@ -70,6 +70,7 @@ export default function ResetPasswordScreen() {
         successBanner: 'Password reset successfully. Please sign in.',
       });
     } catch (error) {
+      console.error(error);
       const apiError = extractApiError(error);
 
       if (apiError?.code === 'AUTH_RESET_TOKEN_EXPIRED') {

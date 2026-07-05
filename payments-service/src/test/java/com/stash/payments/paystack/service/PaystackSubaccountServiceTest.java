@@ -34,7 +34,8 @@ class PaystackSubaccountServiceTest {
     private final LedgerAccountRepository      ledgerAccountRepo = Mockito.mock(LedgerAccountRepository.class);
     private final PaystackSubaccountService    service =
             new PaystackSubaccountService(paystackClient, subaccountRepo,
-                    ledgerAccountRepo, new ObjectMapper(), FIXED_CLOCK);
+                    ledgerAccountRepo, new ObjectMapper(), FIXED_CLOCK,
+                    "002", "0000000000");
 
     private static final UUID   LEDGER_ACCOUNT_ID = UUID.randomUUID();
     private static final UUID   USER_ID            = UUID.randomUUID();
@@ -129,6 +130,6 @@ class PaystackSubaccountServiceTest {
         return new SubaccountCreateResponse(
                 true, "Subaccount created",
                 new SubaccountCreateResponse.SubaccountData(
-                        code, "Stash/akua@stash.test", "TEST", "0000000000"));
+                        code, "Stash/akua@stash.test", "002", "0000000000"));
     }
 }

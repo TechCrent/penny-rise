@@ -56,6 +56,13 @@ public class IdempotencyFilter implements Filter {
         HttpServletRequest  req  = (HttpServletRequest)  request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
+        // Paystack webhooks carry their own deduplication (processed_webhook_events)
+        // and do not send Idempotency-Key headers.
+        if (req.getRequestURI() != null && req.getRequestURI().startsWith("/webhooks/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         if (!MUTATING_METHODS.contains(req.getMethod())) {
             chain.doFilter(request, response);
             return;
@@ -86,7 +93,8 @@ public class IdempotencyFilter implements Filter {
                     idempotencyService.markCompleted(keyValue, cachedResp.getStatus(), cachedBody);
                     cachedResp.copyBodyToResponse();
                 } catch (Exception e) {
-                    // Handler threw — mark failed so retries get the cached error
+                    log.error("Idempotency-wrapped request failed for key '{}': {}",
+                            keyValue, e.getMessage(), e);
                     String errorJson = errorJson("INTERNAL_ERROR", "Request processing failed.");
                     idempotencyService.markFailed(keyValue, 500, errorJson);
                     writeError(resp, 500, "INTERNAL_ERROR", "Request processing failed.");

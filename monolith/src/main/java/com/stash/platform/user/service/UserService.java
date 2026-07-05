@@ -29,9 +29,9 @@ public class UserService {
     }
 
     public Page<AdminUserView> searchForAdmin(AdminUserSearchCriteria criteria, Pageable pageable) {
-        KycStatus kycStatus = parseKycStatus(criteria.kycStatus());
-        AccountStatus accountStatus = parseAccountStatus(criteria.accountStatus());
         String search = blankToNull(criteria.search());
+        String kycStatus = validEnumNameOrNull(criteria.kycStatus(), KycStatus.class);
+        String accountStatus = validEnumNameOrNull(criteria.accountStatus(), AccountStatus.class);
         return userRepository.searchForAdmin(search, kycStatus, accountStatus, pageable)
                 .map(this::toAdminUserView);
     }
@@ -83,14 +83,9 @@ public class UserService {
                 GhanaCardMasker.maskToLastFour(u.getGhanaCardNumber()));
     }
 
-    private static KycStatus parseKycStatus(String s) {
+    private static <E extends Enum<E>> String validEnumNameOrNull(String s, Class<E> type) {
         if (s == null || s.isBlank()) return null;
-        try { return KycStatus.valueOf(s); } catch (IllegalArgumentException e) { return null; }
-    }
-
-    private static AccountStatus parseAccountStatus(String s) {
-        if (s == null || s.isBlank()) return null;
-        try { return AccountStatus.valueOf(s); } catch (IllegalArgumentException e) { return null; }
+        try { Enum.valueOf(type, s.trim()); return s.trim(); } catch (IllegalArgumentException e) { return null; }
     }
 
     private static String blankToNull(String s) {

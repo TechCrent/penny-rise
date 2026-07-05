@@ -4,6 +4,7 @@ import com.stash.platform.subscription.policy.SubscriptionPolicy;
 import com.stash.platform.transfer.api.dto.CreateTransferRequest;
 import com.stash.platform.transfer.api.dto.CreateTransferResponse;
 import com.stash.platform.transfer.client.PeerTransferPaymentsClient;
+import com.stash.platform.transfer.client.TransferLegResult;
 import com.stash.platform.transfer.client.TransferPaymentsException;
 import com.stash.platform.transfer.domain.MonthlyTransferQuotaEntity;
 import com.stash.platform.transfer.domain.PeerTransferEntity;
@@ -60,7 +61,13 @@ public class PeerTransferService {
     public CreateTransferResponse transfer(UUID senderId, CreateTransferRequest request,
                                             String correlationId, String idempotencyKey) {
         // ── Idempotency: check for an existing transfer with this key ─────
+        // Mobile generates its idempotency key once per screen mount, so a user
+        // retrying after a FAILED attempt (e.g. a transient payments-service error)
+        // resubmits the same key. That prior row is reused below (PeerTransferEntity
+        // has a UNIQUE constraint on idempotency_key, so inserting a fresh row for a
+        // retry would 500).
         var existing = transferRepo.findByIdempotencyKey(idempotencyKey);
+        PeerTransferEntity retryOf = null;
         if (existing.isPresent()) {
             PeerTransferEntity prior = existing.get();
             if ("COMPLETED".equals(prior.getStatus())) {
@@ -72,6 +79,7 @@ public class PeerTransferService {
                         "TRANSFER_IN_PROGRESS: A transfer with this idempotency key is " +
                         "already in progress. Retry after a moment.");
             }
+            retryOf = prior; // FAILED — retry in place
         }
 
         UUID recipientId = request.recipientUserId();
@@ -122,12 +130,17 @@ public class PeerTransferService {
         int     freeRemaining = Math.max(0, monthlyLimit - quota.getFreeTransfersUsed());
         quotaRepo.save(quota);
 
-        // ── Create PENDING transfer row ────────────────────────────────────
+        // ── Create (or retry) PENDING transfer row ─────────────────────────
         Instant now = Instant.now(clock);
-        PeerTransferEntity transfer = PeerTransferEntity.create(
-                senderId, recipientId, request.amount(), feeAmount,
-                request.narrative(), idempotencyKey, now);
-        transfer = transferRepo.save(transfer);
+        PeerTransferEntity transfer;
+        if (retryOf != null) {
+            retryOf.retry();
+            transfer = transferRepo.save(retryOf);
+        } else {
+            transfer = transferRepo.save(PeerTransferEntity.create(
+                    senderId, recipientId, request.amount(), feeAmount,
+                    request.narrative(), idempotencyKey, now));
+        }
 
         UUID transferId = transfer.getId();
         log.info("PeerTransfer PENDING: id={} sender={} recipient={} amount={}p fee={}p " +
@@ -141,6 +154,8 @@ public class PeerTransferService {
             senderWalletId    = paymentsClient.resolveUserWallet(senderId, correlationId);
             recipientWalletId = paymentsClient.resolveUserWallet(recipientId, correlationId);
         } catch (TransferPaymentsException e) {
+            log.error("PeerTransfer: wallet resolution failed for transferId={} correlation={}: {}",
+                    transferId, correlationId, e.getMessage(), e);
             transfer.fail(now);
             transferRepo.save(transfer);
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
@@ -148,9 +163,9 @@ public class PeerTransferService {
         }
 
         // ── Leg 1: principal transfer ─────────────────────────────────────
-        String principalTxnRef;
+        TransferLegResult principal;
         try {
-            principalTxnRef = paymentsClient.transferPrincipal(
+            principal = paymentsClient.transferPrincipal(
                     senderWalletId, recipientWalletId,
                     request.amount(), transferId,
                     request.narrative(), correlationId,
@@ -178,16 +193,16 @@ public class PeerTransferService {
         }
 
         // ── Mark COMPLETED ────────────────────────────────────────────────
-        transfer.complete(UUID.fromString(principalTxnRef), isFree, now);
+        transfer.complete(principal.ledgerTransactionId(), isFree, now);
         transferRepo.save(transfer);
 
         log.info("PeerTransfer COMPLETED: id={} txnRef={} amount={}p fee={}p isFree={} " +
                  "freeRemaining={} correlation={}",
-                transferId, principalTxnRef, request.amount(),
+                transferId, principal.transactionReference(), request.amount(),
                 feeAmount, isFree, freeRemaining, correlationId);
 
         return CreateTransferResponse.of(
-                transferId, principalTxnRef,
+                transferId, principal.transactionReference(),
                 request.amount(), feeAmount, freeRemaining,
                 recipientId, now);
     }

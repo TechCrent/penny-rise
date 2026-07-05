@@ -68,6 +68,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
         onSuccess();
       }, 1200);
     } catch (e) {
+      console.error(e);
       const err = e as { message?: string } | null;
       setSubmitError(err?.message ?? 'Payment failed. Try again.');
     } finally {

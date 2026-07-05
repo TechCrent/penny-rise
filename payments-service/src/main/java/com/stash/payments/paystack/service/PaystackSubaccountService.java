@@ -9,6 +9,7 @@ import com.stash.payments.paystack.dto.SubaccountCreateResponse;
 import com.stash.payments.paystack.repository.PaystackSubaccountRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,17 +40,25 @@ public class PaystackSubaccountService {
     private final LedgerAccountRepository      ledgerAccountRepository;
     private final ObjectMapper                 objectMapper;
     private final Clock                        clock;
+    private final String                       sandboxSettlementBank;
+    private final String                       sandboxAccountNumber;
 
     public PaystackSubaccountService(PaystackClient paystackClient,
                                      PaystackSubaccountRepository subaccountRepository,
                                      LedgerAccountRepository ledgerAccountRepository,
                                      ObjectMapper objectMapper,
-                                     Clock clock) {
-        this.paystackClient          = paystackClient;
-        this.subaccountRepository    = subaccountRepository;
-        this.ledgerAccountRepository = ledgerAccountRepository;
-        this.objectMapper            = objectMapper;
-        this.clock                   = clock;
+                                     Clock clock,
+                                     @Value("${paystack.sandbox.settlement-bank-code:002}")
+                                     String sandboxSettlementBank,
+                                     @Value("${paystack.sandbox.settlement-account-number:0000000000}")
+                                     String sandboxAccountNumber) {
+        this.paystackClient            = paystackClient;
+        this.subaccountRepository      = subaccountRepository;
+        this.ledgerAccountRepository   = ledgerAccountRepository;
+        this.objectMapper              = objectMapper;
+        this.clock                     = clock;
+        this.sandboxSettlementBank     = sandboxSettlementBank;
+        this.sandboxAccountNumber      = sandboxAccountNumber;
     }
 
     /**
@@ -76,8 +85,8 @@ public class PaystackSubaccountService {
         // Paystack requires something per subaccount — email is unique per user.
         SubaccountCreateRequest request = new SubaccountCreateRequest(
                 "Stash/" + userEmail,
-                "TEST",              // Paystack test bank code for sandbox
-                "0000000000",        // Paystack test account number for sandbox
+                sandboxSettlementBank,
+                sandboxAccountNumber,
                 DEFAULT_CHARGE_PERCENT,
                 "USER_WALLET for " + userId
         );

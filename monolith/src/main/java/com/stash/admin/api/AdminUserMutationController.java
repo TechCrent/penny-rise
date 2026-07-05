@@ -1,12 +1,11 @@
 package com.stash.admin.api;
 
 import com.stash.admin.api.dto.SuspendUserRequest;
-import com.stash.admin.rbac.AdminResource;
-import com.stash.admin.rbac.RequiresAdminResource;
 import com.stash.admin.service.AdminJwtService.AdminTokenClaims;
 import com.stash.admin.service.AdminUserMutationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,7 +26,7 @@ public class AdminUserMutationController {
     }
 
     @PostMapping("/suspend")
-    @RequiresAdminResource(AdminResource.USER_MANAGEMENT)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).USER_MANAGEMENT)")
     public ResponseEntity<Void> suspend(@PathVariable UUID id,
                                          @Valid @RequestBody SuspendUserRequest request,
                                          Authentication authentication) {
@@ -36,14 +35,14 @@ public class AdminUserMutationController {
     }
 
     @PostMapping("/restore")
-    @RequiresAdminResource(AdminResource.USER_MANAGEMENT)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).USER_MANAGEMENT)")
     public ResponseEntity<Void> restore(@PathVariable UUID id, Authentication authentication) {
         mutationService.restore(id, adminIdOf(authentication));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/force-logout")
-    @RequiresAdminResource(AdminResource.USER_MANAGEMENT)
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).USER_MANAGEMENT)")
     public ResponseEntity<Void> forceLogout(@PathVariable UUID id, Authentication authentication) {
         mutationService.forceLogout(id, adminIdOf(authentication));
         return ResponseEntity.noContent().build();

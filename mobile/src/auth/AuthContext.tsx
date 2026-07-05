@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { clearSession, loadSession, persistSession, setSessionListener } from './authSession';
+import { isAccessTokenExpired, decodeKycStatusFromJwt } from './jwt';
 
 interface AuthState {
   accessToken: string | null;
@@ -15,6 +16,14 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function resolveKycStatus(accessToken: string, fallback: string): string {
+  try {
+    return decodeKycStatusFromJwt(accessToken);
+  } catch {
+    return fallback;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     accessToken: null,
@@ -24,11 +33,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    loadSession().then(session => {
+    loadSession().then(async session => {
+      if (session && isAccessTokenExpired(session.accessToken)) {
+        await clearSession();
+        setState({
+          accessToken: null,
+          kycStatus: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+        return;
+      }
+
       if (session) {
         setState({
           accessToken: session.accessToken,
-          kycStatus: session.kycStatus,
+          kycStatus: resolveKycStatus(session.accessToken, session.kycStatus),
           isLoading: false,
           isAuthenticated: true,
         });
@@ -48,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setState({
           accessToken: session.accessToken,
-          kycStatus: session.kycStatus,
+          kycStatus: resolveKycStatus(session.accessToken, session.kycStatus),
           isLoading: false,
           isAuthenticated: true,
         });

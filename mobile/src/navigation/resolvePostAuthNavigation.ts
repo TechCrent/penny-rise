@@ -1,5 +1,11 @@
+import { getAccessToken } from '../auth/authSession';
+import { decodeUserIdFromJwt } from '../auth/jwt';
 import { getMySubmission } from '../api/kyc';
-import { loadKycSubmission } from '../storage/kycStorage';
+import {
+  clearKycSubmission,
+  hasAcknowledgedKycApproval,
+  loadKycSubmission,
+} from '../storage/kycStorage';
 import type { RootStackParamList } from './RootNavigator';
 
 type PostAuthRoute = {
@@ -14,30 +20,46 @@ type PostAuthRoute = {
 const ACTIVE_SUBMISSION_STATUSES = ['REVIEWING', 'SUBMITTED'];
 
 export async function resolvePostAuthNavigation(kycStatus: string): Promise<PostAuthRoute> {
-  const stored = await loadKycSubmission();
+  const accessToken = await getAccessToken();
+
+  const [stored] = await Promise.all([loadKycSubmission()]);
+  const currentUserId = accessToken ? decodeUserIdFromJwt(accessToken) : null;
+  const submission = await getMySubmission();
+
   if (stored) {
-    return {
-      name: 'KycDocumentUpload',
-      params: {
-        submissionId: stored.submissionId,
-        uploadUrls: stored.uploadUrls,
-      },
-    };
+    const belongsToCurrentUser =
+      !!stored.ownerUserId && !!currentUserId && stored.ownerUserId === currentUserId;
+    const matchesActivePendingSubmission =
+      submission?.id === stored.submissionId && submission.status === 'PENDING_DOCUMENTS';
+
+    if (belongsToCurrentUser && matchesActivePendingSubmission) {
+      return {
+        name: 'KycDocumentUpload',
+        params: {
+          submissionId: stored.submissionId,
+          uploadUrls: stored.uploadUrls,
+        },
+      };
+    }
+
+    await clearKycSubmission();
   }
 
   if (kycStatus === 'APPROVED') {
+    const acknowledged = await hasAcknowledgedKycApproval();
+    if (!acknowledged && submission) {
+      return { name: 'KycSubmissionPending', params: { submissionId: submission.id } };
+    }
     return { name: 'Home' };
   }
 
   if (kycStatus === 'SUBMITTED') {
-    const submission = await getMySubmission();
     if (submission) {
       return { name: 'KycSubmissionPending', params: { submissionId: submission.id } };
     }
     return { name: 'Home' };
   }
 
-  const submission = await getMySubmission();
   if (submission && ACTIVE_SUBMISSION_STATUSES.includes(submission.status)) {
     return { name: 'KycSubmissionPending', params: { submissionId: submission.id } };
   }

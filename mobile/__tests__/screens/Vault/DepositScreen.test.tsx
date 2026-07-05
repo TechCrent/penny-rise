@@ -178,7 +178,11 @@ test('idempotency key stays the same across retries', async () => {
 
   await advanceToConfirm();
   fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
-  await waitFor(() => expect(screen.getByText('Retry.')).toBeTruthy());
+  await waitFor(() =>
+    expect(
+      screen.getByText('Payment service is unavailable. Make sure the payments service is running on port 8081.'),
+    ).toBeTruthy(),
+  );
 
   const key1 = mockMutateAsync.mock.calls[0][0].idempotencyKey;
 

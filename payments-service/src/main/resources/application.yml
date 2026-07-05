@@ -119,6 +119,10 @@ paystack:
   secret-key: ${PAYSTACK_SECRET_KEY}   # sk_test_... for test mode; sk_live_... for live
   webhook-secret: ${PAYSTACK_WEBHOOK_SECRET}
   timeout-seconds: 30
+  # Paystack sandbox test bank (code "002", not "TEST"). See docs/paystack-api-reference.md.
+  sandbox:
+    settlement-bank-code: "002"
+    settlement-account-number: "0000000000"
   retry:
     max-attempts: 3
     initial-interval-ms: 500
@@ -130,6 +134,14 @@ stash:
     service-token: ${INTERNAL_SERVICE_TOKEN}
   ledger:
     paystack-settlement-account-id: ${PAYSTACK_SETTLEMENT_ACCOUNT_ID}
+  paystack:
+    sandbox:
+      # DEV/SANDBOX ONLY — never set true in any deployed environment. When enabled,
+      # a withdrawal blocked by Paystack's sandbox "starter business" third-party-payout
+      # restriction is completed locally (ledger reservation kept, no real Paystack
+      # payout) instead of reversed, so local testing isn't blocked by an account-tier
+      # restriction unrelated to our code. See WithdrawalService.SANDBOX_STARTER_BUSINESS_MARKER.
+      simulate-blocked-transfers: ${PAYSTACK_SANDBOX_SIMULATE_BLOCKED_TRANSFERS:false}
 
 resilience4j:
   circuitbreaker:

@@ -77,6 +77,7 @@ export function CreateSusuScreen() {
         targetMemberCount: form.targetMemberCount,
       });
     } catch (e) {
+      console.error(e);
       const err = e as { code?: string; message?: string } | null;
       const code = err?.code ?? '';
       if (code === 'SUSU_FREE_TIER_LIMIT_REACHED') {

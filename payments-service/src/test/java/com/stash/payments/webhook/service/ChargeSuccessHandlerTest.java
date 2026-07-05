@@ -64,15 +64,15 @@ class ChargeSuccessHandlerTest {
     void vault_deposit_credits_vault_account() {
         TransactionEntity txn = pendingDepositTo(VAULT_LEDGER_ACCOUNT_ID);
         when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(accountRepo.findById(VAULT_LEDGER_ACCOUNT_ID))
+                .thenReturn(Optional.of(vaultAccount(VAULT_LEDGER_ACCOUNT_ID)));
 
         handler.handle(chargeSuccessPayload(), CORR);
 
         ArgumentCaptor<LedgerWriteCommand> captor = ArgumentCaptor.forClass(LedgerWriteCommand.class);
         verify(ledgerService).writeTransaction(captor.capture());
         assertThat(captor.getValue().entries().get(0).accountId()).isEqualTo(VAULT_LEDGER_ACCOUNT_ID);
-
-        // USER_WALLET is never even looked up for a vault deposit.
-        verifyNoInteractions(accountRepo);
+        assertThat(captor.getValue().businessReferenceType()).isEqualTo("VAULT_DEPOSIT");
     }
 
     @Test
@@ -80,12 +80,15 @@ class ChargeSuccessHandlerTest {
     void direct_wallet_deposit_credits_wallet() {
         TransactionEntity txn = pendingDepositTo(USER_WALLET_ID);
         when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(accountRepo.findById(USER_WALLET_ID))
+                .thenReturn(Optional.of(walletAccount()));
 
         handler.handle(chargeSuccessPayload(), CORR);
 
         ArgumentCaptor<LedgerWriteCommand> captor = ArgumentCaptor.forClass(LedgerWriteCommand.class);
         verify(ledgerService).writeTransaction(captor.capture());
         assertThat(captor.getValue().entries().get(0).accountId()).isEqualTo(USER_WALLET_ID);
+        assertThat(captor.getValue().businessReferenceType()).isEqualTo("WALLET_DEPOSIT");
     }
 
     @Test
@@ -93,6 +96,8 @@ class ChargeSuccessHandlerTest {
     void outbox_event_carries_credited_account() {
         TransactionEntity txn = pendingDepositTo(VAULT_LEDGER_ACCOUNT_ID);
         when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(accountRepo.findById(VAULT_LEDGER_ACCOUNT_ID))
+                .thenReturn(Optional.of(vaultAccount(VAULT_LEDGER_ACCOUNT_ID)));
 
         handler.handle(chargeSuccessPayload(), CORR);
 
@@ -110,6 +115,8 @@ class ChargeSuccessHandlerTest {
         TransactionEntity txn = pendingDepositTo(null);
         when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
         when(accountRepo.findByOwnerTypeAndOwnerIdAndAccountType("USER", USER_ID, "USER_WALLET"))
+                .thenReturn(Optional.of(walletAccount()));
+        when(accountRepo.findById(USER_WALLET_ID))
                 .thenReturn(Optional.of(walletAccount()));
 
         handler.handle(chargeSuccessPayload(), CORR);
@@ -175,6 +182,19 @@ class ChargeSuccessHandlerTest {
             var f = LedgerAccountEntity.class.getDeclaredField("id");
             f.setAccessible(true);
             f.set(acc, USER_WALLET_ID);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return acc;
+    }
+
+    private LedgerAccountEntity vaultAccount(UUID id) {
+        LedgerAccountEntity acc = new LedgerAccountEntity(
+                "VAULT", "VAULT", UUID.randomUUID(), "vault", Instant.now(FIXED_CLOCK));
+        try {
+            var f = LedgerAccountEntity.class.getDeclaredField("id");
+            f.setAccessible(true);
+            f.set(acc, id);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

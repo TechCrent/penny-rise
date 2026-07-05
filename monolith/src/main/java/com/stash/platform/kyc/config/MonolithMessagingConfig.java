@@ -2,10 +2,10 @@ package com.stash.platform.kyc.config;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,8 +30,8 @@ public class MonolithMessagingConfig {
     public static final String MONOLITH_KYC_REJECTED_QUEUE = "monolith.kyc.rejected.queue";
 
     @Bean
-    public DirectExchange kycEventsExchange() {
-        return ExchangeBuilder.directExchange(KYC_EXCHANGE)
+    public TopicExchange kycEventsExchange() {
+        return ExchangeBuilder.topicExchange(KYC_EXCHANGE)
                 .durable(true)
                 .build();
     }
@@ -48,7 +48,7 @@ public class MonolithMessagingConfig {
 
     @Bean
     public Binding monolithKycApprovedBinding(Queue monolithKycApprovedQueue,
-                                              DirectExchange kycEventsExchange) {
+                                              TopicExchange kycEventsExchange) {
         return BindingBuilder.bind(monolithKycApprovedQueue)
                 .to(kycEventsExchange)
                 .with(KYC_APPROVED_ROUTING_KEY);
@@ -56,7 +56,7 @@ public class MonolithMessagingConfig {
 
     @Bean
     public Binding monolithKycRejectedBinding(Queue monolithKycRejectedQueue,
-                                              DirectExchange kycEventsExchange) {
+                                              TopicExchange kycEventsExchange) {
         return BindingBuilder.bind(monolithKycRejectedQueue)
                 .to(kycEventsExchange)
                 .with(KYC_REJECTED_ROUTING_KEY);

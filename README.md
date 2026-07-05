@@ -28,6 +28,18 @@ Requires JDK 21 or newer.
 ./mvnw clean install
 ```
 
+### Running a service locally
+
+The root POM is an aggregator only — it has no `main` class. Run a specific module:
+
+```bash
+# Windows — all services
+.\start-services.ps1
+
+# Or one service (monolith on :8080)
+.\mvnw.cmd -pl monolith spring-boot:run
+```
+
 ## API Documentation Convention
 
 Every backend service exposes a live, interactive API reference via Swagger UI

@@ -56,6 +56,18 @@ public class PeerTransferEntity {
         this.completedAt = now;
     }
 
+    /**
+     * Resets a FAILED transfer back to PENDING so the same idempotency key can be
+     * retried. Mobile generates its idempotency key once per screen mount
+     * (see SendMoneyScreen), so a user retrying after a transient failure (e.g. a
+     * payments-service blip) resubmits the same key — without this, the retry would
+     * hit the idempotency_key UNIQUE constraint trying to insert a new row.
+     */
+    public void retry() {
+        this.status      = "PENDING";
+        this.completedAt = null;
+    }
+
     public UUID    getId()                       { return id; }
     public UUID    getSenderUserId()             { return senderUserId; }
     public UUID    getRecipientUserId()          { return recipientUserId; }

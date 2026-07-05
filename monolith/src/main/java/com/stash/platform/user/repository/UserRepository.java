@@ -132,20 +132,34 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Admin search: full-text filter on email/phone, optional status filters.
      * Soft-deleted users are excluded. All parameters are nullable; a null value
      * means "no filter on that field".
+     *
+     * Native query avoids Hibernate 6's null-enum parameter type-resolution issue
+     * where JPQL (:kycStatus IS NULL OR u.kycStatus = :kycStatus) fails when the
+     * bound value is null and the parameter type is inferred as an enum.
      */
-    @Query("""
-            SELECT u FROM User u
-            WHERE u.deletedAt IS NULL
+    @Query(value = """
+            SELECT * FROM user_module.users
+            WHERE deleted_at IS NULL
               AND (:search IS NULL
-                   OR lower(u.email) LIKE lower(concat('%', :search, '%'))
-                   OR u.phone LIKE concat('%', :search, '%'))
-              AND (:kycStatus IS NULL OR u.kycStatus = :kycStatus)
-              AND (:accountStatus IS NULL OR u.accountStatus = :accountStatus)
-            ORDER BY u.createdAt DESC
-            """)
+                   OR lower(email) LIKE lower('%' || :search || '%')
+                   OR phone LIKE '%' || :search || '%')
+              AND (:kycStatus IS NULL OR kyc_status = :kycStatus)
+              AND (:accountStatus IS NULL OR account_status = :accountStatus)
+            ORDER BY created_at DESC
+            """,
+           countQuery = """
+            SELECT COUNT(*) FROM user_module.users
+            WHERE deleted_at IS NULL
+              AND (:search IS NULL
+                   OR lower(email) LIKE lower('%' || :search || '%')
+                   OR phone LIKE '%' || :search || '%')
+              AND (:kycStatus IS NULL OR kyc_status = :kycStatus)
+              AND (:accountStatus IS NULL OR account_status = :accountStatus)
+            """,
+           nativeQuery = true)
     Page<User> searchForAdmin(@Param("search") String search,
-                               @Param("kycStatus") KycStatus kycStatus,
-                               @Param("accountStatus") AccountStatus accountStatus,
+                               @Param("kycStatus") String kycStatus,
+                               @Param("accountStatus") String accountStatus,
                                Pageable pageable);
 
     // ── Admin status mutations ─────────────────────────────────────────────

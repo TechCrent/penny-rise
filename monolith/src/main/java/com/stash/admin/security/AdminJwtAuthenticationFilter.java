@@ -37,7 +37,10 @@ import java.util.List;
  */
 public class AdminJwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String ADMIN_PATH_PREFIX = "/api/v1/admin/";
+    private static final String ADMIN_PATH_PREFIX     = "/api/v1/admin/";
+    // KYC admin proxy is mounted at /api/v1/kyc/admin/ on the monolith and
+    // requires admin JWT auth — same filter, different path prefix.
+    private static final String KYC_ADMIN_PATH_PREFIX = "/api/v1/kyc/admin/";
     private final AdminJwtService jwtService;
 
     public AdminJwtAuthenticationFilter(AdminJwtService jwtService) {
@@ -46,7 +49,8 @@ public class AdminJwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith(ADMIN_PATH_PREFIX);
+        String uri = request.getRequestURI();
+        return !uri.startsWith(ADMIN_PATH_PREFIX) && !uri.startsWith(KYC_ADMIN_PATH_PREFIX);
     }
 
     @Override

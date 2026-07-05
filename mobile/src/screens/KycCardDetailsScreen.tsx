@@ -13,6 +13,8 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { createSubmission } from '../api/kyc';
 import { saveKycSubmission } from '../storage/kycStorage';
 import { extractApiError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { decodeUserIdFromJwt } from '../auth/jwt';
 import { useKycResumability } from '../hooks/useKycResumability';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycCardDetails'>;
@@ -31,6 +33,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function KycCardDetailsScreen() {
   const navigation = useNavigation<Nav>();
+  const { accessToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -55,6 +58,7 @@ export default function KycCardDetailsScreen() {
 
       await saveKycSubmission({
         submissionId: response.id,
+        ownerUserId: accessToken ? (decodeUserIdFromJwt(accessToken) ?? undefined) : undefined,
         uploadUrls: response.upload_urls,
         uploadedTypes: [],
       });
@@ -64,6 +68,7 @@ export default function KycCardDetailsScreen() {
         uploadUrls: response.upload_urls,
       });
     } catch (error) {
+      console.error(error);
       const apiError = extractApiError(error);
 
       if (apiError?.code === 'KYC_SUBMISSION_ALREADY_ACTIVE') {

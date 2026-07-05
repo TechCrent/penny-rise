@@ -1,9 +1,13 @@
 # Shared defaults for @SpringBootTest — override DB/AES via
 # KycIntegrationTestSupport.registerPostgres() in integration tests.
 spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
   rabbitmq:
     listener:
       simple:
+        auto-startup: false
+      direct:
         auto-startup: false
   task:
     scheduling:

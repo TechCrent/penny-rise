@@ -1,4 +1,4 @@
-import { auditServiceClient } from './auditServiceClient';
+import { adminApiClient } from './client';
 
 // Field names verified directly against audit-service's real DTOs
 // (AuditLogEntryResponse, AuditLogPageResponse, AuditLogFacetsResponse) —
@@ -38,7 +38,7 @@ export interface AuditLogFilterParams {
 }
 
 export async function fetchAuditLog(params: AuditLogFilterParams): Promise<AuditLogPageResponse> {
-  const { data } = await auditServiceClient.get<AuditLogPageResponse>('/api/v1/admin/audit-log', {
+  const { data } = await adminApiClient.get<AuditLogPageResponse>('/api/v1/admin/audit-log', {
     params: {
       actorId: params.actorId || undefined,
       eventType: params.eventType || undefined,
@@ -53,6 +53,6 @@ export async function fetchAuditLog(params: AuditLogFilterParams): Promise<Audit
 }
 
 export async function fetchAuditLogFacets(): Promise<AuditLogFacets> {
-  const { data } = await auditServiceClient.get<AuditLogFacets>('/api/v1/admin/audit-log/facets');
+  const { data } = await adminApiClient.get<AuditLogFacets>('/api/v1/admin/audit-log/facets');
   return data;
 }

@@ -8,3 +8,10 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+stash:
+  paystack:
+    sandbox:
+      # Defense-in-depth: this must always be false in production, regardless of the
+      # base application.yml default or any stray env var. See WithdrawalService.
+      simulate-blocked-transfers: false

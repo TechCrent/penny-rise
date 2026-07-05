@@ -5,28 +5,55 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { adminApiClient } from '../../api/client';
+import axios from 'axios';
 
-const PLACEHOLDER_TOKEN =
-  import.meta.env.VITE_PLACEHOLDER_ADMIN_TOKEN ?? 'local-dev-admin-token-not-for-production';
+interface AdminLoginResponse {
+  access_token: string;
+  refresh_token: string;
+  account_type: string;
+  expires_in: number;
+}
 
 export default function LoginPage() {
   const { login } = useAdminAuth();
   const navigate = useNavigate();
-  const [token, setToken] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!token.trim()) {
-      setError('Admin token is required.');
+    if (!email.trim() || !password) {
+      setError('Email and password are required.');
       return;
     }
-    if (token.trim() !== PLACEHOLDER_TOKEN) {
-      setError('Invalid admin token.');
-      return;
+    setIsLoading(true);
+    setError('');
+    try {
+      const { data } = await adminApiClient.post<AdminLoginResponse>(
+        '/api/v1/admin/auth/login',
+        { email: email.trim(), password },
+      );
+      login(data.access_token);
+      navigate('/kyc-queue', { replace: true });
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 401 || status === 403) {
+          setError('Invalid email or password.');
+        } else if (status === 429) {
+          setError('Too many login attempts — wait a moment and try again.');
+        } else {
+          setError('Login failed. Make sure the Stash monolith is running on :8080.');
+        }
+      } else {
+        setError('Login failed. Make sure the Stash monolith is running on :8080.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    login(token.trim());
-    navigate('/kyc-queue', { replace: true });
   };
 
   return (
@@ -34,28 +61,35 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Stash Admin</CardTitle>
-          <CardDescription>
-            Placeholder auth — for local dev and staging only. Real admin auth ships in v0.5.
-          </CardDescription>
+          <CardDescription>Sign in with your admin account credentials.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="token">Admin Token</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="token"
-                type="password"
-                placeholder="Paste your admin token"
-                value={token}
-                onChange={(e) => {
-                  setToken(e.target.value);
-                  setError('');
-                }}
+                id="email"
+                type="email"
+                placeholder="admin@stash.local"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                disabled={isLoading}
               />
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
             </div>
-            <Button type="submit" className="w-full">
-              Sign In
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                disabled={isLoading}
+              />
+            </div>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
         </CardContent>

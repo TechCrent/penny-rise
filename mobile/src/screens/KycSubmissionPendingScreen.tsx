@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getSubmissionStatus } from '../api/kyc';
-import { clearKycSubmission } from '../storage/kycStorage';
+import { clearKycSubmission, markKycApprovalAcknowledged } from '../storage/kycStorage';
 import { supportMailtoUrl } from '../constants/support';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycSubmissionPending'>;
@@ -39,6 +39,7 @@ export default function KycSubmissionPendingScreen() {
   const handleApproved = useCallback(async () => {
     stopPolling();
     await clearKycSubmission();
+    await markKycApprovalAcknowledged();
     setScreenState({ kind: 'approved' });
 
     setTimeout(() => {
@@ -47,8 +48,9 @@ export default function KycSubmissionPendingScreen() {
   }, [stopPolling, navigation]);
 
   const handleRejected = useCallback(
-    (reason: string | null) => {
+    async (reason: string | null) => {
       stopPolling();
+      await clearKycSubmission();
       setScreenState({ kind: 'rejected', reason });
     },
     [stopPolling],
@@ -63,7 +65,7 @@ export default function KycSubmissionPendingScreen() {
           await handleApproved();
           break;
         case 'REJECTED':
-          handleRejected(status.rejection_reason);
+          await handleRejected(status.rejection_reason);
           break;
         case 'REVIEWING':
         case 'SUBMITTED':
@@ -72,7 +74,8 @@ export default function KycSubmissionPendingScreen() {
         default:
           setScreenState({ kind: 'under_review' });
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       // Network error — retry on next poll
     }
   }, [submissionId, handleApproved, handleRejected]);
@@ -130,7 +133,10 @@ export default function KycSubmissionPendingScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => navigation.replace('KycCardDetails')}
+            onPress={async () => {
+              await clearKycSubmission();
+              navigation.replace('KycCardDetails');
+            }}
           >
             <Text style={styles.retryButtonText}>Try again with a new submission</Text>
           </TouchableOpacity>

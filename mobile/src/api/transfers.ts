@@ -58,8 +58,42 @@ export const transferApi = {
     note?: string;
     idempotencyKey: string;
   }): Promise<TransferResult> => {
-    const { data } = await apiClient.post<TransferResult>('/api/v1/transfers', params);
-    return data;
+    const { data } = await apiClient.post<{
+      id: string;
+      transaction_reference: string;
+      amount: number;
+      amount_cedis: string;
+      fee_amount: number;
+      fee_amount_cedis: string;
+      total_debited: number;
+      total_debited_cedis: string;
+      free_transfers_remaining: number;
+      recipient_user_id: string;
+      status: string;
+      completed_at: string;
+    }>(
+      '/api/v1/transfers',
+      {
+        recipient_user_id: params.recipientId,
+        amount: params.amountPesewas,
+        narrative: params.note,
+      },
+      { headers: { 'Idempotency-Key': params.idempotencyKey } },
+    );
+    return {
+      id: data.id,
+      transactionReference: data.transaction_reference,
+      amount: data.amount,
+      amountCedis: data.amount_cedis,
+      feeAmount: data.fee_amount,
+      feeAmountCedis: data.fee_amount_cedis,
+      totalDebited: data.total_debited,
+      totalDebitedCedis: data.total_debited_cedis,
+      freeTransfersRemaining: data.free_transfers_remaining,
+      recipientUserId: data.recipient_user_id,
+      status: data.status,
+      completedAt: data.completed_at,
+    };
   },
 
   listRecent: async (): Promise<{ transfers: RecentTransfer[] }> => {

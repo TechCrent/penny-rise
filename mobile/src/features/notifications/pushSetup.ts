@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { apiClient } from '../../api/client';
 
@@ -9,6 +10,10 @@ import { apiClient } from '../../api/client';
  * here swallows and logs, never throws or surfaces UI.
  */
 export async function registerPushToken(): Promise<void> {
+  // Remote push notifications removed from Expo Go in SDK 53+.
+  // executionEnvironment === 'storeClient' is the reliable SDK 53+ check;
+  // appOwnership === 'expo' kept as fallback for older Expo Go versions.
+  if (Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo') return;
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;

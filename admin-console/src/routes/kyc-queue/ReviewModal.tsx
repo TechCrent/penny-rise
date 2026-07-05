@@ -163,14 +163,24 @@ export function ReviewModal({
                   <p className="text-xs font-medium text-slate-500 mb-1">
                     {DOC_LABELS[type] ?? type}
                   </p>
-                  <img
-                    src={url}
-                    alt={DOC_LABELS[type] ?? type}
-                    className="w-full rounded-lg border border-slate-200 object-cover max-h-64"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Click to view full size"
+                    className="block cursor-zoom-in"
+                  >
+                    <img
+                      src={url}
+                      alt={DOC_LABELS[type] ?? type}
+                      className="w-full rounded-lg border border-slate-200 object-cover max-h-64 hover:opacity-90 transition-opacity"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.style.display = 'none';
+                        img.dataset.failed = 'true';
+                      }}
+                    />
+                  </a>
                 </div>
               ))}
               {Object.keys(detail.document_view_urls).length === 0 ? (

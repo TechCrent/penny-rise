@@ -40,25 +40,26 @@ public class AdminJwtService {
     private static final String CLAIM_ROLE_NAME    = "role_name";
     private static final String TOKEN_TYPE_VALUE   = "ADMIN";
 
-    static final Duration ACCESS_TOKEN_TTL = Duration.ofMinutes(5);
-
+    private final Duration  accessTokenTtl;
     private final SecretKey signingKey;
     private final Clock     clock;
 
     public AdminJwtService(
             @Value("${stash.security.jwt.signing-key}") String signingKeyBase64,
+            @Value("${stash.admin.jwt.access-token-ttl:PT8H}") Duration accessTokenTtl,
             Clock clock) {
         // Same shared signing key as customer tokens — per System Design, the
         // key is shared across services. Discrimination happens via the
         // token_type claim, not via a separate key. Base64-decoded to match
         // the same format used by JwtTokenService.
-        this.signingKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(signingKeyBase64));
-        this.clock      = clock;
+        this.signingKey     = Keys.hmacShaKeyFor(Base64.getDecoder().decode(signingKeyBase64));
+        this.accessTokenTtl = accessTokenTtl;
+        this.clock          = clock;
     }
 
     public String issueAccessToken(UUID adminAccountId, String accountType, String roleName) {
         Instant now = Instant.now(clock);
-        Instant exp = now.plus(ACCESS_TOKEN_TTL);
+        Instant exp = now.plus(accessTokenTtl);
 
         Map<String, Object> claims = new HashMap<>();
         claims.put(CLAIM_TOKEN_TYPE,   TOKEN_TYPE_VALUE);
@@ -72,6 +73,10 @@ public class AdminJwtService {
                 .claims(claims)
                 .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
+    }
+
+    public Duration getAccessTokenTtl() {
+        return accessTokenTtl;
     }
 
     /**

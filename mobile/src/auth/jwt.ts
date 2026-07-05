@@ -24,3 +24,19 @@ export function decodeKycStatusFromJwt(accessToken: string): string {
   const kycStatus = payload.kyc_status;
   return typeof kycStatus === 'string' ? kycStatus : 'PENDING';
 }
+
+export function decodeUserIdFromJwt(accessToken: string): string | null {
+  const payload = decodeJwtPayload(accessToken);
+  const subject = payload.sub;
+  return typeof subject === 'string' && subject.length > 0 ? subject : null;
+}
+
+export function isAccessTokenExpired(accessToken: string, nowMs = Date.now()): boolean {
+  try {
+    const payload = decodeJwtPayload(accessToken);
+    const exp = payload.exp;
+    return typeof exp === 'number' && nowMs / 1000 >= exp;
+  } catch {
+    return true;
+  }
+}

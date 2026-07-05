@@ -58,6 +58,7 @@ export function SusuDetailScreen() {
               await susuApi.activateGroup(groupId, `activate-${groupId}`);
               await fetch();
             } catch (e) {
+              console.error(e);
               Alert.alert('Activation failed', (e as Error)?.message ?? 'Please try again.');
             } finally {
               setActivating(false);

@@ -126,6 +126,7 @@ export default function WithdrawScreen() {
       setTxnRef(resp.transaction_reference);
       setPhase('pending');
     } catch (err: unknown) {
+      console.error(err);
       const apiError = extractApiError(err);
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
       const code = apiError?.code;

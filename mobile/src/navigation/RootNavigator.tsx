@@ -15,6 +15,7 @@ import KycDocumentUploadScreen from '../screens/KycDocumentUploadScreen';
 import KycSubmissionPendingScreen from '../screens/KycSubmissionPendingScreen';
 import {
   CreateVaultScreen,
+  VaultListScreen,
   VaultDetailScreen,
   DepositScreen,
   WithdrawScreen,
@@ -53,7 +54,6 @@ export type RootStackParamList = {
   VaultList: undefined;
   VaultDetail: { vaultId: string; successMessage?: string };
   CreateVault: undefined;
-  Transfer: undefined;
   Wallet: undefined;
   Notifications: undefined;
   TransactionHistory: undefined;
@@ -70,7 +70,7 @@ export type RootStackParamList = {
     };
   };
   KycSubmissionPending: { submissionId: string };
-  Deposit: { vaultId: string };
+  Deposit: { vaultId?: string };
   Withdraw: { vaultId: string };
   EarlyExit: { vaultId: string };
   CancelEarlyExit: { vaultId: string };
@@ -132,6 +132,7 @@ export default function RootNavigator() {
           <Stack.Screen name="KycDocumentUpload" component={KycDocumentUploadScreen} />
           <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
           <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
+          <Stack.Screen name="VaultList" component={VaultListScreen} />
           <Stack.Screen name="VaultDetail" component={VaultDetailScreen} />
           <Stack.Screen name="Deposit" component={DepositScreen} />
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />

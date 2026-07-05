@@ -1,3 +1,6 @@
+import axios from 'axios';
+import * as FileSystem from 'expo-file-system/legacy';
+
 import { apiClient } from './client';
 
 export interface CreateSubmissionRequest {
@@ -53,8 +56,43 @@ export async function getMySubmission(): Promise<SubmissionStatusResponse | null
   try {
     const { data } = await apiClient.get<SubmissionStatusResponse>('/api/v1/kyc/submissions/me');
     return data;
-  } catch {
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      return null;
+    }
+    console.error(err);
     return null;
+  }
+}
+
+function normalizeSignedUrlForDeviceReachability(signedUrl: string): string {
+  const apiBaseUrl = apiClient.defaults.baseURL;
+  if (!apiBaseUrl) {
+    return signedUrl;
+  }
+
+  try {
+    const apiUrl = new URL(apiBaseUrl);
+    const localStorageMatch = signedUrl.match(
+      /^https?:\/\/[^/]+(\/internal\/local-storage\/upload\/[^?]+(?:\?.*)?)$/i,
+    );
+    if (localStorageMatch) {
+      return `${apiUrl.origin}${localStorageMatch[1]}`;
+    }
+
+    const uploadUrl = new URL(signedUrl);
+    const isLoopbackHost = uploadUrl.hostname === 'localhost' || uploadUrl.hostname === '127.0.0.1';
+    if (!isLoopbackHost) {
+      return signedUrl;
+    }
+
+    uploadUrl.hostname = apiUrl.hostname;
+    uploadUrl.protocol = apiUrl.protocol;
+    uploadUrl.port = apiUrl.port;
+    return uploadUrl.toString();
+  } catch (err) {
+    console.error(err);
+    return signedUrl;
   }
 }
 
@@ -64,29 +102,25 @@ export async function uploadDocumentToSignedUrl(
   contentType: string,
   onProgress?: (progress: number) => void,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+  const reachableUrl = normalizeSignedUrlForDeviceReachability(signedUrl);
 
-    xhr.upload.addEventListener('progress', event => {
-      if (event.lengthComputable && onProgress) {
-        onProgress(event.loaded / event.total);
-      }
-    });
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
-      }
-    });
-
-    xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
-
-    xhr.open('PUT', signedUrl);
-    xhr.setRequestHeader('Content-Type', contentType);
-    xhr.send({ uri: fileUri, type: contentType, name: 'document' } as unknown as Document);
+  const result = await FileSystem.uploadAsync(reachableUrl, fileUri, {
+    httpMethod: 'PUT',
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    headers: {
+      'Content-Type': contentType,
+    },
   });
+
+  if (result.status >= 200 && result.status < 300) {
+    return;
+  }
+
+  if (onProgress) {
+    onProgress(1);
+  }
+
+  throw new Error(`Upload failed with status ${result.status}`);
 }
 
 export async function confirmDocumentUpload(

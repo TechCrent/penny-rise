@@ -37,6 +37,7 @@ admin-console/.env.local
 .env
 **/.env
 !**/.env.example
+.git-account-tokens
 
 # OS
 .DS_Store
@@ -44,3 +45,15 @@ Thumbs.db
 
 # Local PR notes (never commit unless explicitly requested)
 PRs/
+
+# Local service run logs / debug output (never commit)
+*-run.log
+*-run.err
+*-debug.log
+*-debug.err
+
+# Git**
+git-account-tokens
+sw.ps1
+sw.sh
+f1.md

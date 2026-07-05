@@ -74,6 +74,7 @@ services:
     ports:
       - "5435:5432"
     volumes:
+      - ../docker/postgres/audit-db-init.sql:/docker-entrypoint-initdb.d/01-audit-roles.sql:ro
       - audit-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${AUDIT_DB_USER} -d audit_db"]

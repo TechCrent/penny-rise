@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { registerPushToken } from '../../../src/features/notifications/pushSetup';
 import { apiClient } from '../../../src/api/client';
 
@@ -8,12 +9,20 @@ jest.mock('expo-notifications', () => ({
   getExpoPushTokenAsync: jest.fn(),
 }));
 
+jest.mock('expo-constants', () => ({
+  default: { appOwnership: null },
+}));
+
 jest.mock('../../../src/api/client', () => ({
   apiClient: { post: jest.fn() },
 }));
 
 describe('registerPushToken', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default: dev build (not Expo Go)
+    (Constants as any).appOwnership = null;
+  });
 
   it('registers the token when permission is already granted', async () => {
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
@@ -60,5 +69,15 @@ describe('registerPushToken', () => {
     (apiClient.post as jest.Mock).mockRejectedValue(new Error('network down'));
 
     await expect(registerPushToken()).resolves.toBeUndefined();
+  });
+
+  it('returns early without touching notifications when running in Expo Go', async () => {
+    (Constants as any).appOwnership = 'expo';
+
+    await registerPushToken();
+
+    expect(Notifications.getPermissionsAsync).not.toHaveBeenCalled();
+    expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+    expect(apiClient.post).not.toHaveBeenCalled();
   });
 });

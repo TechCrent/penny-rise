@@ -66,7 +66,36 @@ public class PaymentsDepositClient {
 
         Map<String, Object> body = buildBody(userId, userEmail, ledgerAccountId,
                 amountPesewas, paymentMethod, mobileNumber, mobileProvider,
-                vaultId, correlationId);
+                vaultId, "VAULT_DEPOSIT", correlationId);
+        return postDeposit(body, idempotencyKey, correlationId);
+    }
+
+    /**
+     * Initiates a deposit into the user's USER_WALLET ledger account.
+     */
+    public DepositResult initiateWalletDeposit(
+            UUID   userId,
+            String userEmail,
+            UUID   walletAccountId,
+            long   amountPesewas,
+            String paymentMethod,
+            String mobileNumber,
+            String mobileProvider,
+            String correlationId,
+            String idempotencyKey) {
+
+        log.debug("PaymentsDepositClient: initiating wallet deposit amount={}p user={}",
+                amountPesewas, userId);
+
+        Map<String, Object> body = buildBody(userId, userEmail, walletAccountId,
+                amountPesewas, paymentMethod, mobileNumber, mobileProvider,
+                userId, "WALLET_DEPOSIT", correlationId);
+        return postDeposit(body, idempotencyKey, correlationId);
+    }
+
+    private DepositResult postDeposit(Map<String, Object> body,
+                                      String idempotencyKey,
+                                      String correlationId) {
         try {
             Map<?, ?> response = webClient.post()
                     .uri("/api/v1/transactions/deposits")
@@ -100,7 +129,8 @@ public class PaymentsDepositClient {
     private Map<String, Object> buildBody(UUID userId, String userEmail,
                                            UUID ledgerAccountId, long amount,
                                            String paymentMethod, String mobileNumber,
-                                           String mobileProvider, UUID vaultId,
+                                           String mobileProvider, UUID businessRefId,
+                                           String businessRefType,
                                            String correlationId) {
         HashMap<String, Object> body = new HashMap<>();
         body.put("ledger_account_id",       ledgerAccountId.toString());
@@ -109,8 +139,8 @@ public class PaymentsDepositClient {
         body.put("payment_method",          paymentMethod);
         body.put("customer_email",          userEmail);
         body.put("correlation_id",          correlationId);
-        body.put("business_reference_id",   vaultId.toString());
-        body.put("business_reference_type", "VAULT_DEPOSIT");
+        body.put("business_reference_id",   businessRefId.toString());
+        body.put("business_reference_type", businessRefType);
         if (mobileNumber  != null) body.put("mobile_number",   mobileNumber);
         if (mobileProvider != null) body.put("mobile_provider", mobileProvider);
         return body;

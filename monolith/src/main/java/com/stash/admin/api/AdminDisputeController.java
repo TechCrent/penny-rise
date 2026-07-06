@@ -1,6 +1,8 @@
 package com.stash.admin.api;
 
 import com.stash.admin.api.dto.AdminDisputeListResponse;
+import com.stash.admin.api.dto.BulkActionResultResponse;
+import com.stash.admin.api.dto.BulkResolveDisputesRequest;
 import com.stash.admin.api.dto.CloseDisputeRequest;
 import com.stash.admin.api.dto.ResolveDisputeRequest;
 import com.stash.admin.service.AdminDisputeService;
@@ -47,6 +49,14 @@ public class AdminDisputeController {
                                          Authentication authentication) {
         disputeService.resolve(id, adminIdOf(authentication), request.resolution());
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).DISPUTES)")
+    @PostMapping("/bulk-resolve")
+    public BulkActionResultResponse bulkResolve(@Valid @RequestBody BulkResolveDisputesRequest request,
+                                                 Authentication authentication) {
+        var results = disputeService.bulkResolve(request.ids(), adminIdOf(authentication), request.resolution());
+        return new BulkActionResultResponse(results);
     }
 
     @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).DISPUTES)")

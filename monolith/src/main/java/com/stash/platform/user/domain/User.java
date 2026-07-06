@@ -98,6 +98,10 @@ public class User {
     @Column(name = "referred_by_code", length = 50)
     private String referredByCode;
 
+    /** Set at signup when the user accepts the ToS/Privacy Policy. NULL predates consent capture. */
+    @Column(name = "terms_accepted_at")
+    private Instant termsAcceptedAt;
+
     // ── Timestamps ────────────────────────────────────────────────────────
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -180,7 +180,9 @@ test('idempotency key stays the same across retries', async () => {
   fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
   await waitFor(() =>
     expect(
-      screen.getByText('Payment service is unavailable. Make sure the payments service is running on port 8081.'),
+      screen.getByText(
+        'Payment service is unavailable. Make sure the payments service is running on port 8081.',
+      ),
     ).toBeTruthy(),
   );
 

@@ -11,6 +11,20 @@ set -uo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$root"
 
+# Load .env into this process's environment so the Spring Boot child
+# processes below inherit MONOLITH_DB_USER etc. — a plain `mvnw
+# spring-boot:run` does NOT read .env on its own (that's a docker-compose
+# convention); without this, every service fails to connect to Postgres.
+if [ -f "$root/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$root/.env"
+    set +a
+else
+    echo -e "\033[33mWARNING: no .env found — copy .env.example to .env first (see README).\033[0m"
+fi
+export SPRING_PROFILES_ACTIVE=local
+
 echo -e "\033[36mStarting infra (Postgres x4, RabbitMQ, Mailpit)...\033[0m"
 
 # Remove any containers with our expected names that were started outside this

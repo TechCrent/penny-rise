@@ -6,6 +6,9 @@ stash:
   kyc:
     # Base64 of exactly 32 bytes: "test-aes-256-key-32-bytes-long!!"
     ghana-card-encryption-key: dGVzdC1hZXMtMjU2LWtleS0zMi1ieXRlcy1sb25nISE=
-    placeholder-admin-token: local-dev-admin-token-not-for-production
     storage:
       provider: local
+  security:
+    jwt:
+      # Same value as monolith's/audit-service's application-local.yml.
+      signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItbG9jYWwtZGV2LW9ubHktMzItY2hhcg==

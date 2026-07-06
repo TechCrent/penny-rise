@@ -77,7 +77,7 @@ register_and_login() {
     local email="$1" password="$2" name="$3"
     curl -s -X POST "http://localhost:8080/api/v1/auth/signup" \
         -H "Content-Type: application/json" \
-        -d "$(jq -n --arg email "$email" --arg password "$password" --arg name "$name" '{email:$email,password:$password,display_name:$name}')" >/dev/null
+        -d "$(jq -n --arg email "$email" --arg password "$password" --arg name "$name" '{email:$email,password:$password,display_name:$name,terms_accepted:true}')" >/dev/null
     sleep 1
     local link
     link="$(get_verify_link "$email")"

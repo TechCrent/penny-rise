@@ -12,6 +12,6 @@ import java.util.UUID;
  * re-set by a later event whose contribution row changed since).
  */
 public record FlaggedSusuGroupListItem(
-        UUID id, String name, UUID organiserUserId, Instant flaggedAt,
-        Integer lastShortfallRoundNumber, UUID lastShortfallMemberUserId, Instant lastShortfallAt,
-        long potBalancePesewas) {}
+        UUID id, String name, UUID organiserUserId, String status, boolean flaggedForReview,
+        Instant flaggedAt, Integer lastShortfallRoundNumber, UUID lastShortfallMemberUserId,
+        Instant lastShortfallAt, long potBalancePesewas) {}

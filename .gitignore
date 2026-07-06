@@ -51,6 +51,10 @@ PRs/
 *-run.err
 *-debug.log
 *-debug.err
+logs/
+
+# Local-only compose port overrides (sandbox/dev-machine specific)
+docker-compose.override.yml
 
 # Git**
 git-account-tokens

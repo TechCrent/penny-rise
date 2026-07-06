@@ -27,11 +27,9 @@ export function DeleteAccountScreen() {
   const handleCancel = () => {
     cancel(undefined, {
       onSuccess: () => {
-        // No dedicated account-settings screen exists yet to navigate back
-        // to with a confirmation param — Alert.alert is this codebase's
-        // established confirmation-dialog pattern (see EarlyExitScreen,
-        // CreateSusuScreen), so it's used here instead of inventing a toast
-        // dependency or a settings screen this issue doesn't require.
+        // Alert.alert is this codebase's established confirmation-dialog
+        // pattern (see EarlyExitScreen, CreateSusuScreen) — goBack() returns
+        // to wherever this screen was entered from (Settings or Home).
         Alert.alert(
           'Deletion request cancelled',
           'Your account is no longer scheduled for deletion.',

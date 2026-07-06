@@ -8,7 +8,9 @@ export interface FlaggedSusuGroupListItem {
   id: string;
   name: string;
   organiserUserId: string;
-  flaggedAt: string;
+  status: string;
+  flaggedForReview: boolean;
+  flaggedAt: string | null;
   lastShortfallRoundNumber: number | null;
   lastShortfallMemberUserId: string | null;
   lastShortfallAt: string | null;
@@ -60,6 +62,20 @@ export async function fetchFlaggedSusuGroups(
   const { data } = await adminApiClient.get<FlaggedSusuGroupListResponse>(
     '/api/v1/admin/susu-groups',
     { params: { flagged: true, page, size } },
+  );
+  return data;
+}
+
+// General browsing — gap-analysis fix: the backend used to 400 on
+// ?flagged=false; admins could only ever reach groups that had already been
+// auto-flagged. Now returns every group, paginated.
+export async function fetchAllSusuGroups(
+  page = 0,
+  size = 20,
+): Promise<FlaggedSusuGroupListResponse> {
+  const { data } = await adminApiClient.get<FlaggedSusuGroupListResponse>(
+    '/api/v1/admin/susu-groups',
+    { params: { flagged: false, page, size } },
   );
   return data;
 }

@@ -26,6 +26,8 @@ const flaggedGroup: FlaggedSusuGroupListItem = {
   id: 'group-1',
   name: 'Legon Roommates Susu',
   organiserUserId: 'user-1',
+  status: 'ACTIVE',
+  flaggedForReview: true,
   flaggedAt: '2026-07-01T09:00:00Z',
   lastShortfallRoundNumber: 3,
   lastShortfallMemberUserId: 'user-2',
@@ -63,7 +65,7 @@ describe('FlaggedSusuGroupsPage', () => {
 
     renderPage();
 
-    expect(await screen.findByTestId('flagged-susu-empty-state')).toBeInTheDocument();
+    expect(await screen.findByTestId('susu-groups-empty-state')).toBeInTheDocument();
   });
 
   it('the organiser link points at the user detail page', async () => {
@@ -94,7 +96,7 @@ describe('FlaggedSusuGroupsPage', () => {
     vi.mocked(susuGroupsAdmin.clearSusuGroupFlag).mockResolvedValue(undefined);
 
     renderPage();
-    await screen.findByTestId('flagged-susu-row-group-1');
+    await screen.findByTestId('susu-group-row-group-1');
 
     fireEvent.click(screen.getByText('Clear Flag'));
 
@@ -113,7 +115,7 @@ describe('FlaggedSusuGroupsPage', () => {
 
     renderPage();
 
-    await screen.findByTestId('flagged-susu-row-group-1');
+    await screen.findByTestId('susu-group-row-group-1');
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 });

@@ -43,4 +43,30 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
             LIMIT 50
             """, nativeQuery = true)
     List<Object[]> findStalePendingTransactions(@Param("threshold") Instant threshold);
+
+    /**
+     * Cursor-paginated transaction history for a user — either side of the
+     * transaction (initiator or counterparty). {@code :cursorCreatedAt} is
+     * exclusive (strictly older than the last-seen row); pass {@code null}
+     * for the first page. Optional {@code :type}/{@code :fromDate}/
+     * {@code :toDate} filters pass {@code null} to skip.
+     */
+    @Query(value = """
+            SELECT id, reference, transaction_type, initiating_user_id, counterparty_user_id,
+                   gross_amount, fee_amount, net_amount, status, ledger_transaction_id, created_at
+            FROM transaction.transactions
+            WHERE (initiating_user_id = :userId OR counterparty_user_id = :userId)
+              AND (:type IS NULL OR transaction_type = :type)
+              AND (CAST(:fromDate AS timestamptz) IS NULL OR created_at >= :fromDate)
+              AND (CAST(:toDate AS timestamptz) IS NULL OR created_at <= :toDate)
+              AND (CAST(:cursorCreatedAt AS timestamptz) IS NULL OR created_at < :cursorCreatedAt)
+            ORDER BY created_at DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Object[]> findHistoryForUser(@Param("userId") UUID userId,
+                                       @Param("type") String type,
+                                       @Param("fromDate") Instant fromDate,
+                                       @Param("toDate") Instant toDate,
+                                       @Param("cursorCreatedAt") Instant cursorCreatedAt,
+                                       @Param("limit") int limit);
 }

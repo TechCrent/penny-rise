@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stash.admin.api.dto.AdminDisputeListItem;
 import com.stash.admin.api.dto.AdminDisputeListResponse;
+import com.stash.admin.api.dto.BulkActionItemResult;
 import com.stash.admin.domain.AdminAuditActionEntity;
 import com.stash.admin.domain.DisputeEntity;
 import com.stash.admin.event.DisputeClosedEvent;
@@ -21,6 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static com.stash.admin.rbac.AdminAuditActionType.*;
@@ -88,6 +91,29 @@ public class AdminDisputeService {
 
         eventPublisher.publishEvent(new DisputeResolvedEvent(
                 disputeId, dispute.getRaisedByUserId(), adminAccountId, resolutionJson, now));
+    }
+
+    /**
+     * Applies the same resolution to every dispute in {@code disputeIds},
+     * independently — one dispute failing (e.g. not IN_REVIEW) does not
+     * abort or roll back the others. Gap-analysis fix: every admin action
+     * was previously one-item-at-a-time only.
+     */
+    @Transactional
+    public List<BulkActionItemResult> bulkResolve(List<UUID> disputeIds, UUID adminAccountId,
+                                                   JsonNode resolution) {
+        List<BulkActionItemResult> results = new ArrayList<>();
+        for (UUID disputeId : disputeIds) {
+            try {
+                resolve(disputeId, adminAccountId, resolution);
+                results.add(new BulkActionItemResult(disputeId, true, null));
+            } catch (ResponseStatusException e) {
+                results.add(new BulkActionItemResult(disputeId, false, e.getReason()));
+            } catch (Exception e) {
+                results.add(new BulkActionItemResult(disputeId, false, e.getMessage()));
+            }
+        }
+        return results;
     }
 
     @Transactional

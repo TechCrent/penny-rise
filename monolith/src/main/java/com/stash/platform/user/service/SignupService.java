@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.Base64;
 
 @Service
@@ -78,6 +79,7 @@ public class SignupService {
 
         String passwordHash = passwordHasher.hash(request.password());
         User user = new User(normalisedEmail, passwordHash, request.displayName().strip());
+        user.setTermsAcceptedAt(Instant.now());
 
         if (request.referralCode() != null && !request.referralCode().isBlank()) {
             user.setReferredByCode(request.referralCode().strip());

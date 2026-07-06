@@ -105,6 +105,12 @@ public class SecurityConfig {
                         new AdminJwtAuthenticationFilter(adminJwtService),
                         JwtAuthenticationFilter.class
                 )
+                // Runs after both auth filters so it can key on the resolved
+                // principal (falls back to IP for unauthenticated requests).
+                .addFilterAfter(
+                        new RateLimitFilter(),
+                        AdminJwtAuthenticationFilter.class
+                )
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                         .accessDeniedHandler(adminAccessDeniedHandler));

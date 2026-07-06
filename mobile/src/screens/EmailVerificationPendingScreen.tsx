@@ -48,7 +48,9 @@ export default function EmailVerificationPendingScreen() {
           clearInterval(pollRef.current!);
           navigation.reset({
             index: 0,
-            routes: [{ name: 'Login', params: { successBanner: 'Email verified! You can sign in now.' } }],
+            routes: [
+              { name: 'Login', params: { successBanner: 'Email verified! You can sign in now.' } },
+            ],
           });
         }
       } catch {

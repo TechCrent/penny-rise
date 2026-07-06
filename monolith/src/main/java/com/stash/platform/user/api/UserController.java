@@ -1,11 +1,15 @@
 package com.stash.platform.user.api;
 
+import com.stash.platform.user.api.dto.ChangePasswordRequest;
 import com.stash.platform.user.api.dto.DeletionRequestResponse;
+import com.stash.platform.user.api.dto.GdprDataExportResponse;
 import com.stash.platform.user.api.dto.UpdateUserProfileRequest;
 import com.stash.platform.user.api.dto.UserProfileResponse;
 import com.stash.platform.user.domain.DeletionRequest;
 import com.stash.platform.user.security.AuthenticatedUser;
+import com.stash.platform.user.service.ChangePasswordService;
 import com.stash.platform.user.service.DeletionRequestService;
+import com.stash.platform.user.service.UserDataExportService;
 import com.stash.platform.user.service.UserProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,11 +31,17 @@ public class UserController {
 
     private final UserProfileService userProfileService;
     private final DeletionRequestService deletionRequestService;
+    private final ChangePasswordService changePasswordService;
+    private final UserDataExportService userDataExportService;
 
     public UserController(UserProfileService userProfileService,
-                          DeletionRequestService deletionRequestService) {
+                          DeletionRequestService deletionRequestService,
+                          ChangePasswordService changePasswordService,
+                          UserDataExportService userDataExportService) {
         this.userProfileService = userProfileService;
         this.deletionRequestService = deletionRequestService;
+        this.changePasswordService = changePasswordService;
+        this.userDataExportService = userDataExportService;
     }
 
     @GetMapping("/me")
@@ -64,6 +74,35 @@ public class UserController {
         AuthenticatedUser authUser = (AuthenticatedUser) authentication;
         return ResponseEntity.ok(
                 userProfileService.updateProfile(authUser.getUserId(), request));
+    }
+
+    @PostMapping("/me/change-password")
+    @Operation(
+        summary     = "Change the authenticated user's password",
+        description = "Requires the current password. Distinct from the " +
+                      "unauthenticated forgot/reset-password flow.")
+    @ApiResponse(responseCode = "204", description = "Password changed")
+    @ApiResponse(responseCode = "401", description = "Not authenticated, or current password incorrect")
+    @ApiResponse(responseCode = "400", description = "Validation error (e.g. weak new password)")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+        AuthenticatedUser authUser = (AuthenticatedUser) authentication;
+        changePasswordService.changePassword(authUser.getUserId(), request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me/data-export")
+    @Operation(
+        summary     = "Download all of the authenticated user's data",
+        description = "GDPR-style data portability bundle: profile, vaults, susu " +
+                      "memberships, and full transaction history. Excludes raw KYC " +
+                      "document images and password hashes.")
+    @ApiResponse(responseCode = "200", description = "Data export returned")
+    @ApiResponse(responseCode = "401", description = "Not authenticated")
+    public ResponseEntity<GdprDataExportResponse> exportMyData(Authentication authentication) {
+        AuthenticatedUser authUser = (AuthenticatedUser) authentication;
+        return ResponseEntity.ok(userDataExportService.export(authUser.getUserId()));
     }
 
     @PostMapping("/me/deletion-request")

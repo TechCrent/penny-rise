@@ -128,13 +128,15 @@ stash:
   kyc:
     ghana-card-encryption-key: ${GHANA_CARD_ENCRYPTION_KEY}
     base-url: ${STASH_KYC_BASE_URL:http://localhost:8082}
-    # ⚠️ PLACEHOLDER admin auth — shared secret only, no real RBAC.
-    # Replaced entirely by the v0.5 admin auth system.
-    placeholder-admin-token: ${KYC_PLACEHOLDER_ADMIN_TOKEN}
     storage:
       bucket: kyc-documents
       provider: ${KYC_STORAGE_PROVIDER:local}
       local-root: ${KYC_LOCAL_STORAGE_PATH:/tmp/stash-kyc-storage}
+  security:
+    jwt:
+      # Same shared HS256 signing key as monolith/audit-service so an
+      # admin JWT the monolith issued verifies here directly.
+      signing-key: ${JWT_SIGNING_KEY}
   stub-provider:
   # Comma-separated Ghana Card numbers that auto-approve in the stub provider.
   # Per Issue Plan §0.1: team-controlled stub, real provider deferred to

@@ -26,5 +26,9 @@ public record SignupRequest(
         String displayName,
 
         @JsonProperty("referral_code")
-        String referralCode
+        String referralCode,
+
+        @AssertTrue(message = "You must accept the Terms of Service and Privacy Policy")
+        @JsonProperty("terms_accepted")
+        boolean termsAccepted
 ) {}

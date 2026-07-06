@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,16 +49,23 @@ public class SusuContributionTransferClient {
      */
     public UUID resolveUserWallet(UUID userId, String correlationId) {
         try {
+            // LinkedHashMap, not Map.of() — see docs/hands-on-testing-findings.md
+            // Finding 9: Map.of()'s iteration order is randomized per JVM run, so
+            // the same logical body serializes to different JSON key ordering
+            // across a monolith restart, breaking this key's idempotency hash
+            // (shared with PeerTransferPaymentsClient's identical key/body) for
+            // every user whose wallet was already provisioned before the restart.
+            Map<String, String> body = new LinkedHashMap<>();
+            body.put("owner_type", "USER");
+            body.put("owner_id", userId.toString());
+            body.put("account_type", "USER_WALLET");
+            body.put("description", "USER_WALLET:" + userId);
+
             Map<?, ?> resp = webClient.post()
                     .uri("/internal/v1/ledger/accounts")
                     .header("Idempotency-Key", "provision-user-wallet:v2:" + userId)
                     .header("X-Correlation-Id", correlationId)
-                    .bodyValue(Map.of(
-                            "owner_type",   "USER",
-                            "owner_id",     userId.toString(),
-                            "account_type", "USER_WALLET",
-                            "description",  "USER_WALLET:" + userId
-                    ))
+                    .bodyValue(body)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .timeout(TIMEOUT)

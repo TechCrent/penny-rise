@@ -32,7 +32,7 @@ ghana_card="GHA-000000001-1"
 echo "1. Signup $email"
 curl -s -X POST "$MONOLITH_BASE/api/v1/auth/signup" \
     -H "Content-Type: application/json" \
-    -d "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password,displayName:"Tier1 E2E"}')" >/dev/null
+    -d "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password,displayName:"Tier1 E2E",terms_accepted:true}')" >/dev/null
 
 echo "2. Fetch verification link from Mailpit"
 sleep 2

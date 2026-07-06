@@ -3,6 +3,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 interface AdminAuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
+  accountType: string | null;
 }
 
 interface AdminAuthContextValue extends AdminAuthState {
@@ -14,12 +15,31 @@ const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
 const SESSION_KEY = 'stash_admin_token';
 
+// Presentation-only decoding (no signature verification — that's the
+// backend's job via @PreAuthorize) so nav links can be hidden for account
+// types that don't have access, matching the account_type claim
+// AdminJwtService puts in every admin JWT.
+function decodeAccountType(token: string): string | null {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const claims = JSON.parse(decoded);
+    return typeof claims.account_type === 'string' ? claims.account_type : null;
+  } catch {
+    return null;
+  }
+}
+
 function readInitialAuth(): AdminAuthState {
   try {
     const token = sessionStorage.getItem(SESSION_KEY);
-    return { isAuthenticated: !!token, isLoading: false };
+    return {
+      isAuthenticated: !!token,
+      isLoading: false,
+      accountType: token ? decodeAccountType(token) : null,
+    };
   } catch {
-    return { isAuthenticated: false, isLoading: false };
+    return { isAuthenticated: false, isLoading: false, accountType: null };
   }
 }
 
@@ -28,12 +48,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const login = (token: string) => {
     sessionStorage.setItem(SESSION_KEY, token);
-    setState({ isAuthenticated: true, isLoading: false });
+    setState({ isAuthenticated: true, isLoading: false, accountType: decodeAccountType(token) });
   };
 
   const logout = () => {
     sessionStorage.removeItem(SESSION_KEY);
-    setState({ isAuthenticated: false, isLoading: false });
+    setState({ isAuthenticated: false, isLoading: false, accountType: null });
   };
 
   return (

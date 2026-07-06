@@ -35,9 +35,9 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 function fillForm(
   utils: ReturnType<typeof render>,
-  overrides: Partial<{ name: string; email: string; password: string }> = {},
+  overrides: Partial<{ name: string; email: string; password: string; acceptTerms: boolean }> = {},
 ) {
-  const { getByPlaceholderText } = utils;
+  const { getByPlaceholderText, getByRole } = utils;
   fireEvent.changeText(
     getByPlaceholderText('How should we call you?'),
     overrides.name ?? 'Test User',
@@ -50,6 +50,9 @@ function fillForm(
     getByPlaceholderText('Min. 8 characters'),
     overrides.password ?? 'SecureP@ss1',
   );
+  if (overrides.acceptTerms ?? true) {
+    fireEvent.press(getByRole('checkbox'));
+  }
 }
 
 describe('RegisterScreen', () => {
@@ -76,6 +79,7 @@ describe('RegisterScreen', () => {
         email: 'test@example.com',
         password: 'SecureP@ss1',
         referral_code: undefined,
+        terms_accepted: true,
       });
       expect(mockNavigate).toHaveBeenCalledWith('EmailVerificationPending', {
         email: 'test@example.com',

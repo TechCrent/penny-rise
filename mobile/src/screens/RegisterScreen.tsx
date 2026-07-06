@@ -37,7 +37,13 @@ export default function RegisterScreen() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { displayName: '', email: '', password: '', referralCode: '' },
+    defaultValues: {
+      displayName: '',
+      email: '',
+      password: '',
+      referralCode: '',
+      termsAccepted: false,
+    },
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
@@ -51,6 +57,7 @@ export default function RegisterScreen() {
         email: values.email,
         password: values.password,
         referral_code: values.referralCode || undefined,
+        terms_accepted: values.termsAccepted,
       });
 
       navigation.navigate('EmailVerificationPending', { email: values.email });
@@ -180,6 +187,35 @@ export default function RegisterScreen() {
             />
           )}
 
+          <Controller
+            control={control}
+            name="termsAccepted"
+            render={({ field: { onChange, value } }) => (
+              <View>
+                <TouchableOpacity
+                  style={styles.termsRow}
+                  onPress={() => onChange(!value)}
+                  activeOpacity={0.7}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: value }}
+                >
+                  <View style={[styles.checkbox, value ? styles.checkboxChecked : null]}>
+                    {value ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                  </View>
+                  <Text style={styles.termsText}>
+                    I agree to the{' '}
+                    <Text style={styles.termsLink} onPress={() => navigation.navigate('Legal')}>
+                      Terms of Service and Privacy Policy
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+                {errors.termsAccepted ? (
+                  <Text style={styles.termsError}>{errors.termsAccepted.message}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+
           <PrimaryButton
             title="Create account"
             onPress={handleSubmit(onSubmit)}
@@ -209,7 +245,24 @@ const styles = StyleSheet.create({
   eyeText: { color: '#6B7280', fontSize: 14 },
   referralToggle: { marginBottom: 16 },
   referralToggleText: { color: '#1A1A1A', fontSize: 14, textDecorationLine: 'underline' },
-  submitButton: { marginTop: 8 },
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 4, marginBottom: 4 },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    marginRight: 10,
+    marginTop: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
+  checkboxMark: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  termsText: { flex: 1, fontSize: 13, color: '#374151', lineHeight: 19 },
+  termsLink: { color: '#1A1A1A', fontWeight: '600', textDecorationLine: 'underline' },
+  termsError: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 30 },
+  submitButton: { marginTop: 12 },
   loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
   loginText: { color: '#6B7280', fontSize: 14 },
   loginLink: { color: '#1A1A1A', fontSize: 14, fontWeight: '600' },

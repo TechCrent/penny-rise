@@ -5,6 +5,7 @@ import {
   fetchSubmissionDetail,
   approveSubmission,
   rejectSubmission,
+  bulkApproveSubmissions,
 } from '../../api/kycAdmin';
 
 export type ModalState =
@@ -16,6 +17,7 @@ export function useKycQueue() {
   const queryClient = useQueryClient();
   const [modalState, setModalState] = useState<ModalState>({ kind: 'closed' });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const submissionId = modalState.kind !== 'closed' ? modalState.submissionId : '';
 
@@ -50,6 +52,39 @@ export function useKycQueue() {
     },
   });
 
+  const bulkApproveMutation = useMutation({
+    mutationFn: (ids: string[]) => bulkApproveSubmissions(ids),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['kycQueue'] });
+      setSelectedIds(new Set());
+      const failures = response.results.filter((r) => !r.success);
+      setSuccessMessage(
+        failures.length === 0
+          ? `${response.results.length} submission(s) approved successfully.`
+          : `${response.results.length - failures.length} approved, ${failures.length} failed.`,
+      );
+      setTimeout(() => setSuccessMessage(null), 6000);
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const items = queueQuery.data?.items ?? [];
+    setSelectedIds((prev) =>
+      items.length > 0 && items.every((i) => prev.has(i.submission_id))
+        ? new Set()
+        : new Set(items.map((i) => i.submission_id)),
+    );
+  };
+
   return {
     queueQuery,
     detailQuery,
@@ -58,5 +93,9 @@ export function useKycQueue() {
     successMessage,
     approveMutation,
     rejectMutation,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    bulkApproveMutation,
   };
 }

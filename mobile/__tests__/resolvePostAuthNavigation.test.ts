@@ -13,7 +13,9 @@ describe('resolvePostAuthNavigation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(authSession, 'getAccessToken').mockResolvedValue(null);
-    jest.spyOn(jwt, 'decodeJwtPayload').mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 });
+    jest
+      .spyOn(jwt, 'decodeJwtPayload')
+      .mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 });
     jest.spyOn(jwt, 'decodeUserIdFromJwt').mockReturnValue(null);
     jest.spyOn(kycStorage, 'loadKycSubmission').mockResolvedValue(null);
     jest.spyOn(kycStorage, 'clearKycSubmission').mockResolvedValue(undefined);
@@ -34,7 +36,7 @@ describe('resolvePostAuthNavigation', () => {
     jest.spyOn(kycApi, 'getMySubmission').mockResolvedValue({
       id: 'sub-1',
       status: 'PENDING_DOCUMENTS',
-      submitted_at: null,
+      submitted_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
       rejection_reason: null,
     });

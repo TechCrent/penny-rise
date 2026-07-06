@@ -17,7 +17,10 @@ stash:
   kyc:
     base-url: http://localhost:8082
     ghana-card-encryption-key: dGVzdC1hZXMtMjU2LWtleS0zMi1ieXRlcy1sb25nISE=
-    placeholder-admin-token: local-dev-admin-token-not-for-production
     storage:
       bucket: kyc-documents
       provider: local
+  security:
+    jwt:
+      # Same value as monolith's application-test.yml.
+      signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItdGVzdHMtb25seS0zMi1jaGFycw==

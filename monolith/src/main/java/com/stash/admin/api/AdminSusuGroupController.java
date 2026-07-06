@@ -4,12 +4,10 @@ import com.stash.admin.api.dto.AdminSusuGroupDetailResponse;
 import com.stash.admin.api.dto.FlaggedSusuGroupListResponse;
 import com.stash.admin.service.AdminJwtService.AdminTokenClaims;
 import com.stash.admin.service.AdminSusuGroupService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -24,9 +22,11 @@ public class AdminSusuGroupController {
     }
 
     /**
-     * Per this issue's AC, only ?flagged=true is specified — an unflagged
-     * listing has no defined behaviour here, so it's required explicit
-     * rather than silently defaulting to "all groups."
+     * {@code ?flagged=true} returns the flagged-for-review queue (with
+     * shortfall detail); omitted or {@code false} returns general
+     * browsing across all susu groups — gap-analysis fix: previously
+     * unflagged listing 400'd outright, so the only reachable groups from
+     * the admin console were ones that had already been auto-flagged.
      */
     @GetMapping
     @PreAuthorize("@adminAccessEvaluator.check(#root, T(com.stash.admin.rbac.AdminResource).SUSU_GROUPS)")
@@ -34,11 +34,7 @@ public class AdminSusuGroupController {
             @RequestParam(required = false, defaultValue = "false") boolean flagged,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        if (!flagged) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "This endpoint currently only supports ?flagged=true — unflagged listing is out of this issue's scope.");
-        }
-        return service.listFlagged(page, size);
+        return flagged ? service.listFlagged(page, size) : service.listAll(page, size);
     }
 
     @GetMapping("/{id}")

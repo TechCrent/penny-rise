@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,12 +49,19 @@ public class PeerTransferPaymentsClient {
     }
 
     private static Map<String, String> userWalletProvisionBody(UUID userId) {
-        return Map.of(
-                "owner_type",   "USER",
-                "owner_id",     userId.toString(),
-                "account_type", "USER_WALLET",
-                "description",  "USER_WALLET:" + userId
-        );
+        // LinkedHashMap, not Map.of() — see docs/hands-on-testing-findings.md
+        // Finding 9: Map.of()'s iteration order is randomized per JVM run, so
+        // the same logical body serializes to different JSON key ordering
+        // across a monolith restart, breaking this key's idempotency hash
+        // (shared with SusuContributionTransferClient's identical key/body)
+        // for every user whose wallet was already provisioned before the
+        // restart.
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("owner_type", "USER");
+        body.put("owner_id", userId.toString());
+        body.put("account_type", "USER_WALLET");
+        body.put("description", "USER_WALLET:" + userId);
+        return body;
     }
 
     /** Resolves (or provisions) a user's USER_WALLET ledger account ID. */

@@ -75,8 +75,8 @@ class LogoutServiceTest {
         attemptTracker.recordSuccess(EMAIL_A);
         attemptTracker.recordSuccess(EMAIL_B);
 
-        signupService.signup(new SignupRequest(EMAIL_A, PASSWORD, "User A", null));
-        signupService.signup(new SignupRequest(EMAIL_B, PASSWORD, "User B", null));
+        signupService.signup(new SignupRequest(EMAIL_A, PASSWORD, "User A", null, true));
+        signupService.signup(new SignupRequest(EMAIL_B, PASSWORD, "User B", null, true));
 
         userA = userRepository.findByEmail(EMAIL_A).orElseThrow();
         userA.setEmailVerifiedAt(Instant.now());

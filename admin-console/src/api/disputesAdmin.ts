@@ -88,3 +88,25 @@ export async function resolveDispute(id: string, notes: string): Promise<void> {
 export async function closeDisputeNoAction(id: string, reason: string): Promise<void> {
   await adminApiClient.post(`/api/v1/admin/disputes/${id}/close-no-action`, { reason });
 }
+
+export interface BulkActionItemResult {
+  id: string;
+  success: boolean;
+  error_message: string | null;
+}
+
+export interface BulkActionResultResponse {
+  results: BulkActionItemResult[];
+}
+
+/** Applies the same resolution notes to every dispute in `ids`. */
+export async function bulkResolveDisputes(
+  ids: string[],
+  notes: string,
+): Promise<BulkActionResultResponse> {
+  const { data } = await adminApiClient.post<BulkActionResultResponse>(
+    '/api/v1/admin/disputes/bulk-resolve',
+    { ids, resolution: { notes } },
+  );
+  return data;
+}

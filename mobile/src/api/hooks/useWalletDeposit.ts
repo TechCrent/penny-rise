@@ -6,11 +6,9 @@ export function useWalletDeposit() {
   const queryClient = useQueryClient();
   return useMutation<DepositResponse, Error, { payload: DepositPayload; idempotencyKey: string }>({
     mutationFn: async ({ payload, idempotencyKey }) => {
-      const { data } = await apiClient.post<DepositResponse>(
-        '/api/v1/users/me/deposits',
-        payload,
-        { headers: { 'Idempotency-Key': idempotencyKey } },
-      );
+      const { data } = await apiClient.post<DepositResponse>('/api/v1/users/me/deposits', payload, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      });
       return data;
     },
     onSuccess: () => {

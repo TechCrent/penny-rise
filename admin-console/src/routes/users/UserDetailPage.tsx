@@ -116,17 +116,29 @@ export default function UserDetailPage() {
               )}
 
               {submission.documents && submission.documents.length > 0 ? (
-                <div className="flex gap-3 mt-2" data-testid="kyc-documents">
+                <div className="grid grid-cols-3 gap-3 mt-2" data-testid="kyc-documents">
                   {submission.documents.map((doc) => (
-                    <a
-                      key={doc.documentType}
-                      href={doc.signedUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm underline text-slate-700"
-                    >
-                      {doc.documentType}
-                    </a>
+                    <div key={doc.documentType}>
+                      <p className="text-xs font-medium text-slate-500 mb-1">{doc.documentType}</p>
+                      <a
+                        href={doc.signedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Click to view full size"
+                        className="block cursor-zoom-in"
+                      >
+                        <img
+                          src={doc.signedUrl}
+                          alt={doc.documentType}
+                          className="w-full rounded-lg border border-slate-200 object-cover max-h-48 hover:opacity-90 transition-opacity"
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            img.style.display = 'none';
+                            img.dataset.failed = 'true';
+                          }}
+                        />
+                      </a>
+                    </div>
                   ))}
                 </div>
               ) : (

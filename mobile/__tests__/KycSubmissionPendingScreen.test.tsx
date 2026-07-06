@@ -22,6 +22,7 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../src/api/kyc');
 jest.mock('../src/storage/kycStorage', () => ({
   clearKycSubmission: jest.fn().mockResolvedValue(undefined),
+  markKycApprovalAcknowledged: jest.fn().mockResolvedValue(undefined),
 }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (

@@ -78,6 +78,9 @@ public interface SusuGroupRepository extends JpaRepository<SusuGroupEntity, UUID
 
     Page<SusuGroupEntity> findByFlaggedForReview(boolean flaggedForReview, Pageable pageable);
 
+    /** Backs the admin dashboard's "flagged susu groups" count. */
+    long countByFlaggedForReview(boolean flaggedForReview);
+
     @Modifying
     @Query("UPDATE SusuGroupEntity g SET g.flaggedForReview = true, g.flaggedAt = :now WHERE g.id = :groupId")
     void flagForReview(@Param("groupId") UUID groupId, @Param("now") Instant now);

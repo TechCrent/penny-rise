@@ -1,6 +1,5 @@
 package com.stash.kyc.document.service;
 
-import com.stash.kyc.config.KycMessagingConfig;
 import com.stash.kyc.document.api.dto.DocumentUploadConfirmationRequest;
 import com.stash.kyc.document.api.dto.DocumentUploadConfirmationResponse;
 import com.stash.kyc.document.domain.KycSubmissionDocument;
@@ -8,15 +7,15 @@ import com.stash.kyc.document.domain.ProcessedDocumentEvent;
 import com.stash.kyc.document.repository.KycSubmissionDocumentRepository;
 import com.stash.kyc.document.repository.ProcessedDocumentEventRepository;
 import com.stash.kyc.submission.domain.KycSubmission;
-import com.stash.kyc.submission.event.SubmissionReadyForReviewEvent;
+import com.stash.kyc.submission.event.SubmissionReadyForReviewApplicationEvent;
 import com.stash.kyc.submission.repository.KycSubmissionRepository;
 import com.stash.shared.apierrors.ErrorCode;
 import com.stash.shared.apierrors.StashApiException;
 import com.stash.shared.correlation.CorrelationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -46,19 +45,19 @@ public class DocumentUploadConfirmationService {
     private final KycSubmissionRepository submissionRepository;
     private final KycSubmissionDocumentRepository documentRepository;
     private final ProcessedDocumentEventRepository processedEventRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final String storageProviderName;
 
     public DocumentUploadConfirmationService(
             KycSubmissionRepository submissionRepository,
             KycSubmissionDocumentRepository documentRepository,
             ProcessedDocumentEventRepository processedEventRepository,
-            RabbitTemplate rabbitTemplate,
+            ApplicationEventPublisher eventPublisher,
             @Value("${stash.kyc.storage.provider:local}") String storageProvider) {
         this.submissionRepository     = submissionRepository;
         this.documentRepository       = documentRepository;
         this.processedEventRepository = processedEventRepository;
-        this.rabbitTemplate           = rabbitTemplate;
+        this.eventPublisher           = eventPublisher;
         this.storageProviderName      = storageProvider.equalsIgnoreCase("supabase") ? "SUPABASE" : "LOCAL";
     }
 
@@ -133,30 +132,14 @@ public class DocumentUploadConfirmationService {
                 submission.setStatus(KycSubmission.STATUS_REVIEWING);
                 submissionRepository.save(submission);
 
-                publishReadyForReviewEvent(submission, correlationId);
+                eventPublisher.publishEvent(new SubmissionReadyForReviewApplicationEvent(
+                        this, submission.getId(), submission.getUserId(), correlationId));
 
                 log.info("Submission transitioned to REVIEWING submissionId={}", submissionId);
             }
         }
 
         return new DocumentUploadConfirmationResponse(document.getId(), submission.getStatus());
-    }
-
-    private void publishReadyForReviewEvent(KycSubmission submission, String correlationId) {
-        var readyEvent = new SubmissionReadyForReviewEvent(
-                UUID.randomUUID().toString(),
-                SubmissionReadyForReviewEvent.EVENT_TYPE,
-                SubmissionReadyForReviewEvent.SCHEMA_VERSION,
-                SubmissionReadyForReviewEvent.SOURCE_SERVICE,
-                Instant.now(),
-                correlationId,
-                new SubmissionReadyForReviewEvent.Payload(submission.getId(), submission.getUserId())
-        );
-        rabbitTemplate.convertAndSend(
-                KycMessagingConfig.KYC_EXCHANGE,
-                "kyc.submission.ready_for_review",
-                readyEvent
-        );
     }
 
     private StashApiException notFound(UUID submissionId) {

@@ -70,7 +70,7 @@ class LoginServiceTest {
 
         // Register user
         signupService.signup(new SignupRequest(
-                TEST_EMAIL, TEST_PASSWORD, "Login Test", null));
+                TEST_EMAIL, TEST_PASSWORD, "Login Test", null, true));
 
         // Verify email so login is permitted
         User user = userRepository.findByEmail(TEST_EMAIL).orElseThrow();

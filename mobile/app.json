@@ -12,7 +12,10 @@
       "bundleIdentifier": "com.stash.mobile",
       "associatedDomains": [
         "applinks:stash.app"
-      ]
+      ],
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Stash uses Face ID to unlock the app when App Lock is enabled."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -51,7 +54,15 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-local-authentication",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Stash uses your camera to capture KYC documents (Ghana Card, selfie).",
+          "photosPermission": "Stash uses your photo library so you can upload existing KYC documents."
+        }
+      ]
     ],
     "extra": {
       "eas": {

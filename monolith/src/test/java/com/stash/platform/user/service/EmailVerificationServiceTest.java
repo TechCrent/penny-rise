@@ -70,7 +70,7 @@ class EmailVerificationServiceTest {
 
         // Register a user and capture the verification token
         signupService.signup(new SignupRequest(
-                "verify-test@example.com", "Str0ng!Pass", "Verify Test", null));
+                "verify-test@example.com", "Str0ng!Pass", "Verify Test", null, true));
 
         registeredUser = userRepository.findByEmail("verify-test@example.com").orElseThrow();
 

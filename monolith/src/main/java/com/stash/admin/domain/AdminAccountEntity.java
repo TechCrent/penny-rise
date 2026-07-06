@@ -54,6 +54,12 @@ public class AdminAccountEntity {
         return a;
     }
 
+    /** Deactivates this admin account. Call from the staff-management deactivate flow only. */
+    public void deactivate(Instant now) {
+        this.isActive      = false;
+        this.deactivatedAt = now;
+    }
+
     public UUID    getId()             { return id; }
     public String  getEmail()          { return email; }
     public String  getPasswordHash()   { return passwordHash; }

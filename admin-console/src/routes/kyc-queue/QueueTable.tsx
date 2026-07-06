@@ -5,9 +5,18 @@ import type { QueueItem } from '../../api/kycAdmin';
 interface QueueTableProps {
   items: QueueItem[];
   onReview: (submissionId: string) => void;
+  selectedIds: Set<string>;
+  onToggleSelect: (submissionId: string) => void;
+  onToggleSelectAll: () => void;
 }
 
-export function QueueTable({ items, onReview }: QueueTableProps) {
+export function QueueTable({
+  items,
+  onReview,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
+}: QueueTableProps) {
   if (items.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
@@ -17,11 +26,21 @@ export function QueueTable({ items, onReview }: QueueTableProps) {
     );
   }
 
+  const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.submission_id));
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
+            <th className="px-6 py-3 w-10">
+              <input
+                type="checkbox"
+                aria-label="Select all submissions"
+                checked={allSelected}
+                onChange={onToggleSelectAll}
+              />
+            </th>
             <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
               Applicant
             </th>
@@ -45,6 +64,14 @@ export function QueueTable({ items, onReview }: QueueTableProps) {
                 index === items.length - 1 ? 'border-0' : ''
               }`}
             >
+              <td className="px-6 py-4">
+                <input
+                  type="checkbox"
+                  aria-label={`Select submission ${item.submission_id}`}
+                  checked={selectedIds.has(item.submission_id)}
+                  onChange={() => onToggleSelect(item.submission_id)}
+                />
+              </td>
               <td className="px-6 py-4">
                 <div className="font-medium text-slate-900">{item.full_name_on_card}</div>
                 <div className="text-slate-400 text-xs mt-0.5 font-mono">

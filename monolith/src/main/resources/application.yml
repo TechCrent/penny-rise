@@ -152,8 +152,6 @@ stash:
   kyc:
     # Internal kyc-service base URL — mobile hits the monolith proxy on :8080
     service-url: ${KYC_SERVICE_URL:http://localhost:8082}
-    # Shared admin token for the KYC service's placeholder admin filter (pre-v0.5)
-    placeholder-admin-token: ${KYC_PLACEHOLDER_ADMIN_TOKEN:admin_password}
   audit:
     # Internal audit-service base URL — admin console routes through monolith proxy
     service-url: ${AUDIT_SERVICE_URL:http://localhost:8083}

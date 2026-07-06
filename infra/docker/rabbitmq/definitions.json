@@ -3,7 +3,7 @@
   "users": [
     {
       "name": "stash",
-      "password_hash": "kI3GCjBCQVdzIv9Hpkh6wUy1w/J32YSqoP8iOiF186DnKeLr",
+      "password_hash": "8sh1M0KqS4a6rkm4yA6Ct4ki232pCkYDeLtzp4XQKUtLbhzz",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": ["administrator"],
       "limits": {}

@@ -9,6 +9,9 @@ interface DisputesTableProps {
   onAssign: (id: string) => void;
   assigningId: string | undefined;
   isAssigning: boolean;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAllResolvable: () => void;
 }
 
 function TimeInQueue({ createdAt }: { createdAt: string }) {
@@ -28,6 +31,9 @@ export function DisputesTable({
   onAssign,
   assigningId,
   isAssigning,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAllResolvable,
 }: DisputesTableProps) {
   if (items.length === 0) {
     return (
@@ -37,11 +43,24 @@ export function DisputesTable({
     );
   }
 
+  const resolvable = items.filter((d) => d.status === 'IN_REVIEW');
+  const allResolvableSelected =
+    resolvable.length > 0 && resolvable.every((d) => selectedIds.has(d.id));
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
+            <th className="px-6 py-3 w-10">
+              <input
+                type="checkbox"
+                aria-label="Select all resolvable disputes"
+                checked={allResolvableSelected}
+                disabled={resolvable.length === 0}
+                onChange={onToggleSelectAllResolvable}
+              />
+            </th>
             <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
               Priority
             </th>
@@ -72,6 +91,16 @@ export function DisputesTable({
               }`}
               data-testid={`dispute-row-${d.id}`}
             >
+              <td className="px-6 py-4">
+                {d.status === 'IN_REVIEW' && (
+                  <input
+                    type="checkbox"
+                    aria-label={`Select dispute ${d.id}`}
+                    checked={selectedIds.has(d.id)}
+                    onChange={() => onToggleSelect(d.id)}
+                  />
+                )}
+              </td>
               <td className="px-6 py-4">
                 <PriorityBadge priority={d.priority} />
               </td>

@@ -85,6 +85,12 @@ public class KycAdminReviewService {
      * @param cursor    opaque pagination cursor (null for first page)
      * @param pageSize  per System Design §14.4: default 20, max 100
      */
+    /** Count of submissions currently awaiting manual review — backs the admin dashboard. */
+    @Transactional(readOnly = true)
+    public long getQueueCount() {
+        return manualReviewQueueRepository.countByRemovedFromQueueAtIsNull();
+    }
+
     @Transactional(readOnly = true)
     public AdminQueuePageResponse getQueue(String cursor, int pageSize) {
         int size = Math.min(Math.max(pageSize, 1), 100);
@@ -183,8 +189,8 @@ public class KycAdminReviewService {
      * @param submissionId    the submission to decide
      * @param decisionType    {@link #DECIDE_APPROVE} or {@link #DECIDE_REJECT}
      * @param reason          required for REJECT, ignored for APPROVE
-     * @param reviewerAdminId from the placeholder admin auth — see
-     *                        {@link com.stash.kyc.shared.security.PlaceholderAdminAuthFilter}
+     * @param reviewerAdminId the real admin's account id, from
+     *                        {@link com.stash.kyc.shared.security.AdminJwtAuthenticationFilter}
      * @throws StashApiException 404 if not found, 422 if reject without reason
      */
     @Transactional
@@ -228,6 +234,28 @@ public class KycAdminReviewService {
             log.info("Submission REJECTED via MANUAL review submissionId={} reviewerAdminId={}",
                     submissionId, reviewerAdminId);
         }
+    }
+
+    /**
+     * Approves every submission in {@code submissionIds}, independently —
+     * one submission failing (e.g. already decided) does not abort or roll
+     * back the others. Gap-analysis fix: KYC decisions were previously
+     * one-submission-at-a-time only.
+     */
+    @Transactional
+    public List<BulkActionItemResult> bulkApprove(List<UUID> submissionIds, UUID reviewerAdminId) {
+        List<BulkActionItemResult> results = new ArrayList<>();
+        for (UUID submissionId : submissionIds) {
+            try {
+                decide(submissionId, DECIDE_APPROVE, null, reviewerAdminId);
+                results.add(new BulkActionItemResult(submissionId, true, null));
+            } catch (StashApiException e) {
+                results.add(new BulkActionItemResult(submissionId, false, e.getMessage()));
+            } catch (Exception e) {
+                results.add(new BulkActionItemResult(submissionId, false, e.getMessage()));
+            }
+        }
+        return results;
     }
 
     // ── Private helpers ──────────────────────────────────────────────────

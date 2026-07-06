@@ -82,6 +82,27 @@ public class AdminSusuGroupService {
                 items, result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
+    /**
+     * General susu-group browsing/lookup — gap-analysis fix: previously only
+     * the flagged-for-review queue was reachable from the admin console;
+     * there was no way to look up or act on a group that hadn't been
+     * auto-flagged. Skips the per-item waived-penalty ("shortfall") lookup
+     * that {@link #listFlagged} does, since that's only meaningful for
+     * flagged groups — those fields are always null here.
+     */
+    @Transactional(readOnly = true)
+    public FlaggedSusuGroupListResponse listAll(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<SusuGroupEntity> result = groupRepo.findAll(pageable);
+
+        List<FlaggedSusuGroupListItem> items = result.getContent().stream()
+                .map(this::toGeneralListItem)
+                .toList();
+
+        return new FlaggedSusuGroupListResponse(
+                items, result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+    }
+
     @Transactional(readOnly = true)
     public AdminSusuGroupDetailResponse getDetail(UUID groupId) {
         SusuGroupEntity group = groupRepo.findById(groupId)
@@ -165,7 +186,19 @@ public class AdminSusuGroupService {
                 : 0L;
 
         return new FlaggedSusuGroupListItem(
-                group.getId(), group.getName(), group.getOrganiserUserId(), group.getFlaggedAt(),
+                group.getId(), group.getName(), group.getOrganiserUserId(), group.getStatus(),
+                group.isFlaggedForReview(), group.getFlaggedAt(),
                 lastShortfallRoundNumber, lastShortfallMemberUserId, lastShortfallAt, potBalance);
+    }
+
+    private FlaggedSusuGroupListItem toGeneralListItem(SusuGroupEntity group) {
+        long potBalance = group.getLedgerAccountId() != null
+                ? paymentsClient.getLedgerAccountBalance(group.getLedgerAccountId())
+                : 0L;
+
+        return new FlaggedSusuGroupListItem(
+                group.getId(), group.getName(), group.getOrganiserUserId(), group.getStatus(),
+                group.isFlaggedForReview(), group.getFlaggedAt(),
+                null, null, null, potBalance);
     }
 }

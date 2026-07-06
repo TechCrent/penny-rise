@@ -29,7 +29,7 @@ $password = "Str0ng!Pass1"
 $ghanaCard = "GHA-000000001-1"
 
 Write-Host "1. Signup $email"
-$signupBody = @{ email = $email; password = $password; displayName = "Tier1 E2E" } | ConvertTo-Json
+$signupBody = @{ email = $email; password = $password; displayName = "Tier1 E2E"; terms_accepted = $true } | ConvertTo-Json
 Invoke-RestMethod -Method Post -Uri "$MonolithBase/api/v1/auth/signup" -ContentType "application/json" -Body $signupBody | Out-Null
 
 Write-Host "2. Fetch verification link from Mailpit"

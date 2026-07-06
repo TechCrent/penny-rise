@@ -64,7 +64,7 @@ class DeletionRequestServiceTest {
         userRepository.deleteAll();
 
         signupService.signup(new SignupRequest(
-                "delete-test@example.com", "Str0ng!Pass", "Delete Test", null));
+                "delete-test@example.com", "Str0ng!Pass", "Delete Test", null, true));
         user = userRepository.findByEmail("delete-test@example.com").orElseThrow();
     }
 

@@ -32,12 +32,12 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     try {
-      const { data } = await adminApiClient.post<AdminLoginResponse>(
-        '/api/v1/admin/auth/login',
-        { email: email.trim(), password },
-      );
+      const { data } = await adminApiClient.post<AdminLoginResponse>('/api/v1/admin/auth/login', {
+        email: email.trim(),
+        password,
+      });
       login(data.access_token);
-      navigate('/kyc-queue', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
@@ -72,7 +72,10 @@ export default function LoginPage() {
                 type="email"
                 placeholder="admin@stash.local"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError('');
+                }}
                 disabled={isLoading}
               />
             </div>
@@ -83,7 +86,10 @@ export default function LoginPage() {
                 type="password"
                 placeholder="Password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
                 disabled={isLoading}
               />
             </div>

@@ -57,6 +57,26 @@ export async function rejectSubmission(id: string, reason: string): Promise<void
   await adminApiClient.post(`/api/v1/kyc/admin/submissions/${id}/reject`, { reason });
 }
 
+export interface BulkActionItemResult {
+  id: string;
+  success: boolean;
+  error_message: string | null;
+}
+
+export interface BulkActionResultResponse {
+  results: BulkActionItemResult[];
+}
+
+export async function bulkApproveSubmissions(
+  submissionIds: string[],
+): Promise<BulkActionResultResponse> {
+  const { data } = await adminApiClient.post<BulkActionResultResponse>(
+    '/api/v1/kyc/admin/submissions/bulk-approve',
+    { submissionIds },
+  );
+  return data;
+}
+
 export function maskGhanaCardNumber(raw: string): string {
   if (!raw) return '—';
   const parts = raw.split('-');

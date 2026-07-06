@@ -102,6 +102,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u WHERE u.kycStatus = :kycStatus AND u.deletedAt IS NULL")
     List<User> findByKycStatus(@Param("kycStatus") KycStatus kycStatus);
 
+    /** Backs the admin dashboard's "flagged accounts" (RESUBMISSION_REQUIRED) count. */
+    @Query("SELECT COUNT(u) FROM User u WHERE u.kycStatus = :kycStatus AND u.deletedAt IS NULL")
+    long countByKycStatus(@Param("kycStatus") KycStatus kycStatus);
+
     /**
      * Returns all active users with the given account status.
      * Used by admin operational queries (e.g. list all SUSPENDED accounts).

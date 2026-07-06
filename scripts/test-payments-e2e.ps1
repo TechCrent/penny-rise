@@ -60,7 +60,7 @@ function Get-VerifyLink($email) {
 function Register-And-Login($email, $password, $name) {
     $signup = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/auth/signup" -Method Post `
         -ContentType "application/json" `
-        -Body (@{ email = $email; password = $password; display_name = $name } | ConvertTo-Json)
+        -Body (@{ email = $email; password = $password; display_name = $name; terms_accepted = $true } | ConvertTo-Json)
     Start-Sleep -Seconds 1
     $link = Get-VerifyLink $email
     Invoke-WebRequest -Uri $link -UseBasicParsing | Out-Null

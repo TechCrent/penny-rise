@@ -37,6 +37,9 @@ public enum ErrorCode {
     /** The caller is authenticated but not permitted to perform this action. */
     FORBIDDEN,
 
+    /** Too many requests from this caller in the current window. */
+    RATE_LIMIT_EXCEEDED,
+
     // ── AUTH domain ────────────────────────────────────────────────────────
 
     /** Credentials are incorrect (email not found or wrong password). */

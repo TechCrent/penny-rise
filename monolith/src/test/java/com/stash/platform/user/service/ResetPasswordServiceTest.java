@@ -82,7 +82,7 @@ class ResetPasswordServiceTest {
         userRepository.deleteAll();
         attemptTracker.recordSuccess(EMAIL);
 
-        signupService.signup(new SignupRequest(EMAIL, OLD_PASSWORD, "Reset Test", null));
+        signupService.signup(new SignupRequest(EMAIL, OLD_PASSWORD, "Reset Test", null, true));
         user = userRepository.findByEmail(EMAIL).orElseThrow();
         user.setEmailVerifiedAt(Instant.now());
         userRepository.save(user);

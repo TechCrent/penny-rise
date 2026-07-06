@@ -77,7 +77,7 @@ class TokenRefreshServiceTest {
         userRepository.deleteAll();
         attemptTracker.recordSuccess(EMAIL);
 
-        signupService.signup(new SignupRequest(EMAIL, PASSWORD, "Refresh Test", null));
+        signupService.signup(new SignupRequest(EMAIL, PASSWORD, "Refresh Test", null, true));
 
         var user = userRepository.findByEmail(EMAIL).orElseThrow();
         user.setEmailVerifiedAt(Instant.now());

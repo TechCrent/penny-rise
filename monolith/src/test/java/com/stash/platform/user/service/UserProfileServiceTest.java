@@ -60,7 +60,7 @@ class UserProfileServiceTest {
         userRepository.deleteAll();
 
         signupService.signup(new SignupRequest(
-                "profile-test@example.com", "Str0ng!Pass", "Original Name", null));
+                "profile-test@example.com", "Str0ng!Pass", "Original Name", null, true));
         user = userRepository.findByEmail("profile-test@example.com").orElseThrow();
     }
 

@@ -25,6 +25,10 @@ export const registerSchema = z.object({
     ),
 
   referralCode: z.string().optional(),
+
+  termsAccepted: z.boolean().refine(value => value === true, {
+    message: 'You must accept the Terms of Service and Privacy Policy',
+  }),
 });
 
 export type RegisterFormValues = z.infer<typeof registerSchema>;

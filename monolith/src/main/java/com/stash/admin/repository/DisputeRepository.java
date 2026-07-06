@@ -28,6 +28,9 @@ public interface DisputeRepository extends JpaRepository<DisputeEntity, UUID> {
             """)
     List<DisputeEntity> findQueue(@Param("status") String status);
 
+    /** Backs the admin dashboard's "open disputes" count. */
+    long countByStatus(String status);
+
     @Query("""
             SELECT d FROM DisputeEntity d
             WHERE d.raisedByUserId = :userId

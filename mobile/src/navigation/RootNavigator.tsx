@@ -40,6 +40,11 @@ import { ChallengeDetailScreen } from '../screens/Challenges/ChallengeDetailScre
 import { DeleteAccountScreen } from '../screens/DeleteAccount/DeleteAccountScreen';
 import { UpgradeScreen } from '../screens/Subscription/UpgradeScreen';
 import { DowngradeScreen } from '../screens/Subscription/DowngradeScreen';
+import { SettingsScreen } from '../screens/Settings/SettingsScreen';
+import { ProfileScreen } from '../screens/Settings/ProfileScreen';
+import { ChangePasswordScreen } from '../screens/Settings/ChangePasswordScreen';
+import { AppLockSettingsScreen } from '../screens/Settings/AppLockSettingsScreen';
+import { LegalScreen } from '../screens/Settings/LegalScreen';
 import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
@@ -91,6 +96,11 @@ export type RootStackParamList = {
   TransferSuccess: { result: TransferResult; recipientName: string };
   SubscriptionUpgrade: undefined;
   SubscriptionDowngrade: undefined;
+  Settings: undefined;
+  Profile: undefined;
+  ChangePassword: undefined;
+  AppLockSettings: undefined;
+  Legal: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -154,6 +164,11 @@ export default function RootNavigator() {
           <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
           <Stack.Screen name="SubscriptionUpgrade" component={UpgradeScreen} />
           <Stack.Screen name="SubscriptionDowngrade" component={DowngradeScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+          <Stack.Screen name="AppLockSettings" component={AppLockSettingsScreen} />
+          <Stack.Screen name="Legal" component={LegalScreen} />
         </>
       ) : (
         <>
@@ -165,6 +180,7 @@ export default function RootNavigator() {
             name="EmailVerificationPending"
             component={EmailVerificationPendingScreen}
           />
+          <Stack.Screen name="Legal" component={LegalScreen} />
         </>
       )}
     </Stack.Navigator>

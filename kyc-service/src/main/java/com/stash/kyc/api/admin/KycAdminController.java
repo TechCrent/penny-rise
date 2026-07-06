@@ -1,6 +1,5 @@
 package com.stash.kyc.api.admin;
 
-import com.stash.kyc.shared.security.PlaceholderAdminAuthFilter;
 import com.stash.kyc.submission.api.dto.*;
 import com.stash.kyc.submission.service.KycAdminReviewService;
 import com.stash.shared.apierrors.ErrorCode;
@@ -11,6 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -19,9 +20,11 @@ import java.util.UUID;
  * Admin endpoints for the KYC manual review queue. Called by the admin
  * console (v0.2-031).
  *
- * <p>⚠️ Auth here is the placeholder shared-secret check from
- * {@link PlaceholderAdminAuthFilter} — see that class for the full
- * explanation of why and what replaces it in v0.5.
+ * <p>Auth is a real per-admin JWT, verified by
+ * {@link com.stash.kyc.shared.security.AdminJwtAuthenticationFilter} — the
+ * same token the monolith issued for the logged-in admin, forwarded as a
+ * Bearer token. {@code requireAdmin} returns the actual admin's account id,
+ * which is what gets stamped onto {@code reviewer_admin_id}.
  *
  * <p>Endpoint shape: System Design's public API table specifies a single
  * POST .../decide endpoint; this issue's acceptance criteria specify
@@ -38,6 +41,15 @@ public class KycAdminController {
 
     public KycAdminController(KycAdminReviewService reviewService) {
         this.reviewService = reviewService;
+    }
+
+    @GetMapping("/queue/count")
+    @Operation(summary = "Count of submissions currently awaiting manual review")
+    @ApiResponse(responseCode = "200", description = "Count returned")
+    @ApiResponse(responseCode = "403", description = "Not an authenticated admin")
+    public ResponseEntity<AdminQueueCountResponse> getQueueCount(HttpServletRequest request) {
+        requireAdmin(request);
+        return ResponseEntity.ok(new AdminQueueCountResponse(reviewService.getQueueCount()));
     }
 
     @GetMapping("/queue")
@@ -87,6 +99,17 @@ public class KycAdminController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/submissions/bulk-approve")
+    @Operation(summary = "Approve multiple submissions under manual review at once")
+    @ApiResponse(responseCode = "200", description = "Per-submission results returned")
+    @ApiResponse(responseCode = "403", description = "Not an authenticated admin")
+    public ResponseEntity<BulkActionResultResponse> bulkApprove(
+            @RequestBody BulkApproveRequest request, HttpServletRequest httpRequest) {
+        UUID adminId = requireAdmin(httpRequest);
+        return ResponseEntity.ok(new BulkActionResultResponse(
+                reviewService.bulkApprove(request.submissionIds(), adminId)));
+    }
+
     @PostMapping("/submissions/{id}/decide")
     @Operation(summary = "Decide a submission — System Design canonical route")
     @ApiResponse(responseCode = "204", description = "Decided")
@@ -104,19 +127,15 @@ public class KycAdminController {
     }
 
     private UUID requireAdmin(HttpServletRequest request) {
-        Object authAttr = request.getAttribute(PlaceholderAdminAuthFilter.ADMIN_AUTH_ATTRIBUTE);
-        boolean authenticated = switch (authAttr) {
-            case Boolean b -> b;
-            case String s -> Boolean.parseBoolean(s);
-            case null, default -> false;
-        };
-        if (!authenticated) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof UUID adminId)) {
             throw new StashApiException(
                     ErrorCode.FORBIDDEN,
                     "Admin authentication required.",
                     HttpStatus.FORBIDDEN
             );
         }
-        return PlaceholderAdminAuthFilter.PLACEHOLDER_ADMIN_ID;
+        return adminId;
     }
 }

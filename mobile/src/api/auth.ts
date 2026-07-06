@@ -5,6 +5,7 @@ export interface SignupRequest {
   password: string;
   display_name: string;
   referral_code?: string;
+  terms_accepted: boolean;
 }
 
 export interface SignupResponse {

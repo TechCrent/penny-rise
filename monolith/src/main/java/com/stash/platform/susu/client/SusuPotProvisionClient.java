@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -51,16 +52,23 @@ public class SusuPotProvisionClient {
     public UUID provisionSusuPot(UUID groupId, String groupName, String correlationId) {
         log.debug("Provisioning SUSU_POT for group={} correlation={}", groupId, correlationId);
         try {
+            // LinkedHashMap, not Map.of() — see docs/hands-on-testing-findings.md
+            // Finding 9: Map.of()'s iteration order is randomized per JVM run, so
+            // the same logical body serializes to different JSON key ordering
+            // across a monolith restart, breaking this fixed, reused-by-design
+            // idempotency key's hash for any group whose pot was already
+            // provisioned before the restart.
+            Map<String, String> body = new LinkedHashMap<>();
+            body.put("owner_type", "SUSU_GROUP");
+            body.put("owner_id", groupId.toString());
+            body.put("account_type", "SUSU_POT");
+            body.put("description", "SUSU_POT for group: " + groupName);
+
             Map<?, ?> response = webClient.post()
                     .uri("/internal/v1/ledger/accounts")
                     .header("Idempotency-Key", "provision-susu-pot:" + groupId)
                     .header("X-Correlation-Id", correlationId)
-                    .bodyValue(Map.of(
-                            "owner_type",   "SUSU_GROUP",
-                            "owner_id",     groupId.toString(),
-                            "account_type", "SUSU_POT",
-                            "description",  "SUSU_POT for group: " + groupName
-                    ))
+                    .bodyValue(body)
                     .retrieve()
                     .bodyToMono(java.util.Map.class)
                     .timeout(TIMEOUT)

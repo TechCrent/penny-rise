@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,16 +58,21 @@ public class PaymentsServiceClient {
                   "for vault={} user={}", vaultId, ownerUserId);
 
         try {
+            // LinkedHashMap, not Map.of() — see docs/hands-on-testing-findings.md
+            // Finding 9: a retry that lands after a monolith restart would hash
+            // this body differently under Map.of()'s per-JVM-run randomized
+            // iteration order, even though it's logically identical.
+            Map<String, String> body = new LinkedHashMap<>();
+            body.put("account_type", "VAULT");
+            body.put("owner_type", "VAULT");
+            body.put("owner_id", vaultId.toString());
+            body.put("description", "Vault ledger account for vault " + vaultId);
+
             Map<?, ?> response = webClient.post()
                     .uri("/internal/v1/ledger/accounts")
                     .header("Idempotency-Key", idempotencyKey + ":ledger-provision")
                     .header("X-Correlation-Id", correlationId)
-                    .bodyValue(Map.of(
-                            "account_type",     "VAULT",
-                            "owner_type",       "VAULT",
-                            "owner_id",         vaultId.toString(),
-                            "description",      "Vault ledger account for vault " + vaultId
-                    ))
+                    .bodyValue(body)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .timeout(Duration.ofSeconds(5))

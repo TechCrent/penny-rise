@@ -3,6 +3,8 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdminAuthProvider, useAdminAuth } from './auth/AdminAuthContext';
 import LoginPage from './routes/login';
+import DashboardPage from './routes/dashboard/DashboardPage';
+import StaffPage from './routes/staff/StaffPage';
 import KycQueuePage from './routes/kyc-queue/KycQueuePage';
 import UserSearchPage from './routes/users/UserSearchPage';
 import UserDetailPage from './routes/users/UserDetailPage';
@@ -25,8 +27,24 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/kyc-queue" replace /> },
+  { path: '/', element: <Navigate to="/dashboard" replace /> },
   { path: '/login', element: <LoginPage /> },
+  {
+    path: '/dashboard',
+    element: (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/staff',
+    element: (
+      <ProtectedRoute>
+        <StaffPage />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/kyc-queue',
     element: (

@@ -8,7 +8,7 @@ interface AdminShellProps {
 }
 
 export function AdminShell({ children, title }: AdminShellProps) {
-  const { logout } = useAdminAuth();
+  const { logout, accountType } = useAdminAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -23,6 +23,12 @@ export function AdminShell({ children, title }: AdminShellProps) {
           <div className="flex items-center gap-8">
             <span className="font-bold text-lg text-slate-900">Stash Admin</span>
             <nav className="flex gap-6">
+              <Link
+                to="/dashboard"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900"
+              >
+                Dashboard
+              </Link>
               <Link
                 to="/kyc-queue"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900"
@@ -50,6 +56,14 @@ export function AdminShell({ children, title }: AdminShellProps) {
               >
                 Susu Groups
               </Link>
+              {accountType === 'SUPER' && (
+                <Link
+                  to="/staff"
+                  className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                >
+                  Staff
+                </Link>
+              )}
             </nav>
           </div>
           <button

@@ -7,6 +7,22 @@
 
 $root = $PSScriptRoot
 
+# Load .env into this process's environment so the Spring Boot child
+# processes below inherit MONOLITH_DB_USER etc. — a plain
+# `mvnw.cmd spring-boot:run` does NOT read .env on its own (that's a
+# docker-compose convention); without this, every service fails to connect
+# to Postgres. Start-Process inherits the launching process's environment,
+# so setting these here before spawning the service windows is sufficient.
+$envPath = Join-Path $root ".env"
+if (Test-Path $envPath) {
+    Get-Content $envPath | ForEach-Object {
+        if ($_ -match '^([^#=]+)=(.*)$') { Set-Item -Path "env:$($matches[1])" -Value $matches[2] }
+    }
+} else {
+    Write-Host "WARNING: no .env found - copy .env.example to .env first (see README)." -ForegroundColor Yellow
+}
+$env:SPRING_PROFILES_ACTIVE = "local"
+
 Write-Host "Starting infra (Postgres x4, RabbitMQ, Mailpit)..." -ForegroundColor Cyan
 
 # Remove any containers with our expected names that were started outside this

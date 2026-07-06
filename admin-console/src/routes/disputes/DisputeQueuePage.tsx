@@ -11,8 +11,18 @@ export default function DisputeQueuePage() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
+  const [bulkNotes, setBulkNotes] = useState('');
 
-  const { queueQuery, assign, assigningId, isAssigning } = useDisputeQueue({
+  const {
+    queueQuery,
+    assign,
+    assigningId,
+    isAssigning,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAllResolvable,
+    bulkResolveMutation,
+  } = useDisputeQueue({
     status: statusFilter || undefined,
     page,
   });
@@ -25,6 +35,13 @@ export default function DisputeQueuePage() {
   const visibleDisputes = statusFilter
     ? disputes
     : disputes.filter((d) => d.status !== 'RESOLVED' && d.status !== 'CLOSED_NO_ACTION');
+
+  const handleBulkResolve = () => {
+    bulkResolveMutation.mutate(
+      { ids: Array.from(selectedIds), notes: bulkNotes },
+      { onSuccess: () => setBulkNotes('') },
+    );
+  };
 
   return (
     <AdminShell title="Dispute Queue">
@@ -51,6 +68,29 @@ export default function DisputeQueuePage() {
         </div>
       )}
 
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-slate-100 rounded-lg px-4 py-2">
+          <span className="text-sm text-slate-600 whitespace-nowrap">
+            {selectedIds.size} selected
+          </span>
+          <input
+            className="flex-1 h-8 rounded-lg border border-input bg-white px-2.5 text-sm"
+            placeholder="Resolution notes applied to all selected disputes"
+            value={bulkNotes}
+            onChange={(e) => setBulkNotes(e.target.value)}
+          />
+          <Button
+            size="sm"
+            disabled={!bulkNotes.trim() || bulkResolveMutation.isPending}
+            onClick={handleBulkResolve}
+          >
+            {bulkResolveMutation.isPending
+              ? 'Resolving…'
+              : `Resolve Selected (${selectedIds.size})`}
+          </Button>
+        </div>
+      )}
+
       {queueQuery.isLoading ? (
         <div className="text-center py-12 text-slate-400">Loading…</div>
       ) : (
@@ -60,6 +100,9 @@ export default function DisputeQueuePage() {
           onAssign={assign}
           assigningId={assigningId}
           isAssigning={isAssigning}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onToggleSelectAllResolvable={toggleSelectAllResolvable}
         />
       )}
 

@@ -182,10 +182,7 @@ export default function DepositScreen() {
         setServerError('This vault is closed and cannot accept deposits.');
       } else if (status === 403) {
         setServerError("You don't have permission to deposit into this vault.");
-      } else if (
-        status === 409 &&
-        message?.toLowerCase().includes('paystack subaccount')
-      ) {
+      } else if (status === 409 && message?.toLowerCase().includes('paystack subaccount')) {
         setServerError(
           'Payments are not set up for your account yet. Complete KYC approval and ensure Paystack/RabbitMQ are running, then try again.',
         );
@@ -529,7 +526,9 @@ export default function DepositScreen() {
           <Text style={styles.resultAmount}>GHS {formatCedis(amountPesewas)}</Text>
           <Text style={styles.resultSubtitle}>
             has been added to{'\n'}
-            <Text style={styles.resultVaultName}>{isWalletDeposit ? 'your wallet' : vault?.name}</Text>
+            <Text style={styles.resultVaultName}>
+              {isWalletDeposit ? 'your wallet' : vault?.name}
+            </Text>
           </Text>
           {txnRef && (
             <Text style={styles.refText} selectable>
@@ -550,7 +549,9 @@ export default function DepositScreen() {
             accessibilityRole="button"
             accessibilityLabel={isWalletDeposit ? 'Back to wallet' : 'Back to vault'}
           >
-            <Text style={styles.ctaText}>{isWalletDeposit ? 'Back to wallet' : 'Back to vault'}</Text>
+            <Text style={styles.ctaText}>
+              {isWalletDeposit ? 'Back to wallet' : 'Back to vault'}
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

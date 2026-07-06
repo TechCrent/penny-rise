@@ -91,8 +91,30 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>{greeting()}</Text>
             <Text style={styles.subhead}>Here&apos;s how your savings are doing</Text>
           </View>
-          <View style={styles.bellButton} accessibilityLabel="Notifications">
-            <Text style={styles.bellIcon}>🔔</Text>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.bellButton}
+              onPress={() => navigation.navigate('Notifications')}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+            >
+              <Text style={styles.bellIcon}>🔔</Text>
+              {unreadNotificationsCount > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>
+                    {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bellButton}
+              onPress={() => navigation.navigate('Settings')}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+            >
+              <Text style={styles.bellIcon}>⚙️</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -194,15 +216,6 @@ export default function HomeScreen() {
             <Text style={styles.fabIcon}>＋</Text>
           </TouchableOpacity>
         )}
-
-        <TouchableOpacity
-          style={styles.deleteAccountLink}
-          onPress={() => navigation.navigate('DeleteAccount')}
-          accessibilityRole="button"
-          accessibilityLabel="Delete account"
-        >
-          <Text style={styles.deleteAccountLinkText}>Delete account</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -236,6 +249,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     marginTop: 2,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
   },
   bellButton: {
     width: 40,
@@ -411,13 +428,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 30,
     marginTop: -2,
-  },
-  deleteAccountLink: {
-    alignSelf: 'center',
-    marginTop: 32,
-  },
-  deleteAccountLinkText: {
-    fontSize: 12,
-    color: '#9CA3AF',
   },
 });

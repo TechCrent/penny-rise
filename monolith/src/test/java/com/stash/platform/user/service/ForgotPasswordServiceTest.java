@@ -61,7 +61,7 @@ class ForgotPasswordServiceTest {
         emailTokenRepository.deleteAll();
         userRepository.deleteAll();
 
-        signupService.signup(new SignupRequest(EMAIL, "Str0ng!Pass", "Forgot Test", null));
+        signupService.signup(new SignupRequest(EMAIL, "Str0ng!Pass", "Forgot Test", null, true));
     }
 
 // ΓöÇΓöÇ Registered email ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ

@@ -71,6 +71,24 @@ reusable foundations before or alongside page-level work:
 
 Group by journey, since several of these only make sense in sequence.
 
+**Launch experience** (the actual first thing every user sees, every time —
+easy to underinvest in since it's "just" a loading moment, but it sets the
+tone for the whole app before a single screen of content appears)
+- Native splash screen (currently wired via the `expo-splash-screen` config
+  plugin as a static centered image on a plain white background — no
+  animation at all today). Worth deciding whether a subtle branded animation
+  on the transition out of the native splash and into the JS app is worth
+  the investment, versus keeping it deliberately quick/minimal — either is a
+  legitimate choice, but it should be a choice, not a default.
+- `AuthenticatedBootstrapScreen` (the in-between screen while session/auth
+  state resolves right after the native splash hands off to the JS app —
+  currently an easy screen to neglect; shouldn't read as a blank flash or a
+  second, uglier loading screen bolted onto the first).
+- The full launch sequence end-to-end — native splash → bootstrap/session
+  check → first real screen (`LoginScreen` or `HomeScreen`) — should feel
+  like one continuous, considered motion rather than three unrelated loading
+  moments stitched together.
+
 **Auth & onboarding**
 - `LoginScreen`
 - `RegisterScreen` (includes a required terms-acceptance checkbox — the
@@ -215,3 +233,92 @@ and apply consistently:
   amounts); establish one considered treatment for how monetary values are
   sized, weighted, and colored relative to surrounding text, and apply it
   everywhere money appears.
+- **Signature animation moments** — beyond general screen-transition motion
+  (covered under Foundations), a financial app like this earns real trust
+  and delight from a handful of *specific* animated moments done well rather
+  than animation sprinkled everywhere. Candidates worth deliberate treatment:
+  balance reveal/hide toggle on `WalletScreen`, a vault reaching its savings
+  goal on `VaultDetailScreen`, a susu circle's contribution round completing
+  on `SusuDetailScreen`, the `TransferSuccessScreen` confirmation moment, and
+  the KYC approval transition out of `KycSubmissionPendingScreen`. Pick a
+  small, intentional set — the goal is a handful of memorable, on-brand
+  moments, not motion for its own sake, and not so many that any one of them
+  stops feeling special.
+
+---
+
+# Forward-looking scope — not yet built
+
+Everything above this line describes screens and features that exist in the
+codebase today (v0.5 and earlier) and can be designed against directly. This
+section is different in kind: it's speculative design scoping for
+**features that don't exist yet**, inferred from `docs/gap-analysis-vendor-dependent-followup.md`
+and the project's version tracker (issues tagged v0.1 through v3.0). Treat
+everything below as "worth thinking about the shape of," not "ready to
+finalize" — the underlying features themselves are still pending product
+decisions (vendor selection, compliance scope, business-model details) that
+will change their exact requirements. Don't invest in pixel-perfect
+definition here the way the sections above deserve; sketch direction and
+flag open questions instead.
+
+## v1.5 — near-term, mostly vendor-free
+
+These don't need a third-party vendor decision to start, which is why
+they're grouped as the nearest-term of the three:
+
+- **Dark mode** — touches every screen above; needs a real color-token
+  system (see Foundations) as a prerequisite before this is even possible,
+  since colors are currently hardcoded hex values per screen.
+- **Localization / i18n** — every screen's copy is currently inline English.
+  Design-wise, this mostly means auditing for text-expansion tolerance
+  (some languages run 30-50% longer than English) and confirming layouts
+  don't break — not new screens, but a constraint on every existing one.
+- **Crash reporting opt-in** — likely a small addition to onboarding or
+  `LegalScreen`/`SettingsScreen` (a consent toggle), not a new screen of its
+  own. Mostly invisible to users when working correctly.
+- **Local fraud/velocity rule-flagging** — if a transaction gets flagged by
+  a simple local rule (no vendor yet), there needs to be *some* user-facing
+  state (a "we're reviewing this" moment, similar in spirit to
+  `KycSubmissionPendingScreen`) and an admin-side surface to review flagged
+  transactions — likely a new admin queue page, similar in shape to the
+  existing `KycQueuePage`/`DisputeQueuePage` pattern.
+
+## v2.0 — larger feature additions, revenue/growth-oriented
+
+These are more speculative in shape since they depend on a vendor/product
+decision not yet made:
+
+- **Recurring billing / Premium subscription management** — beyond the
+  existing `UpgradeScreen`/`DowngradeScreen`, a real subscription needs a
+  billing-history view (currently no history table exists at all — see
+  followup doc item 4) and likely a payment-method-on-file management
+  screen. Shape depends heavily on which Paystack billing model gets chosen.
+- **SMS-based OTP and alerts** — a code-entry screen (similar pattern to
+  existing email-verification flow) plus a notification-preferences surface
+  where users choose push vs. SMS vs. email per alert type. Only relevant if
+  the SMS vendor decision lands.
+- **Fraud/anomaly admin tooling, expanded** — if v1.5's local rule-flagging
+  proves out, this is where it likely grows into a dedicated fraud dashboard
+  (distinct from the general `DashboardPage`) with case-management-style
+  detail views, not just a queue.
+
+## v3.0 — compliance/regulatory-scale features
+
+The followup doc ties AML/PEP screening specifically to an anticipated SEC
+Ghana regulatory engagement, which suggests this version bracket skews
+compliance-heavy rather than consumer-feature-heavy:
+
+- **AML / sanctions / PEP screening** — almost certainly needs a dedicated
+  admin review surface distinct from the existing KYC queue (a watchlist
+  hit is a different kind of decision than "is this ID photo legible,"
+  likely needing case notes, escalation, and audit trail beyond what
+  `KycQueuePage`'s approve/reject pattern currently supports).
+- **Regulatory reporting surfaces** — if SEC Ghana engagement requires
+  produced reports (transaction volume, suspicious-activity reports, audit
+  exports beyond the existing `AuditLogPage`), this is likely net-new admin
+  console territory, not an extension of an existing page.
+- **Whatever compliance-driven user-facing changes fall out of the above** —
+  e.g., additional consent/disclosure screens if regulatory status changes
+  what Stash is required to tell users. Genuinely unknown until the
+  regulatory scope itself is defined; flagged here so it isn't a total
+  surprise later.

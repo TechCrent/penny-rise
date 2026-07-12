@@ -8,13 +8,13 @@ import {
 } from '../storage/kycStorage';
 import type { RootStackParamList } from './RootNavigator';
 
-type PostAuthRoute = {
+export type PostAuthRoute = {
   [K in keyof RootStackParamList]: RootStackParamList[K] extends undefined
     ? { name: K }
     : { name: K; params: RootStackParamList[K] };
 }[keyof Pick<
   RootStackParamList,
-  'Home' | 'KycCardDetails' | 'KycDocumentUpload' | 'KycSubmissionPending'
+  'Main' | 'KycCardDetails' | 'KycDocumentUpload' | 'KycSubmissionPending'
 >];
 
 const ACTIVE_SUBMISSION_STATUSES = ['REVIEWING', 'SUBMITTED'];
@@ -50,14 +50,14 @@ export async function resolvePostAuthNavigation(kycStatus: string): Promise<Post
     if (!acknowledged && submission) {
       return { name: 'KycSubmissionPending', params: { submissionId: submission.id } };
     }
-    return { name: 'Home' };
+    return { name: 'Main', params: { screen: 'Home' } };
   }
 
   if (kycStatus === 'SUBMITTED') {
     if (submission) {
       return { name: 'KycSubmissionPending', params: { submissionId: submission.id } };
     }
-    return { name: 'Home' };
+    return { name: 'Main', params: { screen: 'Home' } };
   }
 
   if (submission && ACTIVE_SUBMISSION_STATUSES.includes(submission.status)) {

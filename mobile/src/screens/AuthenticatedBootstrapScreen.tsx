@@ -6,12 +6,17 @@ import { useAuth } from '../auth/AuthContext';
 import { resolvePostAuthNavigation } from '../navigation/resolvePostAuthNavigation';
 import { registerPushToken } from '../features/notifications/pushSetup';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { hasPromptedAppLockSetup } from '../auth/appLock';
+import {
+  markKycUnderReviewBannerPending,
+  clearKycUnderReviewBannerPending,
+} from '../storage/kycStorage';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AuthenticatedBootstrap'>;
 
 export default function AuthenticatedBootstrapScreen() {
   const navigation = useNavigation<Nav>();
-  const { kycStatus } = useAuth();
+  const { kycStatus, justLoggedIn } = useAuth();
   const startedRef = useRef(false);
   const pushRegisteredRef = useRef(false);
 
@@ -19,10 +24,31 @@ export default function AuthenticatedBootstrapScreen() {
     if (!kycStatus || startedRef.current) return;
     startedRef.current = true;
 
-    resolvePostAuthNavigation(kycStatus).then(route => {
+    resolvePostAuthNavigation(kycStatus).then(async route => {
+      // Keep the LoginScreen "under review" banner flag in sync with what we
+      // actually just resolved — set it the moment we know review is still
+      // pending, clear it the moment we resolve past it (approved) so a
+      // later logout/session-expiry doesn't show a stale banner.
+      if (route.name === 'KycSubmissionPending') {
+        void markKycUnderReviewBannerPending();
+      } else if (route.name === 'Main') {
+        void clearKycUnderReviewBannerPending();
+      }
+
+      // Offer the one-time app-lock opt-in only right after a fresh login
+      // (never on cold-start session restore) and only once ever, and only
+      // once the user has actually reached the main app (not mid-KYC).
+      if (route.name === 'Main' && justLoggedIn && !(await hasPromptedAppLockSetup())) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AppLockSetupPrompt', params: { nextRoute: route } }],
+        });
+        return;
+      }
+
       navigation.reset({ index: 0, routes: [route] });
     });
-  }, [kycStatus, navigation]);
+  }, [kycStatus, justLoggedIn, navigation]);
 
   useEffect(() => {
     // Fires once per authenticated session — this screen mounts both right

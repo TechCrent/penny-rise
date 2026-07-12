@@ -7,8 +7,10 @@ import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.UUID;
 
@@ -50,7 +52,33 @@ public class KycUserSyncService {
 
         user.setKycStatus(KycStatus.APPROVED);
         user.setGhanaCardNumber(event.payload().ghanaCardNumber());
-        userRepository.save(user);
+
+        try {
+            // saveAndFlush (not save) so a unique-constraint violation on
+            // ghana_card_number surfaces here, inside this try/catch, rather
+            // than at @Transactional commit time back in the RabbitListener —
+            // where it would propagate as an uncaught exception. This queue
+            // has no dead-letter config, so an uncaught exception here means
+            // RabbitMQ redelivers the same unfixable message forever (a
+            // duplicate Ghana Card number can never succeed on retry),
+            // burning CPU in a tight loop. Real occurrence: kyc-service's
+            // stub auto-approve provider only recognises 3 fixed test card
+            // numbers, so repeat local/QA signups collide on them.
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            // The flush failed, so this transaction's persistence context is no
+            // longer usable — mark rollback-only explicitly rather than
+            // returning normally (which would make the @Transactional proxy
+            // attempt to commit a broken context). Not rethrowing means the
+            // RabbitListener still sees a normal return and acks the message
+            // instead of requeuing an update that can never succeed.
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            log.error("KycApproved could not sync userId={} submissionId={} — " +
+                    "ghana_card_number is already assigned to a different user " +
+                    "(duplicate submission or provider collision). Not retrying.",
+                    userId, submissionId, e);
+            return;
+        }
 
         log.info("User KYC status synced to APPROVED userId={} submissionId={}", userId, submissionId);
     }

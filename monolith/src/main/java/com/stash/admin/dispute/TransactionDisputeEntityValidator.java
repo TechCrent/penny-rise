@@ -8,10 +8,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.UUID;
 
 /**
- * BLOCKING DEPENDENCY on a new payments-service endpoint. disputes.related_entity_id
- * is a UUID, but the customer-facing transaction lookup is keyed by string reference.
- * The stub IntegrationPaymentsClient.getTransactionById returns Optional.empty() until
- * the payments-service exposes a by-id lookup endpoint.
+ * disputes.related_entity_id is a UUID, but the customer-facing transaction
+ * lookup is keyed by string reference — IntegrationPaymentsClient.getTransactionById
+ * calls payments-service's {@code GET /api/v1/transactions/by-id/{id}} endpoint,
+ * which looks up by the transaction's UUID primary key instead.
  */
 @Component
 public class TransactionDisputeEntityValidator implements DisputeEntityValidator {

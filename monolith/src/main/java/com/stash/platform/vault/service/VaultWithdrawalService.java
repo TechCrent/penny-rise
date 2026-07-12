@@ -9,6 +9,7 @@ import com.stash.platform.vault.client.PaymentsServiceException;
 import com.stash.platform.vault.client.PaymentsWithdrawalClient;
 import com.stash.platform.vault.domain.VaultEntity;
 import com.stash.platform.vault.repository.VaultRepository;
+import com.stash.shared.validation.MomoNumberValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -118,8 +119,9 @@ public class VaultWithdrawalService {
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         "Authenticated user not found."));
 
-        // ── Validate MoMo provider ────────────────────────────────────────
-        validateMomoProvider(request.momoProvider());
+        // ── Validate MoMo provider/number ─────────────────────────────────
+        MomoNumberValidator.validate(request.momoProvider(), request.destinationMomoNumber(),
+                "momo_provider", "destination_momo_number");
 
         // ── Delegate to Payments Service ──────────────────────────────────
         try {
@@ -183,12 +185,4 @@ public class VaultWithdrawalService {
                 "Payment processing temporarily unavailable. Please retry.");
     }
 
-    private void validateMomoProvider(String provider) {
-        if (!"mtn".equalsIgnoreCase(provider)
-                && !"vodafone".equalsIgnoreCase(provider)
-                && !"airteltigo".equalsIgnoreCase(provider)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "momo_provider must be one of: mtn, vodafone, airteltigo.");
-        }
-    }
 }

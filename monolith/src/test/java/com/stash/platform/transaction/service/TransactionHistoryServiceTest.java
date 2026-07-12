@@ -32,11 +32,11 @@ class TransactionHistoryServiceTest {
     @DisplayName("empty page from Payments is returned as-is")
     void emptyPagePassesThrough() {
         when(paymentsClient.getUnifiedTransactionHistory(
-                eq(USER_ID), isNull(), isNull(), isNull(), isNull(), eq(20)))
+                eq(USER_ID), isNull(), isNull(), isNull(), isNull(), eq(20), isNull()))
                 .thenReturn(new UnifiedTransactionPage(List.of(), null, false));
 
         UnifiedTransactionHistoryResponse response =
-                service.list(USER_ID, null, null, null, null, null);
+                service.list(USER_ID, null, null, null, null, null, null);
 
         assertThat(response.transactions()).isEmpty();
         assertThat(response.hasMore()).isFalse();
@@ -47,13 +47,13 @@ class TransactionHistoryServiceTest {
     @DisplayName("rows from Payments are enriched and returned")
     void rowsAreEnriched() {
         var row = txRow("WITHDRAWAL");
-        when(paymentsClient.getUnifiedTransactionHistory(any(), any(), any(), any(), any(), anyInt()))
+        when(paymentsClient.getUnifiedTransactionHistory(any(), any(), any(), any(), any(), anyInt(), any()))
                 .thenReturn(new UnifiedTransactionPage(List.of(row), null, false));
         when(enricher.resolveAccountName(row)).thenReturn("Wallet");
         when(enricher.resolveDirection(row, USER_ID)).thenReturn("OUT");
         when(enricher.resolveCounterpartyName(row)).thenReturn(null);
 
-        var response = service.list(USER_ID, null, null, null, null, null);
+        var response = service.list(USER_ID, null, null, null, null, null, null);
 
         assertThat(response.transactions()).hasSize(1);
         var item = response.transactions().get(0);
@@ -68,13 +68,13 @@ class TransactionHistoryServiceTest {
     @DisplayName("cursor and hasMore from Payments are forwarded to the response")
     void paginationFieldsAreForwarded() {
         var row = txRow("DEPOSIT");
-        when(paymentsClient.getUnifiedTransactionHistory(any(), any(), any(), any(), any(), anyInt()))
+        when(paymentsClient.getUnifiedTransactionHistory(any(), any(), any(), any(), any(), anyInt(), any()))
                 .thenReturn(new UnifiedTransactionPage(List.of(row), "STSH-202607-000020", true));
         when(enricher.resolveAccountName(row)).thenReturn("Wallet");
         when(enricher.resolveDirection(row, USER_ID)).thenReturn("IN");
         when(enricher.resolveCounterpartyName(row)).thenReturn(null);
 
-        var response = service.list(USER_ID, null, null, null, null, 20);
+        var response = service.list(USER_ID, null, null, null, null, 20, null);
 
         assertThat(response.hasMore()).isTrue();
         assertThat(response.nextCursor()).isEqualTo("STSH-202607-000020");
@@ -84,10 +84,10 @@ class TransactionHistoryServiceTest {
     @DisplayName("limit above MAX_LIMIT is clamped to 50")
     void limitIsClamped() {
         when(paymentsClient.getUnifiedTransactionHistory(
-                eq(USER_ID), isNull(), isNull(), isNull(), isNull(), eq(50)))
+                eq(USER_ID), isNull(), isNull(), isNull(), isNull(), eq(50), isNull()))
                 .thenReturn(new UnifiedTransactionPage(List.of(), null, false));
 
-        service.list(USER_ID, null, null, null, null, 9999);
+        service.list(USER_ID, null, null, null, null, 9999, null);
 
         // verification is implicit: if Mockito didn't match eq(50) the stub would return null
         // and the test would NPE. We assert the response to prove it matched.
@@ -97,10 +97,10 @@ class TransactionHistoryServiceTest {
     @DisplayName("null limit defaults to 20")
     void nullLimitDefaultsTo20() {
         when(paymentsClient.getUnifiedTransactionHistory(
-                eq(USER_ID), isNull(), isNull(), isNull(), isNull(), eq(20)))
+                eq(USER_ID), isNull(), isNull(), isNull(), isNull(), eq(20), isNull()))
                 .thenReturn(new UnifiedTransactionPage(List.of(), null, false));
 
-        var response = service.list(USER_ID, null, null, null, null, null);
+        var response = service.list(USER_ID, null, null, null, null, null, null);
 
         assertThat(response).isNotNull();
     }

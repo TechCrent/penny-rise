@@ -13,6 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class ChallengeEventPublisher {
@@ -48,6 +49,8 @@ public class ChallengeEventPublisher {
             rabbitTemplate.send(EXCHANGE, ROUTING_KEY,
                     MessageBuilder.withBody(body.getBytes(StandardCharsets.UTF_8))
                             .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                            .setHeader("event_id", UUID.randomUUID().toString())
+                            .setHeader("event_type", ROUTING_KEY)
                             .build());
             log.info("Published challenge.completed userChallengeId={} userId={}",
                     event.userChallengeId(), event.userId());

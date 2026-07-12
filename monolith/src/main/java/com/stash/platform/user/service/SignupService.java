@@ -1,12 +1,12 @@
 package com.stash.platform.user.service;
 
-import com.stash.platform.notification.service.EmailSender;
 import com.stash.platform.subscription.domain.Subscription;
 import com.stash.platform.subscription.repository.SubscriptionRepository;
 import com.stash.platform.user.api.dto.SignupRequest;
 import com.stash.platform.user.api.dto.SignupResponse;
 import com.stash.platform.user.domain.EmailVerificationToken;
 import com.stash.platform.user.domain.User;
+import com.stash.platform.user.event.SignupVerificationEmailRequestedEvent;
 import com.stash.platform.user.event.UserCreatedApplicationEvent;
 import com.stash.platform.user.repository.EmailVerificationTokenRepository;
 import com.stash.platform.user.repository.UserRepository;
@@ -37,7 +37,6 @@ public class SignupService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final PasswordHasher passwordHasher;
-    private final EmailSender emailSender;
     private final ApplicationEventPublisher eventPublisher;
     private final BetaAllowlistService betaAllowlistService;
     private final SecureRandom secureRandom;
@@ -47,7 +46,6 @@ public class SignupService {
                          EmailVerificationTokenRepository tokenRepository,
                          SubscriptionRepository subscriptionRepository,
                          PasswordHasher passwordHasher,
-                         EmailSender emailSender,
                          ApplicationEventPublisher eventPublisher,
                          BetaAllowlistService betaAllowlistService,
                          @Value("${stash.email.base-url:http://localhost:8080}") String baseUrl) {
@@ -55,7 +53,6 @@ public class SignupService {
         this.tokenRepository     = tokenRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.passwordHasher      = passwordHasher;
-        this.emailSender         = emailSender;
         this.eventPublisher      = eventPublisher;
         this.betaAllowlistService = betaAllowlistService;
         this.secureRandom        = new SecureRandom();
@@ -108,12 +105,13 @@ public class SignupService {
 
         log.info("User registered successfully userId={}", user.getId());
 
+        // Fires AFTER_COMMIT via SignupVerificationEmailPublisher — sending
+        // synchronously here would hold this transaction open for as long as
+        // EmailSender's retry loop takes (up to ~7s) and could make a client
+        // give up on the HTTP response before the row even commits.
         String verificationUrl = baseUrl + "/api/v1/auth/verify-email?token=" + rawToken;
-        emailSender.sendEmailVerification(
-                normalisedEmail,
-                user.getDisplayName(),
-                verificationUrl
-        );
+        eventPublisher.publishEvent(new SignupVerificationEmailRequestedEvent(
+                this, normalisedEmail, user.getDisplayName(), verificationUrl));
 
         return new SignupResponse(
                 user.getId(),

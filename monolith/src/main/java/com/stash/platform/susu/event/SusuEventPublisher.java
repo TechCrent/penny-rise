@@ -173,6 +173,7 @@ public class SusuEventPublisher {
             rabbitTemplate.send(EXCHANGE, routingKey,
                     MessageBuilder.withBody(body.getBytes(StandardCharsets.UTF_8))
                             .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                            .setHeader("event_id", UUID.randomUUID().toString())
                             .setHeader("correlation_id", correlationId)
                             .setHeader("event_type", routingKey)
                             .build());

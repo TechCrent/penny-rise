@@ -115,7 +115,7 @@ public class TransactionStatementExportService {
         boolean hasMore = true;
 
         while (hasMore && all.size() < MAX_ROWS) {
-            var page = historyService.list(userId, null, null, null, cursor, PAGE_SIZE);
+            var page = historyService.list(userId, null, null, null, cursor, PAGE_SIZE, null);
             all.addAll(page.transactions());
             hasMore = page.hasMore();
             cursor = page.nextCursor();

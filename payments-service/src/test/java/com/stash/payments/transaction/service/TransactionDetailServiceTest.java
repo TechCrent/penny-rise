@@ -215,6 +215,33 @@ class TransactionDetailServiceTest {
                 .doesNotThrowAnyException();
     }
 
+    // ── getDetailById ────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("getDetailById: non-existent id returns 404")
+    void get_detail_by_id_not_found_returns_404() {
+        var id = UUID.randomUUID();
+        when(txnRepo.findById(id)).thenReturn(Optional.empty());
+
+        var ex = assertThrows(ResponseStatusException.class,
+                () -> service.getDetailById(id, CallerContext.internal()));
+        assertThat(ex.getStatusCode()).isEqualTo(NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("getDetailById: internal caller looks up by UUID and bypasses ownership")
+    void get_detail_by_id_internal_caller() {
+        var id = UUID.randomUUID();
+        when(txnRepo.findById(id)).thenReturn(Optional.of(completedTxn()));
+        when(ledgerService.getEntriesForTransaction(LEDGER_TXN)).thenReturn(twoEntryRows());
+
+        var result = service.getDetailById(id, CallerContext.internal());
+
+        assertThat(result.reference()).isEqualTo(REF);
+        assertThat(result.entries()).hasSize(2);
+        verifyNoInteractions(accountRepo);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private TransactionEntity completedTxn() {

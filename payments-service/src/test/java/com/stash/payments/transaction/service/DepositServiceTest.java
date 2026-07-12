@@ -40,7 +40,7 @@ class DepositServiceTest {
     private final PaystackClient               paystack       = Mockito.mock(PaystackClient.class);
     private final TransactionReferenceGenerator refGen        = Mockito.mock(TransactionReferenceGenerator.class);
     private final DepositService service = new DepositService(
-            ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK);
+            ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK, false);
 
     private static final UUID   USER_ID    = UUID.randomUUID();
     private static final UUID   ACCOUNT_ID = UUID.randomUUID();
@@ -190,6 +190,92 @@ class DepositServiceTest {
                 "MOMO", "akua@stash.test",
                 null,    // missing
                 "mtn", "corr-001",
+                UUID.randomUUID(), "VAULT_DEPOSIT");
+
+        assertThatThrownBy(() -> service.initiateDeposit(request, IDEM_KEY))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
+    }
+
+    // ── Sandbox test-MoMo-number substitution ─────────────────────────────
+
+    @Test
+    @DisplayName("substitution disabled (default): Paystack is charged with the real user-entered number")
+    void substitution_disabled_charges_real_number() {
+        stubActiveAccount();
+        stubSubaccount();
+        stubPaystackSuccess();
+        when(paystack.isTestMode()).thenReturn(true);
+
+        service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
+
+        ArgumentCaptor<com.stash.payments.paystack.dto.ChargeInitiateRequest> captor =
+                ArgumentCaptor.forClass(com.stash.payments.paystack.dto.ChargeInitiateRequest.class);
+        verify(paystack).initiateCharge(captor.capture());
+        assertThat(captor.getValue().mobileMoneyChannel().phone()).isEqualTo("0241234567");
+        assertThat(captor.getValue().mobileMoneyChannel().provider()).isEqualTo("mtn");
+    }
+
+    @Test
+    @DisplayName("substitution enabled + test-mode key: Paystack is charged the sandbox test number, " +
+                 "but the stored transaction still reflects the real number")
+    void substitution_enabled_in_test_mode_charges_sandbox_number() {
+        var serviceWithSubstitution = new DepositService(
+                ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK, true);
+        stubActiveAccount();
+        stubSubaccount();
+        stubPaystackSuccess();
+        when(paystack.isTestMode()).thenReturn(true);
+
+        // Real user-entered number is a valid, different Ghanaian number.
+        var request = new DepositInitiateRequest(
+                ACCOUNT_ID, USER_ID, 10_000L,
+                "MOMO", "akua@stash.test",
+                "0201234567", "vodafone", "corr-001",
+                UUID.randomUUID(), "VAULT_DEPOSIT");
+
+        serviceWithSubstitution.initiateDeposit(request, IDEM_KEY);
+
+        ArgumentCaptor<com.stash.payments.paystack.dto.ChargeInitiateRequest> chargeCaptor =
+                ArgumentCaptor.forClass(com.stash.payments.paystack.dto.ChargeInitiateRequest.class);
+        verify(paystack).initiateCharge(chargeCaptor.capture());
+        assertThat(chargeCaptor.getValue().mobileMoneyChannel().phone()).isEqualTo("0551234987");
+        assertThat(chargeCaptor.getValue().mobileMoneyChannel().provider()).isEqualTo("mtn");
+    }
+
+    @Test
+    @DisplayName("substitution enabled but key is LIVE mode: still charges the real number — " +
+                 "double guard prevents substitution against a live Paystack account")
+    void substitution_enabled_but_live_mode_does_not_substitute() {
+        var serviceWithSubstitution = new DepositService(
+                ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK, true);
+        stubActiveAccount();
+        stubSubaccount();
+        stubPaystackSuccess();
+        when(paystack.isTestMode()).thenReturn(false);
+
+        serviceWithSubstitution.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
+
+        ArgumentCaptor<com.stash.payments.paystack.dto.ChargeInitiateRequest> captor =
+                ArgumentCaptor.forClass(com.stash.payments.paystack.dto.ChargeInitiateRequest.class);
+        verify(paystack).initiateCharge(captor.capture());
+        assertThat(captor.getValue().mobileMoneyChannel().phone()).isEqualTo("0241234567");
+    }
+
+    // ── MoMo prefix validation ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("phone number not matching the selected provider's prefixes returns 422")
+    void momo_number_not_matching_provider_returns_422() {
+        stubActiveAccount();
+        stubSubaccount();
+
+        // 020 is a Vodafone/Telecel prefix, not MTN.
+        var request = new DepositInitiateRequest(
+                ACCOUNT_ID, USER_ID, 10_000L,
+                "MOMO", "akua@stash.test",
+                "0201234567", "mtn", "corr-001",
                 UUID.randomUUID(), "VAULT_DEPOSIT");
 
         assertThatThrownBy(() -> service.initiateDeposit(request, IDEM_KEY))

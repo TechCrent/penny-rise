@@ -53,20 +53,31 @@ public interface PeerTransferRepository extends JpaRepository<PeerTransferEntity
             @Param("cursorId")   UUID    cursorId,
             Pageable pageable);
 
-    /** All transfers for a user (sent + received), cursor-paginated via UNION ALL. */
+    /**
+     * All transfers for a user (sent + received), cursor-paginated via UNION ALL.
+     *
+     * <p>Every named parameter used more than once in a native query expands
+     * to its own independent JDBC positional placeholder per occurrence —
+     * Postgres doesn't know two {@code ?}s came from the same {@code :name}.
+     * The comparison-side occurrences here were already cast, but the bare
+     * {@code :fromDate IS NULL} / {@code :toDate IS NULL} / {@code :cursorTime
+     * IS NULL} occurrences were not, so each of those still needed its own
+     * cast — Postgres fails to infer a type for a parameter whose only
+     * context is a bare {@code IS NULL} check.
+     */
     @Query(value = """
             SELECT * FROM (
                 SELECT * FROM transfer.peer_transfers
                 WHERE sender_user_id = :userId
-                  AND (:fromDate IS NULL OR created_at >= CAST(:fromDate AS TIMESTAMPTZ))
-                  AND (:toDate   IS NULL OR created_at <= CAST(:toDate   AS TIMESTAMPTZ))
+                  AND (CAST(:fromDate AS TIMESTAMPTZ) IS NULL OR created_at >= CAST(:fromDate AS TIMESTAMPTZ))
+                  AND (CAST(:toDate   AS TIMESTAMPTZ) IS NULL OR created_at <= CAST(:toDate   AS TIMESTAMPTZ))
                 UNION ALL
                 SELECT * FROM transfer.peer_transfers
                 WHERE recipient_user_id = :userId
-                  AND (:fromDate IS NULL OR created_at >= CAST(:fromDate AS TIMESTAMPTZ))
-                  AND (:toDate   IS NULL OR created_at <= CAST(:toDate   AS TIMESTAMPTZ))
+                  AND (CAST(:fromDate AS TIMESTAMPTZ) IS NULL OR created_at >= CAST(:fromDate AS TIMESTAMPTZ))
+                  AND (CAST(:toDate   AS TIMESTAMPTZ) IS NULL OR created_at <= CAST(:toDate   AS TIMESTAMPTZ))
             ) combined
-            WHERE (:cursorTime IS NULL
+            WHERE (CAST(:cursorTime AS TIMESTAMPTZ) IS NULL
                    OR combined.created_at < CAST(:cursorTime AS TIMESTAMPTZ)
                    OR (combined.created_at = CAST(:cursorTime AS TIMESTAMPTZ)
                        AND combined.id < CAST(:cursorId AS UUID)))

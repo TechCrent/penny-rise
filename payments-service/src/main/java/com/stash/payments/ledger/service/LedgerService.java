@@ -67,6 +67,21 @@ public class LedgerService {
     }
 
     /**
+     * Batch-fetches business-reference/narrative enrichment for a set of
+     * ledger transactions. Exposed here (not on the repository) so
+     * TransactionHistoryQueryService can label history rows with their
+     * vault/susu-group name without violating the repository access
+     * constraint. Columns match {@link com.stash.payments.ledger.repository.LedgerTransactionRepository#findBusinessReferencesByIds}.
+     */
+    @Transactional(readOnly = true)
+    public List<Object[]> getBusinessReferencesForTransactions(List<UUID> ledgerTransactionIds) {
+        if (ledgerTransactionIds.isEmpty()) {
+            return List.of();
+        }
+        return txnRepo.findBusinessReferencesByIds(ledgerTransactionIds);
+    }
+
+    /**
      * Posts a double-entry ledger transaction atomically.
      *
      * <p>Steps:

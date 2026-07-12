@@ -61,10 +61,10 @@ public interface LedgerEntryRepository
             FROM ledger.ledger_entries le
             JOIN ledger.ledger_transactions lt ON lt.id = le.ledger_transaction_id
             WHERE le.account_id = :accountId
-              AND (:fromDate IS NULL OR le.created_at >= :fromDate)
-              AND (:toDate   IS NULL OR le.created_at <= :toDate)
+              AND (CAST(:fromDate AS timestamptz) IS NULL OR le.created_at >= :fromDate)
+              AND (CAST(:toDate   AS timestamptz) IS NULL OR le.created_at <= :toDate)
               AND (
-                    :cursorCreatedAt IS NULL
+                    CAST(:cursorCreatedAt AS timestamptz) IS NULL
                     OR le.created_at < :cursorCreatedAt
                     OR (le.created_at = :cursorCreatedAt AND le.id < :cursorEntryId)
                   )

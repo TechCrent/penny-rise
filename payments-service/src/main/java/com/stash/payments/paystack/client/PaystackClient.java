@@ -36,8 +36,14 @@ import java.util.function.Supplier;
  * if a charge initiation times out, we cannot know whether Paystack received it;
  * retrying risks a duplicate charge. The charge webhook confirms whether it succeeded.
  *
- * <p><strong>Circuit breaker:</strong> shared across all calls. Opens after 50%
- * failure rate in a 10-call sliding window (minimum 5 calls). Half-open after 30s.
+ * <p><strong>Circuit breaker:</strong> one shared across all user-facing payment
+ * calls (charge, verify, transfer recipient, transfer, balance), and a second,
+ * isolated one for subaccount provisioning only. Provisioning is a background,
+ * best-effort operation fired off user signup — a burst of provisioning
+ * failures must never be able to fail-fast every real-time payment operation
+ * too, which is what a single shared breaker allowed to happen in local dev on
+ * 2026-07-12. Each breaker opens after 50% failure rate in a 10-call sliding
+ * window (minimum 5 calls); half-open after 30s.
  *
  * <p>Resilience4j is applied <em>programmatically</em> rather than via the
  * {@code @CircuitBreaker}/{@code @Retry} annotations so that the behaviour is
@@ -57,12 +63,15 @@ public class PaystackClient {
     private static final Logger log = LoggerFactory.getLogger(PaystackClient.class);
 
     static final String CIRCUIT_BREAKER_NAME = "paystack";
+    static final String PROVISIONING_CIRCUIT_BREAKER_NAME = "paystack-subaccount-provisioning";
     static final String RETRY_NAME = "paystack-idempotent";
 
     private final WebClient webClient;
     private final CircuitBreaker circuitBreaker;
+    private final CircuitBreaker provisioningCircuitBreaker;
     private final Retry retry;
     private final Duration timeout;
+    private final boolean testMode;
 
     /**
      * Spring constructor — uses the shared, {@code application.yml}-configured
@@ -79,6 +88,7 @@ public class PaystackClient {
 
         this(webClientBuilder, baseUrl, secretKey, timeoutSeconds,
                 circuitBreakerRegistry.circuitBreaker(CIRCUIT_BREAKER_NAME),
+                circuitBreakerRegistry.circuitBreaker(PROVISIONING_CIRCUIT_BREAKER_NAME),
                 retryRegistry.retry(RETRY_NAME));
     }
 
@@ -94,7 +104,9 @@ public class PaystackClient {
             int timeoutSeconds) {
 
         this(webClientBuilder, baseUrl, secretKey, timeoutSeconds,
-                defaultCircuitBreaker(), defaultRetry());
+                defaultCircuitBreaker(CIRCUIT_BREAKER_NAME),
+                defaultCircuitBreaker(PROVISIONING_CIRCUIT_BREAKER_NAME),
+                defaultRetry());
     }
 
     private PaystackClient(
@@ -103,11 +115,13 @@ public class PaystackClient {
             String secretKey,
             int timeoutSeconds,
             CircuitBreaker circuitBreaker,
+            CircuitBreaker provisioningCircuitBreaker,
             Retry retry) {
 
-        validateKeyFormat(secretKey);
+        this.testMode = validateKeyFormat(secretKey);
 
         this.circuitBreaker = circuitBreaker;
+        this.provisioningCircuitBreaker = provisioningCircuitBreaker;
         this.retry = retry;
         this.timeout = Duration.ofSeconds(timeoutSeconds);
 
@@ -125,8 +139,8 @@ public class PaystackClient {
                 .build();
     }
 
-    private static CircuitBreaker defaultCircuitBreaker() {
-        return CircuitBreaker.of(CIRCUIT_BREAKER_NAME, CircuitBreakerConfig.custom()
+    private static CircuitBreaker defaultCircuitBreaker(String name) {
+        return CircuitBreaker.of(name, CircuitBreakerConfig.custom()
                 .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
                 .slidingWindowSize(10)
                 .failureRateThreshold(50)
@@ -167,11 +181,17 @@ public class PaystackClient {
         return callIdempotent(() -> get("/transaction/verify/" + reference, TransactionVerifyResponse.class));
     }
 
+    /**
+     * Guarded by {@link #provisioningCircuitBreaker}, not the main {@link
+     * #circuitBreaker} — this is a background operation fired off user
+     * signup, and its failures must not fail-fast real-time payment calls.
+     */
     public SubaccountCreateResponse createSubaccount(SubaccountCreateRequest request) {
         log.debug("Paystack.createSubaccount: businessName=REDACTED bank={}",
                 request.settlementBank());
 
-        return callIdempotent(() -> post("/subaccount", request, SubaccountCreateResponse.class));
+        return callIdempotent(provisioningCircuitBreaker,
+                () -> post("/subaccount", request, SubaccountCreateResponse.class));
     }
 
     public TransferRecipientCreateResponse createTransferRecipient(
@@ -202,19 +222,23 @@ public class PaystackClient {
         try {
             return circuitBreaker.executeSupplier(action);
         } catch (CallNotPermittedException ex) {
-            log.warn("Paystack circuit breaker is OPEN — failing fast");
+            log.warn("Paystack circuit breaker '{}' is OPEN — failing fast", circuitBreaker.getName());
             throw new PaystackCircuitOpenException();
         }
     }
 
     /** Retry (outer) wrapping the circuit breaker (inner) — for idempotent calls. */
     private <T> T callIdempotent(Supplier<T> action) {
-        Supplier<T> guarded = CircuitBreaker.decorateSupplier(circuitBreaker, action);
+        return callIdempotent(circuitBreaker, action);
+    }
+
+    private <T> T callIdempotent(CircuitBreaker breaker, Supplier<T> action) {
+        Supplier<T> guarded = CircuitBreaker.decorateSupplier(breaker, action);
         Supplier<T> retrying = Retry.decorateSupplier(retry, guarded);
         try {
             return retrying.get();
         } catch (CallNotPermittedException ex) {
-            log.warn("Paystack circuit breaker is OPEN — failing fast");
+            log.warn("Paystack circuit breaker '{}' is OPEN — failing fast", breaker.getName());
             throw new PaystackCircuitOpenException();
         }
     }
@@ -260,15 +284,27 @@ public class PaystackClient {
 
     // ── Validation and utilities ──────────────────────────────────────────
 
-    private void validateKeyFormat(String key) {
+    private boolean validateKeyFormat(String key) {
         if (key == null || (!key.startsWith("sk_test_") && !key.startsWith("sk_live_"))) {
             throw new IllegalArgumentException(
                     "PAYSTACK_SECRET_KEY must start with sk_test_ or sk_live_. " +
                     "Check your environment configuration.");
         }
         // Log mode (test vs live) but never the key value
-        String mode = key.startsWith("sk_test_") ? "TEST" : "LIVE";
-        log.info("PaystackClient initialised in {} mode", mode);
+        boolean isTestMode = key.startsWith("sk_test_");
+        log.info("PaystackClient initialised in {} mode", isTestMode ? "TEST" : "LIVE");
+        return isTestMode;
+    }
+
+    /**
+     * True if this client was configured with a {@code sk_test_} key. Used
+     * as one of two independent guards (alongside the
+     * {@code stash.paystack.sandbox.*} config flags) before any
+     * sandbox-only behavior runs, so a flag left on by mistake can never
+     * fire against a live Paystack account.
+     */
+    public boolean isTestMode() {
+        return testMode;
     }
 
     /**

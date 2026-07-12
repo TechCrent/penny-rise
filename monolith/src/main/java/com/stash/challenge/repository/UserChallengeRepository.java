@@ -12,6 +12,8 @@ import java.util.UUID;
 
 public interface UserChallengeRepository extends JpaRepository<UserChallengeEntity, UUID> {
 
+    List<UserChallengeEntity> findByUserId(UUID userId);
+
     @Query(value = """
             SELECT EXISTS(
                 SELECT 1 FROM challenge.user_challenges

@@ -39,8 +39,9 @@ public class TransactionHistoryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant toDate,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String scope,
             @AuthenticationPrincipal UUID userId) {
-        return historyService.list(userId, transactionType, fromDate, toDate, cursor, limit);
+        return historyService.list(userId, transactionType, fromDate, toDate, cursor, limit, scope);
     }
 
     @GetMapping("/export")

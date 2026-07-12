@@ -9,6 +9,7 @@ import com.stash.kyc.submission.domain.KycSubmission;
 import com.stash.kyc.submission.repository.KycSubmissionRepository;
 import com.stash.shared.apierrors.StashApiException;
 import org.junit.jupiter.api.*;
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -109,7 +110,7 @@ class DocumentUploadConfirmationServiceTest {
                 req("event-3", KycSubmissionDocument.TYPE_SELFIE));
 
         verify(rabbitTemplate, times(1))
-                .convertAndSend(anyString(), anyString(), any(Object.class));
+                .convertAndSend(anyString(), anyString(), any(Object.class), any(MessagePostProcessor.class));
     }
 
     @Test
@@ -136,7 +137,7 @@ class DocumentUploadConfirmationServiceTest {
         confirmationService.confirmUpload(submission.getId(), finalRequest);
 
         verify(rabbitTemplate, times(1))
-                .convertAndSend(anyString(), anyString(), any(Object.class));
+                .convertAndSend(anyString(), anyString(), any(Object.class), any(MessagePostProcessor.class));
 
         KycSubmission reloaded = submissionRepository.findById(submission.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(KycSubmission.STATUS_REVIEWING);

@@ -20,12 +20,14 @@ public class KycDecisionEventConsumer {
         this.kycUserSyncService = kycUserSyncService;
     }
 
-    @RabbitListener(queues = MonolithMessagingConfig.MONOLITH_KYC_APPROVED_QUEUE)
+    @RabbitListener(queues = MonolithMessagingConfig.MONOLITH_KYC_APPROVED_QUEUE,
+                     containerFactory = "kycDecisionListenerContainerFactory")
     public void onKycApproved(KycApprovedEvent event) {
         kycUserSyncService.applyApproved(event);
     }
 
-    @RabbitListener(queues = MonolithMessagingConfig.MONOLITH_KYC_REJECTED_QUEUE)
+    @RabbitListener(queues = MonolithMessagingConfig.MONOLITH_KYC_REJECTED_QUEUE,
+                     containerFactory = "kycDecisionListenerContainerFactory")
     public void onKycRejected(KycRejectedEvent event) {
         kycUserSyncService.applyRejected(event);
     }

@@ -1,9 +1,8 @@
 package com.stash.admin.integration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -12,24 +11,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * BLOCKING DEPENDENCY — mostly a stub implementation.
- *
- * <p>Will delegate to the payments micro-service admin API once those
- * endpoints are exposed. Until then, most methods return empty results so
- * callers compile and start without errors.
- *
- * <p>{@link #getUnifiedTransactionHistory} is the one exception — see
- * docs/hands-on-testing-findings.md Finding 8: this was blocking the real,
- * working transaction-history endpoint and this branch's new statement
- * export feature from ever showing real data, so it's wired to the real
- * Payments Service endpoint. The other methods remain documented stubs;
- * see docs/gap-analysis-vendor-dependent-followup.md for what's needed to
- * finish them.
+ * Calls Payments Service's real endpoints for admin transaction history,
+ * transaction detail, ledger account balances, and account closure — all
+ * gated by the shared {@code X-Internal-Service-Token} convention (see
+ * docs/hands-on-testing-findings.md Finding 8 and
+ * docs/gap-analysis-vendor-dependent-followup.md for the history behind
+ * why these were stubs).
  */
 @Component
 public class IntegrationPaymentsClient {
-
-    private static final Logger log = LoggerFactory.getLogger(IntegrationPaymentsClient.class);
 
     private final RestClient paymentsClient;
 
@@ -43,37 +33,84 @@ public class IntegrationPaymentsClient {
                 .build();
     }
 
+    /**
+     * Returns the {@code limit} most recent transactions for a user, calling
+     * the same {@code GET /api/v1/transactions} endpoint as
+     * {@link #getUnifiedTransactionHistory}, just without cursor/type/date
+     * filters. Used by the admin user-detail page.
+     */
     public List<TransactionRecord> getRecentTransactionsForUser(UUID userId, int limit) {
-        log.debug("IntegrationPaymentsClient is a stub — returning empty transaction list for user {}", userId);
-        return List.of();
-    }
+        var uriBuilder = UriComponentsBuilder.fromPath("/api/v1/transactions")
+                .queryParam("user_id", userId)
+                .queryParam("limit", limit);
 
-    public Optional<TransactionDetail> getTransactionById(UUID transactionId) {
-        log.debug("IntegrationPaymentsClient is a stub — returning empty for transaction {}", transactionId);
-        return Optional.empty();
+        PaymentsUnifiedHistoryResponse response = paymentsClient.get()
+                .uri(uriBuilder.build().toUriString())
+                .retrieve()
+                .body(PaymentsUnifiedHistoryResponse.class);
+
+        if (response == null) {
+            return List.of();
+        }
+
+        return response.transactions().stream()
+                .map(r -> new TransactionRecord(
+                        r.reference(), r.transactionType(), r.netAmount(), r.status(), r.createdAt()))
+                .toList();
     }
 
     /**
-     * Closes a ledger account in Payments Service (v0.5-019 deletion saga, step 3/4).
-     *
-     * <p>STUB — requires a new Payments Service endpoint (proposed:
-     * POST /api/v1/accounts/{id}/close) that does not yet exist in the documented
-     * public API surface. The endpoint MUST be idempotent (closing an already-CLOSED
-     * account is a no-op, not an error) and MUST reject if balance != 0.
+     * Looks up a single transaction by its UUID primary key, calling
+     * Payments Service's {@code GET /api/v1/transactions/by-id/{id}}
+     * endpoint. Returns empty if the transaction doesn't exist.
+     */
+    public Optional<TransactionDetail> getTransactionById(UUID transactionId) {
+        try {
+            PaymentsTransactionDetailResponse response = paymentsClient.get()
+                    .uri("/api/v1/transactions/by-id/{id}", transactionId)
+                    .retrieve()
+                    .body(PaymentsTransactionDetailResponse.class);
+
+            if (response == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(new TransactionDetail(
+                    transactionId, response.initiatingUserId(), response.reference(),
+                    response.transactionType(), response.netAmountPesewas(), response.status()));
+        } catch (HttpClientErrorException.NotFound e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Closes a ledger account in Payments Service (v0.5-019 deletion saga,
+     * step 3/4), calling {@code POST /internal/v1/ledger/accounts/{id}/close}.
+     * Idempotent server-side (closing an already-CLOSED account is a no-op);
+     * rejects with a non-2xx (propagated as a {@code RuntimeException}) if
+     * the account's balance isn't zero.
      */
     public void closeLedgerAccount(UUID ledgerAccountId) {
-        log.debug("IntegrationPaymentsClient is a stub — skipping closeLedgerAccount for {}", ledgerAccountId);
+        paymentsClient.post()
+                .uri("/internal/v1/ledger/accounts/{id}/close", ledgerAccountId)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     /**
      * Returns a cursor-paginated unified transaction history for the given
      * user, calling Payments Service's real {@code GET /api/v1/transactions}
      * endpoint (see docs/hands-on-testing-findings.md Finding 8).
+     *
+     * @param scope "vault" / "wallet" / {@code null} for unscoped — narrows
+     *              to a single account's activity, used by Home's
+     *              Savings/Wallet states.
      */
     public UnifiedTransactionPage getUnifiedTransactionHistory(UUID userId, String transactionType,
                                                                 java.time.Instant fromDate,
                                                                 java.time.Instant toDate,
-                                                                String cursor, int limit) {
+                                                                String cursor, int limit,
+                                                                String scope) {
         var uriBuilder = UriComponentsBuilder.fromPath("/api/v1/transactions")
                 .queryParam("user_id", userId)
                 .queryParam("limit", limit);
@@ -81,6 +118,7 @@ public class IntegrationPaymentsClient {
         if (fromDate != null) uriBuilder.queryParam("from_date", fromDate);
         if (toDate != null) uriBuilder.queryParam("to_date", toDate);
         if (cursor != null) uriBuilder.queryParam("cursor", cursor);
+        if (scope != null) uriBuilder.queryParam("scope", scope);
 
         PaymentsUnifiedHistoryResponse response = paymentsClient.get()
                 .uri(uriBuilder.build().toUriString())
@@ -123,19 +161,29 @@ public class IntegrationPaymentsClient {
         ) {}
     }
 
+    private record PaymentsTransactionDetailResponse(
+            String reference,
+            @com.fasterxml.jackson.annotation.JsonProperty("transaction_type") String transactionType,
+            String status,
+            @com.fasterxml.jackson.annotation.JsonProperty("net_amount_pesewas") long netAmountPesewas,
+            @com.fasterxml.jackson.annotation.JsonProperty("initiating_user_id") UUID initiatingUserId
+    ) {}
+
     /**
-     * Returns a ledger account's current balance in pesewas (v0.5-034).
-     *
-     * <p>STUB — matches {@link #toVaultSummary} in AdminUserService, which
-     * already hardcodes vault balances to 0L for the exact same reason:
-     * no real balance-lookup endpoint exists in this client at all yet.
-     * Requires a new Payments Service endpoint (proposed:
-     * GET /api/v1/accounts/{id}/balance) that does not yet exist in the
-     * documented public API surface.
+     * Returns a ledger account's current balance in pesewas (v0.5-034),
+     * calling Payments Service's {@code GET /api/v1/accounts/{id}/balance}
+     * endpoint — internal callers may query any account regardless of owner.
      */
     public long getLedgerAccountBalance(UUID ledgerAccountId) {
-        log.debug("IntegrationPaymentsClient is a stub — returning 0 balance for ledger account {}",
-                ledgerAccountId);
-        return 0L;
+        PaymentsBalanceResponse response = paymentsClient.get()
+                .uri("/api/v1/accounts/{id}/balance", ledgerAccountId)
+                .retrieve()
+                .body(PaymentsBalanceResponse.class);
+
+        return response != null ? response.balancePesewas() : 0L;
     }
+
+    private record PaymentsBalanceResponse(
+            @com.fasterxml.jackson.annotation.JsonProperty("balance_pesewas") long balancePesewas
+    ) {}
 }

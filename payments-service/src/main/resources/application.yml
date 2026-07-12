@@ -142,6 +142,21 @@ stash:
       # payout) instead of reversed, so local testing isn't blocked by an account-tier
       # restriction unrelated to our code. See WithdrawalService.SANDBOX_STARTER_BUSINESS_MARKER.
       simulate-blocked-transfers: ${PAYSTACK_SANDBOX_SIMULATE_BLOCKED_TRANSFERS:false}
+      # DEV/SANDBOX ONLY — never set true in any deployed environment. When enabled
+      # (AND the Paystack key is sk_test_ — both must be true, see DepositService),
+      # deposits charge Paystack's real sandbox test MoMo number instead of the
+      # user-entered one, so any valid Ghanaian number/provider can be used for
+      # testing without every deposit requiring the one number Paystack's sandbox
+      # actually resolves. Never affects what's stored or shown — only the outbound
+      # Paystack charge itself. See DepositService.SANDBOX_TEST_MOMO_NUMBER.
+      substitute-test-momo-number: ${PAYSTACK_SANDBOX_SUBSTITUTE_TEST_MOMO_NUMBER:false}
+    reconciliation:
+      # How long a deposit must sit PENDING before DepositReconciliationJob checks it
+      # against Paystack's Verify Transaction API. Kept well above normal webhook
+      # latency so this never races (or duplicates work with) a healthy webhook
+      # delivery — it only kicks in when one is missed, delayed, or never had a
+      # reachable callback URL to land on (e.g. local dev with no public tunnel).
+      pending-threshold-seconds: ${PAYSTACK_RECONCILIATION_PENDING_THRESHOLD_SECONDS:60}
 
 resilience4j:
   circuitbreaker:
@@ -151,6 +166,22 @@ resilience4j:
         sliding-window-size: 10
         failure-rate-threshold: 50          # open at 50% failure in sliding window
         minimum-number-of-calls: 5          # need at least 5 calls before evaluating
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+      # Isolated from "paystack" above: subaccount provisioning is a background,
+      # best-effort operation driven off user signup (fire-and-forget via
+      # RabbitMQ), not a user-facing payment action. A burst of provisioning
+      # failures must never trip the SAME breaker guarding real-time
+      # charges/transfers/withdrawals — that happened in local dev on
+      # 2026-07-12 and made every payment operation fail-fast with a generic
+      # "temporarily unavailable" error while the underlying issue was only
+      # provisioning.
+      paystack-subaccount-provisioning:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
         register-health-indicator: true

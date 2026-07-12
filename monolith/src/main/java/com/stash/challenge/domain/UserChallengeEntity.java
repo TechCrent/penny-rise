@@ -63,4 +63,5 @@ public class UserChallengeEntity {
     public String  getStatus()         { return status; }
     public long    getProgressAmount() { return progressAmount; }
     public Instant getStartedAt()      { return startedAt; }
+    public Instant getCompletedAt()    { return completedAt; }
 }

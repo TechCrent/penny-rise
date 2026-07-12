@@ -51,7 +51,13 @@ public class SubmissionReadyForReviewEventPublisher {
         rabbitTemplate.convertAndSend(
                 KycMessagingConfig.KYC_EXCHANGE,
                 "kyc.submission.ready_for_review",
-                readyEvent
+                readyEvent,
+                message -> {
+                    message.getMessageProperties().setHeader("event_id", readyEvent.eventId());
+                    message.getMessageProperties().setHeader("event_type", readyEvent.eventType());
+                    message.getMessageProperties().setHeader("correlation_id", readyEvent.correlationId());
+                    return message;
+                }
         );
 
         log.info("Published SubmissionReadyForReview submissionId={} correlationId={}",

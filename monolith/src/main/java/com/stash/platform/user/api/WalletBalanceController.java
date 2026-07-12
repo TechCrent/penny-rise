@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
@@ -68,6 +69,46 @@ public class WalletBalanceController {
                 balancePesewas,
                 formatCedis(balancePesewas)
         );
+    }
+
+    /**
+     * Proxies the wallet's paginated statement from Payments Service.
+     *
+     * <p>Was entirely unreachable from the mobile app before this: the
+     * client called {@code GET /api/v1/accounts/{accountId}/statement}
+     * against the monolith (:8080), but that route only ever existed on
+     * Payments Service (:8081) — every call 404'd, surfacing as "Could not
+     * load transaction history" on the Wallet screen. Self-scoped (no
+     * accountId path param) so the same trusted wallet-resolution as
+     * {@link #getWalletBalance} is reused instead of trusting a
+     * client-supplied account id — a generic {@code /accounts/{id}/statement}
+     * proxy would need its own ownership check to stop one user reading
+     * another's statement by guessing/enumerating account ids.
+     */
+    @GetMapping(value = "/wallet-statement", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    public String getWalletStatement(
+            Authentication authentication,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit) {
+        AuthenticatedUser authUser = (AuthenticatedUser) authentication;
+        UUID callerId = authUser.getUserId();
+
+        UUID accountId;
+        try {
+            accountId = walletClient.resolveUserWallet(callerId, CorrelationContext.get());
+        } catch (TransferPaymentsException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Payment processing temporarily unavailable. Please retry.");
+        }
+
+        return paymentsClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/v1/accounts/{id}/statement")
+                        .queryParamIfPresent("cursor", java.util.Optional.ofNullable(cursor))
+                        .queryParamIfPresent("limit", java.util.Optional.ofNullable(limit))
+                        .build(accountId))
+                .retrieve()
+                .body(String.class);
     }
 
     private static String formatCedis(long pesewas) {

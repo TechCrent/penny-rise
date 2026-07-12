@@ -12,6 +12,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Publishes susu.round.fully_collected to RabbitMQ AFTER the contribution
@@ -51,6 +52,7 @@ public class SusuRoundFullyCollectedEventPublisher {
             var message = MessageBuilder
                     .withBody(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8))
                     .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                    .setHeader("event_id",       UUID.randomUUID().toString())
                     .setHeader("correlation_id", event.getCorrelationId())
                     .setHeader("event_type",     "susu.round.fully_collected")
                     .build();

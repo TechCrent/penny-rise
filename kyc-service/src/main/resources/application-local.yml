@@ -2,13 +2,16 @@ spring:
   jpa:
     show-sql: true
 
+# Do NOT add stash.security.jwt.signing-key here. It must stay on
+# ${JWT_SIGNING_KEY} (set in application.yml, resolved from .env) so this
+# service verifies the exact same admin JWTs the monolith issues — a
+# hardcoded local override here previously caused every admin-console
+# request to kyc-service to fail signature verification and 403 (silently,
+# since AdminJwtAuthenticationFilter swallows verification errors).
+
 stash:
   kyc:
     # Base64 of exactly 32 bytes: "test-aes-256-key-32-bytes-long!!"
     ghana-card-encryption-key: dGVzdC1hZXMtMjU2LWtleS0zMi1ieXRlcy1sb25nISE=
     storage:
       provider: local
-  security:
-    jwt:
-      # Same value as monolith's/audit-service's application-local.yml.
-      signing-key: dGVzdC1zaWduaW5nLWtleS1mb3ItbG9jYWwtZGV2LW9ubHktMzItY2hhcg==

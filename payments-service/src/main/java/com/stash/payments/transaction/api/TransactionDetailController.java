@@ -36,6 +36,24 @@ public class TransactionDetailController {
     }
 
     /**
+     * Internal-only transaction lookup by UUID primary key rather than
+     * string reference — needed by callers (e.g. monolith's dispute-entity
+     * validator) that only have the transaction's UUID id.
+     */
+    @GetMapping("/by-id/{id}")
+    public TransactionDetailResponse getTransactionById(
+            @PathVariable UUID id,
+            @RequestAttribute(CallerContextFilter.ATTR) CallerContext callerContext) {
+
+        if (!callerContext.isInternal()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "This endpoint requires internal-service authentication");
+        }
+
+        return transactionDetailService.getDetailById(id, callerContext);
+    }
+
+    /**
      * Internal-only unified transaction history — see
      * docs/hands-on-testing-findings.md Finding 8. Called by monolith's
      * {@code IntegrationPaymentsClient} on behalf of an arbitrary end user,
@@ -51,6 +69,7 @@ public class TransactionDetailController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant toDate,
             @RequestParam(value = "cursor", required = false) String cursor,
             @RequestParam(value = "limit", required = false) Integer limit,
+            @RequestParam(value = "scope", required = false) String scope,
             @RequestAttribute(CallerContextFilter.ATTR) CallerContext callerContext) {
 
         if (!callerContext.isInternal()) {
@@ -58,6 +77,6 @@ public class TransactionDetailController {
                     "This endpoint requires internal-service authentication");
         }
 
-        return transactionHistoryQueryService.getHistory(userId, type, fromDate, toDate, cursor, limit);
+        return transactionHistoryQueryService.getHistory(userId, type, fromDate, toDate, cursor, limit, scope);
     }
 }

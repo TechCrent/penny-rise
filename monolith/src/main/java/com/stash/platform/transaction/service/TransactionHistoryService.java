@@ -26,11 +26,12 @@ public class TransactionHistoryService {
 
     public UnifiedTransactionHistoryResponse list(UUID userId, String transactionType,
                                                    Instant fromDate, Instant toDate,
-                                                   String cursor, Integer requestedLimit) {
+                                                   String cursor, Integer requestedLimit,
+                                                   String scope) {
         int limit = clampLimit(requestedLimit);
 
         var page = paymentsClient.getUnifiedTransactionHistory(
-                userId, transactionType, fromDate, toDate, cursor, limit);
+                userId, transactionType, fromDate, toDate, cursor, limit, scope);
 
         var items = page.transactions().stream()
                 .map(row -> toItem(row, userId))

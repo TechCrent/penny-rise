@@ -40,7 +40,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
             FROM notification.notifications
             WHERE user_id = :userId
               AND (:unreadOnly = false OR read_at IS NULL)
-              AND (:cursorCreatedAt IS NULL OR (created_at, id) < (:cursorCreatedAt, :cursorId))
+              AND (CAST(:cursorCreatedAt AS timestamptz) IS NULL OR (created_at, id) < (:cursorCreatedAt, :cursorId))
             ORDER BY created_at DESC, id DESC
             LIMIT :limit
             """, nativeQuery = true)

@@ -8,6 +8,7 @@ import com.stash.platform.vault.api.dto.VaultDepositRequest;
 import com.stash.platform.vault.api.dto.VaultDepositResponse;
 import com.stash.platform.vault.client.PaymentsDepositClient;
 import com.stash.platform.vault.client.PaymentsServiceException;
+import com.stash.shared.validation.MomoNumberValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -96,14 +97,8 @@ public class WalletDepositService {
                     "payment_method must be MOMO or CARD.");
         }
         if ("MOMO".equalsIgnoreCase(request.paymentMethod())) {
-            if (request.mobileNumber() == null || request.mobileNumber().isBlank()) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "mobile_number is required for MOMO deposits.");
-            }
-            if (request.mobileProvider() == null || request.mobileProvider().isBlank()) {
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "mobile_provider is required for MOMO deposits.");
-            }
+            MomoNumberValidator.validate(request.mobileProvider(), request.mobileNumber(),
+                    "mobile_provider", "mobile_number");
         }
     }
 }

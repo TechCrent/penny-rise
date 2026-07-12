@@ -36,7 +36,23 @@ public class TransactionDetailService {
     public TransactionDetailResponse getDetail(String reference, CallerContext caller) {
         TransactionEntity txn = txnRepo.findByReference(reference)
                 .orElseThrow(() -> notFound(reference));
+        return buildDetail(txn, caller);
+    }
 
+    /**
+     * Same as {@link #getDetail} but keyed by the transaction's UUID primary
+     * key instead of its string reference — needed because callers like
+     * monolith's dispute-entity validator only have the UUID
+     * (disputes.related_entity_id), not the reference.
+     */
+    @Transactional(readOnly = true)
+    public TransactionDetailResponse getDetailById(UUID id, CallerContext caller) {
+        TransactionEntity txn = txnRepo.findById(id)
+                .orElseThrow(() -> notFound(id.toString()));
+        return buildDetail(txn, caller);
+    }
+
+    private TransactionDetailResponse buildDetail(TransactionEntity txn, CallerContext caller) {
         List<Object[]> rawEntries = txn.getLedgerTransactionId() != null
                 ? ledgerService.getEntriesForTransaction(txn.getLedgerTransactionId())
                 : List.of();

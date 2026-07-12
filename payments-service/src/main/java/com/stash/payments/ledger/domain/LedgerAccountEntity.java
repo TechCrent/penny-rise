@@ -58,4 +58,8 @@ public class LedgerAccountEntity {
     public void setExternalReference(String ref) {
         this.externalReference = ref;
     }
+
+    public void close() {
+        this.status = "CLOSED";
+    }
 }

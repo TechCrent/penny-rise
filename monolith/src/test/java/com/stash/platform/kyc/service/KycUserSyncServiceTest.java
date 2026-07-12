@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -80,6 +81,35 @@ class KycUserSyncServiceTest {
         User updated = userRepository.findById(user.getId()).orElseThrow();
         assertThat(updated.getKycStatus()).isEqualTo(KycStatus.APPROVED);
         assertThat(updated.getGhanaCardNumber()).isEqualTo("GHA-123456789-0");
+    }
+
+    @Test
+    @DisplayName("approve for a ghana_card_number already assigned to a different user " +
+                 "does not throw and leaves both users' rows intact (was: uncaught " +
+                 "DataIntegrityViolationException that looped a RabbitMQ redelivery forever)")
+    void approve_with_duplicate_ghana_card_number_does_not_throw() {
+        kycUserSyncService.applyApproved(approvedEvent("GHA-111111111-1"));
+
+        User secondUser = userRepository.save(new User("kyc-sync-2@example.com", "hash", "Second User"));
+        UUID secondSubmissionId = UUID.randomUUID();
+        var duplicateEvent = new KycApprovedEvent(
+                UUID.randomUUID().toString(),
+                KycApprovedEvent.EVENT_TYPE,
+                "1.0",
+                "kyc-service",
+                Instant.now(),
+                "corr-dup",
+                new KycApprovedEvent.Payload(secondSubmissionId, secondUser.getId(), "GHA-111111111-1"));
+
+        assertThatNoException().isThrownBy(() -> kycUserSyncService.applyApproved(duplicateEvent));
+
+        User firstUpdated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(firstUpdated.getKycStatus()).isEqualTo(KycStatus.APPROVED);
+        assertThat(firstUpdated.getGhanaCardNumber()).isEqualTo("GHA-111111111-1");
+
+        User secondUpdated = userRepository.findById(secondUser.getId()).orElseThrow();
+        assertThat(secondUpdated.getKycStatus()).isNotEqualTo(KycStatus.APPROVED);
+        assertThat(secondUpdated.getGhanaCardNumber()).isNull();
     }
 
     @Test

@@ -53,6 +53,7 @@ public class UserCreatedEventPublisher {
             var message = MessageBuilder
                     .withBody(payload.getBytes(StandardCharsets.UTF_8))
                     .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                    .setHeader("event_id", UUID.randomUUID().toString())
                     .setHeader("correlation_id", event.getCorrelationId())
                     .setHeader("event_type", "user.created")
                     .build();

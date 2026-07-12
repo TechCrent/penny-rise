@@ -52,6 +52,10 @@ class SignupServiceTest {
     @Autowired SubscriptionRepository subscriptionRepository;
     @MockBean  EmailSender emailSender;
 
+    // Email dispatch happens @Async AFTER_COMMIT (SignupVerificationEmailPublisher),
+    // so assertions on it must poll rather than check immediately after signup() returns.
+    private static final long EMAIL_VERIFY_TIMEOUT_MS = 3000;
+
     @BeforeEach
     void cleanUp() {
         tokenRepository.deleteAll();
@@ -74,7 +78,8 @@ class SignupServiceTest {
 
         assertThat(userRepository.findByEmail("alice@example.com")).isPresent();
         assertThat(tokenRepository.findAll()).hasSize(1);
-        verify(emailSender).sendEmailVerification(eq("alice@example.com"), eq("Alice"), anyString());
+        verify(emailSender, timeout(EMAIL_VERIFY_TIMEOUT_MS))
+                .sendEmailVerification(eq("alice@example.com"), eq("Alice"), anyString());
     }
 
     @Test
@@ -170,6 +175,30 @@ class SignupServiceTest {
         assertThatExceptionOfType(StashApiException.class)
                 .isThrownBy(() -> signupService.signup(new SignupRequest(
                         "HENRY@EXAMPLE.COM", "Str0ng!Pass", "Henry2", null, true)));
+    }
+
+    @Test
+    @DisplayName("signup does not block on a slow email send, and the new user is " +
+                 "immediately queryable (email dispatch is async, after commit)")
+    void signup_does_not_block_on_slow_email_send() {
+        doAnswer(invocation -> {
+            Thread.sleep(2000);
+            return null;
+        }).when(emailSender).sendEmailVerification(anyString(), anyString(), anyString());
+
+        long start = System.currentTimeMillis();
+        SignupResponse response = signupService.signup(new SignupRequest(
+                "kwame@example.com", "Str0ng!Pass", "Kwame", null, true));
+        long elapsedMs = System.currentTimeMillis() - start;
+
+        assertThat(elapsedMs).isLessThan(2000);
+        // The row must already be committed and visible — a client that gets this
+        // response back should be able to log in immediately, not race the email send.
+        assertThat(userRepository.findByEmail("kwame@example.com")).isPresent();
+        assertThat(response.id()).isNotNull();
+
+        verify(emailSender, timeout(EMAIL_VERIFY_TIMEOUT_MS))
+                .sendEmailVerification(eq("kwame@example.com"), eq("Kwame"), anyString());
     }
 
     @Test

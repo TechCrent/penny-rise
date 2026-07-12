@@ -12,8 +12,10 @@ import com.stash.payments.transaction.api.dto.DepositInitiateRequest;
 import com.stash.payments.transaction.api.dto.DepositInitiateResponse;
 import com.stash.payments.transaction.domain.TransactionEntity;
 import com.stash.payments.transaction.repository.TransactionRepository;
+import com.stash.payments.transaction.validation.MomoNumberValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,25 +56,37 @@ public class DepositService {
 
     private static final Logger log = LoggerFactory.getLogger(DepositService.class);
 
+    /**
+     * Paystack's documented Ghana sandbox MoMo test number (MTN) — the only
+     * number that actually resolves to a completed charge in test mode. See
+     * docs/paystack-api-reference.md.
+     */
+    private static final String SANDBOX_TEST_MOMO_NUMBER = "0551234987";
+    private static final String SANDBOX_TEST_MOMO_PROVIDER = "mtn";
+
     private final LedgerAccountRepository      ledgerAccountRepo;
     private final PaystackSubaccountRepository subaccountRepo;
     private final TransactionRepository        transactionRepo;
     private final PaystackClient               paystackClient;
     private final TransactionReferenceGenerator referenceGenerator;
     private final Clock                        clock;
+    private final boolean                      substituteTestMomoNumber;
 
     public DepositService(LedgerAccountRepository ledgerAccountRepo,
                           PaystackSubaccountRepository subaccountRepo,
                           TransactionRepository transactionRepo,
                           PaystackClient paystackClient,
                           TransactionReferenceGenerator referenceGenerator,
-                          Clock clock) {
+                          Clock clock,
+                          @Value("${stash.paystack.sandbox.substitute-test-momo-number:false}")
+                          boolean substituteTestMomoNumber) {
         this.ledgerAccountRepo   = ledgerAccountRepo;
         this.subaccountRepo      = subaccountRepo;
         this.transactionRepo     = transactionRepo;
         this.paystackClient      = paystackClient;
         this.referenceGenerator  = referenceGenerator;
         this.clock               = clock;
+        this.substituteTestMomoNumber = substituteTestMomoNumber;
     }
 
     /**
@@ -100,14 +114,7 @@ public class DepositService {
         }
 
         // ── Validate MoMo fields ──────────────────────────────────────────
-        if (request.mobileNumber() == null || request.mobileNumber().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "mobile_number is required for MOMO deposits.");
-        }
-        if (request.mobileProvider() == null || request.mobileProvider().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "mobile_provider is required for MOMO deposits.");
-        }
+        MomoNumberValidator.validate(request.mobileProvider(), request.mobileNumber());
 
         // ── Validate ledger account ───────────────────────────────────────
         LedgerAccountEntity account = ledgerAccountRepo
@@ -165,12 +172,31 @@ public class DepositService {
         transactionRepo.save(txn);
 
         // ── Call Paystack ─────────────────────────────────────────────────
+        // Sandbox-only, double-guarded: charges Paystack's real test MoMo number
+        // instead of the user-entered one, so any valid Ghanaian number/provider
+        // combination can be used for testing without every deposit requiring the
+        // one number Paystack's sandbox actually resolves. Never touches the
+        // TransactionEntity/ledger/receipts — request.mobileNumber() (the real
+        // number) is still what's stored and shown everywhere else. Requires BOTH
+        // the config flag AND a sk_test_ key, so a stray flag can never fire
+        // against a live Paystack account. Must never be enabled outside
+        // local/sandbox dev — see application-prod.yml.
+        String effectiveMobileNumber = request.mobileNumber();
+        String effectiveMobileProvider = request.mobileProvider();
+        if (substituteTestMomoNumber && paystackClient.isTestMode()) {
+            log.info("[SANDBOX_MOMO_SUBSTITUTION] Charging Paystack's sandbox test MoMo number " +
+                    "instead of the user-entered number for txn={} — internal records and the UI " +
+                    "still show the real number the user entered.", txnReference);
+            effectiveMobileNumber = SANDBOX_TEST_MOMO_NUMBER;
+            effectiveMobileProvider = SANDBOX_TEST_MOMO_PROVIDER;
+        }
+
         // NOT retried — non-idempotent. See class javadoc.
         ChargeInitiateRequest chargeRequest = new ChargeInitiateRequest(
                 request.customerEmail(),
                 request.amount(),
                 new ChargeInitiateRequest.MobileMoneyChannel(
-                        request.mobileNumber(), request.mobileProvider()),
+                        effectiveMobileNumber, effectiveMobileProvider),
                 "GHS",
                 subaccountCode
         );

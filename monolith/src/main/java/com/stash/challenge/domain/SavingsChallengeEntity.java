@@ -47,6 +47,8 @@ public class SavingsChallengeEntity {
     protected SavingsChallengeEntity() {}
 
     public UUID    getId()                { return id; }
+    public String  getName()              { return name; }
+    public String  getDescription()       { return description; }
     public String  getChallengeType()     { return challengeType; }
     public Long    getTargetAmount()      { return targetAmount; }
     public Integer getTargetDurationDays(){ return targetDurationDays; }

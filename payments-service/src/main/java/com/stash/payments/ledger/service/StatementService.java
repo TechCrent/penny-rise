@@ -169,8 +169,16 @@ public class StatementService {
         throw notFound(accountId);
     }
 
+    // This native query's created_at column comes back as a plain Instant,
+    // not java.sql.Timestamp — this method previously assumed Timestamp
+    // unconditionally and threw ClassCastException on every call. Never
+    // caught before because this endpoint had no route reachable from the
+    // monolith until now (see WalletBalanceController#getWalletStatement).
     private static Instant toInstant(Object col) {
-        return ((Timestamp) col).toInstant();
+        if (col instanceof Instant instant) return instant;
+        if (col instanceof Timestamp ts) return ts.toInstant();
+        throw new IllegalStateException("Unexpected date column type: "
+                + (col == null ? "null" : col.getClass()));
     }
 
     private ResponseStatusException notFound(UUID accountId) {

@@ -190,6 +190,36 @@ class PaystackClientTest {
         wireMock.verify(lessThan(12), getRequestedFor(anyUrl()));
     }
 
+    @Test
+    @DisplayName("subaccount provisioning failures trip an isolated breaker — payment calls stay unaffected")
+    void provisioning_circuit_breaker_is_isolated_from_payment_breaker() {
+        wireMock.stubFor(post(urlEqualTo("/subaccount")).willReturn(serverError()));
+
+        // Trip only the provisioning breaker.
+        for (int i = 0; i < 10; i++) {
+            try {
+                client.createSubaccount(new SubaccountCreateRequest(
+                        "Akua Mensah", "GCB", "1234567890", 0.0, "User wallet"));
+            } catch (PaystackServerException | PaystackCircuitOpenException ignored) {}
+        }
+        assertThatThrownBy(() -> client.createSubaccount(new SubaccountCreateRequest(
+                "Akua Mensah", "GCB", "1234567890", 0.0, "User wallet")))
+                .isInstanceOf(PaystackCircuitOpenException.class);
+
+        // A real-time payment call must still go through — this is exactly what
+        // failed in local dev on 2026-07-12 when both shared one breaker.
+        wireMock.stubFor(get(urlEqualTo("/transaction/verify/pay_ref_after_provisioning_trip"))
+                .willReturn(okJson("""
+                        {"status":true,"message":"Verification successful",
+                         "data":{"reference":"pay_ref_after_provisioning_trip","status":"success",
+                                 "amount":10000,"gateway_response":"Approved"}}
+                        """)));
+
+        var response = client.verifyTransaction("pay_ref_after_provisioning_trip");
+
+        assertThat(response.data().status()).isEqualTo("success");
+    }
+
     // ── API key redaction ─────────────────────────────────────────────────
 
     @Test

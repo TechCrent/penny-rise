@@ -21,11 +21,11 @@ public class AuditEventConsumer {
     }
 
     /**
-     * Parses standard AMQP properties per the assumption flagged in the spec:
-     * messageId=event_id, type=event_type, correlationId=correlation_id,
-     * body=raw payload JSON. If OutboxRelay wraps things differently (e.g.
-     * a JSON envelope rather than AMQP properties), change this parsing
-     * only — everything downstream of IncomingAuditEvent is unaffected.
+     * Parses OutboxRelay's actual wire format: event_id/event_type/correlation_id
+     * are custom message headers (see OutboxRelay#publish), not the AMQP
+     * messageId/type/correlationId properties — those are never set by any
+     * publisher, so reading them here always returned null and rejected every
+     * message to the DLQ. body=raw payload JSON.
      *
      * Exceptions propagate to the RetryOperationsInterceptor (5-attempt
      * exponential backoff) and ultimately to the DLQ.
@@ -34,9 +34,9 @@ public class AuditEventConsumer {
     public void onMessage(Message message) throws Exception {
         var props = message.getMessageProperties();
 
-        String eventId    = props.getMessageId();
-        String eventType  = props.getType();
-        String correlationId = props.getCorrelationId();
+        String eventId    = (String) props.getHeaders().get("event_id");
+        String eventType  = (String) props.getHeaders().get("event_type");
+        String correlationId = (String) props.getHeaders().get("correlation_id");
         String sourceService = exchangeToServiceName(props.getReceivedExchange());
 
         if (eventId == null || eventType == null) {

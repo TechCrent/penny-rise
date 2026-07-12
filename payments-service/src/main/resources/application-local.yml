@@ -1,3 +1,13 @@
 spring:
   jpa:
     show-sql: true
+
+stash:
+  paystack:
+    sandbox:
+      # Without this, deposits initiated with any Ghanaian-looking test number
+      # (e.g. from local/QA scripts) get rejected by Paystack's real sandbox API,
+      # which only accepts its own dedicated test MoMo number. The substitution
+      # feature exists precisely for this — it was just never turned on for the
+      # local profile, so deposit testing against a real local stack always 422s.
+      substitute-test-momo-number: true

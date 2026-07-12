@@ -8,6 +8,7 @@ import com.stash.platform.vault.domain.EarlyExitRequestEntity;
 import com.stash.platform.vault.domain.VaultEntity;
 import com.stash.platform.vault.repository.EarlyExitRequestRepository;
 import com.stash.platform.vault.repository.VaultRepository;
+import com.stash.shared.validation.MomoNumberValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -85,7 +86,7 @@ public class VaultEarlyExitService {
      *                                 403 not owned by user;
      *                                 409 not LOCKED type, not ACTIVE status,
      *                                     or duplicate PENDING request;
-     *                                 422 invalid reason;
+     *                                 422 invalid reason, or zero/negative balance;
      *                                 502 Payments Service unavailable
      */
     @Transactional
@@ -99,8 +100,9 @@ public class VaultEarlyExitService {
                     "Invalid reason. Must be one of: " + VALID_REASONS);
         }
 
-        // ── Validate MoMo provider ────────────────────────────────────────
-        validateMomoProvider(request.momoProvider());
+        // ── Validate MoMo provider/number ─────────────────────────────────
+        MomoNumberValidator.validate(request.momoProvider(), request.destinationMomoNumber(),
+                "momo_provider", "destination_momo_number");
 
         // ── Load and validate vault ───────────────────────────────────────
         VaultEntity vault = vaultRepo.findById(vaultId)
@@ -158,6 +160,18 @@ public class VaultEarlyExitService {
                             "Please retry.");
                 });
 
+        // locked_vault_early_exit_requests has a DB check constraint requiring
+        // balance_at_request > 0. A zero (or negative) balance produces a
+        // penalty/release of (0,0,0), which passes penaltyCalculator's own
+        // isValid() check (0 = 0 + 0) but then fails that constraint at INSERT
+        // time as an uncaught PSQLException -> raw 500. Reject it here instead,
+        // as the same kind of clean business-rule 4xx as the checks above.
+        if (balancePesewas <= 0) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "VAULT_EARLY_EXIT_NO_BALANCE: This vault has no balance to release. " +
+                    "Early exit is not applicable to an empty vault.");
+        }
+
         // ── Calculate penalty and release amount ──────────────────────────
         EarlyExitPenaltyCalculator.PenaltyResult penalty =
                 penaltyCalculator.calculate(balancePesewas);
@@ -210,15 +224,6 @@ public class VaultEarlyExitService {
                 scheduledReleaseAt, reason, correlationId);
 
         return EarlyExitResponse.from(savedRequest);
-    }
-
-    private void validateMomoProvider(String provider) {
-        if (!"mtn".equalsIgnoreCase(provider)
-                && !"vodafone".equalsIgnoreCase(provider)
-                && !"airteltigo".equalsIgnoreCase(provider)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "momo_provider must be one of: mtn, vodafone, airteltigo.");
-        }
     }
 
     private void setVaultStatus(VaultEntity vault, String status, boolean earlyExitInProgress) {

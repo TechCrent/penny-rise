@@ -116,16 +116,31 @@ class VaultEarlyExitServiceTest {
     // ── Zero balance edge case ────────────────────────────────────────────
 
     @Test
-    @DisplayName("zero balance: penalty = 0, release = 0, request still created")
-    void zero_balance_request_still_created() {
+    @DisplayName("zero balance returns 422 instead of hitting the DB check constraint " +
+                 "locked_vault_early_exit_requests_balance_positive (was: uncaught " +
+                 "PSQLException -> raw 500)")
+    void zero_balance_rejected_with_422() {
         when(balanceClient.fetchBalance(LEDGER_ID, CORR)).thenReturn(Optional.of(0L));
 
-        EarlyExitResponse result = service.requestEarlyExit(
-                VAULT_ID, USER_ID, request("FAMILY"), CORR);
+        assertThatThrownBy(() -> service.requestEarlyExit(
+                VAULT_ID, USER_ID, request("FAMILY"), CORR))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
 
-        assertThat(result.penaltyAmountPesewas()).isEqualTo(0L);
-        assertThat(result.releaseAmountPesewas()).isEqualTo(0L);
-        assertThat(result.status()).isEqualTo("PENDING");
+        verify(requestRepo, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("negative balance also returns 422 (defensive — Payments Service should never report this)")
+    void negative_balance_rejected_with_422() {
+        when(balanceClient.fetchBalance(LEDGER_ID, CORR)).thenReturn(Optional.of(-1L));
+
+        assertThatThrownBy(() -> service.requestEarlyExit(
+                VAULT_ID, USER_ID, request("FAMILY"), CORR))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                        .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 
     // ── Validation failures ───────────────────────────────────────────────
@@ -254,14 +269,14 @@ class VaultEarlyExitServiceTest {
     @Test
     @DisplayName("destination_momo_number and momo_provider stored on the request row")
     void momo_details_stored_on_request() {
-        var req = new EarlyExitRequest("MEDICAL", "0551234567", "vodafone");
+        var req = new EarlyExitRequest("MEDICAL", "0201234567", "vodafone");
 
         service.requestEarlyExit(VAULT_ID, USER_ID, req, CORR);
 
         ArgumentCaptor<EarlyExitRequestEntity> captor =
                 ArgumentCaptor.forClass(EarlyExitRequestEntity.class);
         verify(requestRepo).save(captor.capture());
-        assertThat(captor.getValue().getDestinationMomoNumber()).isEqualTo("0551234567");
+        assertThat(captor.getValue().getDestinationMomoNumber()).isEqualTo("0201234567");
         assertThat(captor.getValue().getMomoProvider()).isEqualTo("vodafone");
     }
 

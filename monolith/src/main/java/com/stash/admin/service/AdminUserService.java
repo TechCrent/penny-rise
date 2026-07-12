@@ -93,7 +93,10 @@ public class AdminUserService {
     }
 
     private AdminVaultSummary toVaultSummary(VaultEntity v) {
-        return new AdminVaultSummary(v.getId(), v.getName(), v.getVaultType(), v.getStatus(), 0L);
+        long balance = v.getLedgerAccountId() != null
+                ? paymentsClient.getLedgerAccountBalance(v.getLedgerAccountId())
+                : 0L;
+        return new AdminVaultSummary(v.getId(), v.getName(), v.getVaultType(), v.getStatus(), balance);
     }
 
     private AdminSusuMembershipSummary toSusuSummary(SusuMembershipEntity m) {

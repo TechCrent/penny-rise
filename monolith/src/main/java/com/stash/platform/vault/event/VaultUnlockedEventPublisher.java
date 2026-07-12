@@ -13,6 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Publishes vault.unlocked to RabbitMQ AFTER the unlock transaction commits.
@@ -51,6 +52,7 @@ public class VaultUnlockedEventPublisher {
             var message = MessageBuilder
                     .withBody(payload.getBytes(StandardCharsets.UTF_8))
                     .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                    .setHeader("event_id",        UUID.randomUUID().toString())
                     .setHeader("correlation_id",  event.getCorrelationId())
                     .setHeader("event_type",      "vault.unlocked")
                     .build();

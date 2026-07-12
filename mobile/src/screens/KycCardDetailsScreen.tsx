@@ -16,6 +16,7 @@ import { extractApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { decodeUserIdFromJwt } from '../auth/jwt';
 import { useKycResumability } from '../hooks/useKycResumability';
+import { formatGhanaCardInput } from '../utils/ghanaCard';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycCardDetails'>;
 
@@ -43,7 +44,10 @@ export default function KycCardDetailsScreen() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { ghanaCardNumber: 'GHA-', fullName: '' },
+  });
 
   const onSubmit = async (values: FormValues) => {
     if (isSubmitting) return;
@@ -113,10 +117,12 @@ export default function KycCardDetailsScreen() {
                 label="Ghana Card number"
                 placeholder="GHA-000000000-0"
                 value={value}
-                onChangeText={text => onChange(text.toUpperCase())}
+                onChangeText={text => onChange(formatGhanaCardInput(text))}
                 onBlur={onBlur}
                 error={errors.ghanaCardNumber?.message}
                 autoCapitalize="characters"
+                keyboardType="number-pad"
+                maxLength={15}
                 returnKeyType="next"
               />
             )}

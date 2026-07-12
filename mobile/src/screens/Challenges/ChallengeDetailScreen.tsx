@@ -12,14 +12,32 @@ type Route = RouteProp<RootStackParamList, 'ChallengeDetail'>;
 export function ChallengeDetailScreen() {
   const route = useRoute<Route>();
   const { challengeId } = route.params;
-  const { data: challenge, isLoading } = useChallengeDetail(challengeId);
+  const {
+    data: challenge,
+    isLoading,
+    isError,
+    refetch,
+  } = useChallengeDetail(challengeId);
   const joinMutation = useJoinChallenge();
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
-  if (isLoading || !challenge) {
+  if (isLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator testID="challenge-detail-loading" />
+      </View>
+    );
+  }
+
+  if (isError || !challenge) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.message} testID="challenge-detail-error">
+          Couldn&apos;t load this challenge.
+        </Text>
+        <Pressable style={styles.retryButton} onPress={() => refetch()} testID="challenge-detail-retry">
+          <Text style={styles.retryButtonLabel}>Retry</Text>
+        </Pressable>
       </View>
     );
   }
@@ -114,7 +132,15 @@ export function ChallengeDetailScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F9FAFB' },
   container: { padding: 20 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  message: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 16 },
+  retryButton: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  retryButtonLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   badgeSection: { alignItems: 'center', marginBottom: 20 },
   badgeEarnedLabel: { fontSize: 15, fontWeight: '700', color: '#059669', marginTop: 8 },
   title: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8 },

@@ -175,7 +175,7 @@ test('user can navigate away from pending screen via Back to vault', async () =>
 test('user can navigate to home screen from pending', async () => {
   await advanceToPending();
   fireEvent.press(screen.getByText('Go to home screen'));
-  expect(mockNavigate).toHaveBeenCalledWith('Home');
+  expect(mockNavigate).toHaveBeenCalledWith('Main', { screen: 'Home' });
 });
 
 // ── Idempotency key stability ──────────────────────────────────────────────

@@ -24,21 +24,22 @@ function normaliseType(raw: string): TransactionType {
 
 function toActivity(e: StatementEntry): WalletActivity {
   return {
-    id: e.id,
+    id: e.entry_id,
     direction: e.direction,
-    amount: e.amount,
-    amountCedis: toCedis(e.amount),
-    runningBalance: e.running_balance,
-    runningBalanceCedis: toCedis(e.running_balance),
+    amount: e.amount_pesewas,
+    amountCedis: e.amount_cedis ?? toCedis(e.amount_pesewas),
+    runningBalance: e.running_balance_pesewas,
+    runningBalanceCedis: e.running_balance_cedis ?? toCedis(e.running_balance_pesewas),
     reference: e.transaction_reference,
-    narrative: e.narrative,
+    narrative: e.narrative ?? '',
     transactionType: normaliseType(e.transaction_type),
     createdAt: e.created_at,
-    counterparty: e.counterparty,
   };
 }
 
-export function useWalletStatement(accountId: string | null) {
+// Self-scoped to the caller's own wallet server-side — no accountId needed
+// (see WalletBalanceController#getWalletStatement).
+export function useWalletStatement() {
   const [entries, setEntries] = useState<WalletActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -48,38 +49,34 @@ export function useWalletStatement(accountId: string | null) {
 
   const cursor = useRef<string | null>(null);
 
-  const fetchPage = useCallback(
-    async (isRefresh = false) => {
-      if (!accountId) return;
-      if (isRefresh) {
-        setRefreshing(true);
-        cursor.current = null;
-      } else {
-        setLoading(true);
-      }
-      setError(null);
+  const fetchPage = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+      cursor.current = null;
+    } else {
+      setLoading(true);
+    }
+    setError(null);
 
-      try {
-        const page = await paymentsApi.getStatement(accountId, null, 20);
-        cursor.current = page.next_cursor;
-        setEntries(page.entries.map(toActivity));
-        setHasMore(page.has_more);
-      } catch (err) {
-        console.error(err);
-        setError('Could not load transaction history.');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [accountId],
-  );
+    try {
+      const page = await paymentsApi.getStatement(null, 20);
+      cursor.current = page.next_cursor;
+      setEntries(page.entries.map(toActivity));
+      setHasMore(page.has_more);
+    } catch (err) {
+      console.error(err);
+      setError('Could not load transaction history.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   const loadMore = useCallback(async () => {
-    if (!accountId || !cursor.current || loadingMore) return;
+    if (!cursor.current || loadingMore) return;
     setLoadingMore(true);
     try {
-      const page = await paymentsApi.getStatement(accountId, cursor.current, 20);
+      const page = await paymentsApi.getStatement(cursor.current, 20);
       cursor.current = page.next_cursor;
       setEntries(prev => [...prev, ...page.entries.map(toActivity)]);
       setHasMore(page.has_more);
@@ -89,7 +86,7 @@ export function useWalletStatement(accountId: string | null) {
     } finally {
       setLoadingMore(false);
     }
-  }, [accountId, loadingMore]);
+  }, [loadingMore]);
 
   const refresh = useCallback(() => fetchPage(true), [fetchPage]);
 

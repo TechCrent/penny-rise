@@ -22,6 +22,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { login } from '../api/auth';
 import { extractApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { isKycUnderReviewBannerPending } from '../storage/kycStorage';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 type Route = RouteProp<RootStackParamList, 'Login'>;
@@ -41,6 +42,7 @@ export default function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [lockoutSecondsRemaining, setLockoutSeconds] = useState(0);
+  const [showUnderReviewBanner, setShowUnderReviewBanner] = useState(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(
@@ -49,6 +51,10 @@ export default function LoginScreen() {
     },
     [],
   );
+
+  useEffect(() => {
+    isKycUnderReviewBannerPending().then(setShowUnderReviewBanner);
+  }, []);
 
   const startLockoutCountdown = (seconds: number) => {
     setLockoutSeconds(seconds);
@@ -115,9 +121,21 @@ export default function LoginScreen() {
         style={styles.flex}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow} hitSlop={8}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+
           {successBanner ? (
             <View style={styles.successBanner}>
               <Text style={styles.successBannerText}>{successBanner}</Text>
+            </View>
+          ) : null}
+
+          {showUnderReviewBanner ? (
+            <View style={styles.reviewBanner}>
+              <Text style={styles.reviewBannerText}>
+                Your KYC verification is under review. Log in to check your status.
+              </Text>
             </View>
           ) : null}
 
@@ -222,10 +240,21 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FFFFFF' },
   flex: { flex: 1 },
   scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
+  backRow: { marginBottom: 20 },
+  backText: { color: '#1A1A1A', fontSize: 15 },
   heading: { fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 },
   subheading: { fontSize: 16, color: '#6B7280', marginBottom: 32 },
   successBanner: { backgroundColor: '#D1FAE5', borderRadius: 8, padding: 14, marginBottom: 20 },
   successBannerText: { color: '#065F46', fontSize: 14, fontWeight: '500' },
+  reviewBanner: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  reviewBannerText: { color: '#1E40AF', fontSize: 14, fontWeight: '500' },
   globalError: { backgroundColor: '#FEF2F2', borderRadius: 8, padding: 14, marginBottom: 20 },
   globalErrorText: { color: '#991B1B', fontSize: 14 },
   lockoutBox: {

@@ -23,6 +23,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useVaultDeposit } from '../../api/hooks/useVaultDeposit';
 import { useWalletDeposit } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
+import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -53,14 +54,6 @@ function ghsToPesewas(ghs: string): number {
 }
 
 // ── Provider mapping ───────────────────────────────────────────────────────
-const PROVIDERS = [
-  { id: 'mtn', label: 'MTN MoMo', color: '#FBB01C' },
-  { id: 'vodafone', label: 'Vodafone Cash', color: '#E10A0A' },
-  { id: 'airteltigo', label: 'AirtelTigo', color: '#FF6200' },
-] as const;
-
-type ProviderId = (typeof PROVIDERS)[number]['id'];
-
 // Plain objects (not StyleSheet.create) — accessed via dynamic key so no-unused-styles
 // would flag them if inside StyleSheet.create, and no-inline-styles would flag
 // object literals directly in JSX style props.
@@ -96,6 +89,7 @@ export default function DepositScreen() {
   const [method, setMethod] = useState<'MOMO' | 'CARD'>('MOMO');
   const [momoNumber, setMomoNumber] = useState(user?.momoNumber ?? '');
   const [provider, setProvider] = useState<ProviderId>('mtn');
+  const [momoError, setMomoError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [txnRef, setTxnRef] = useState<string | null>(null);
 
@@ -113,6 +107,7 @@ export default function DepositScreen() {
       queryClient.invalidateQueries({ queryKey: ['statement'] });
       queryClient.invalidateQueries({ queryKey: ['vaults'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setPhase('success');
     } else if (polledTxn.status === 'FAILED') {
       setPhase('failure');
@@ -393,19 +388,32 @@ export default function DepositScreen() {
               <TextInput
                 style={styles.input}
                 value={momoNumber}
-                onChangeText={setMomoNumber}
+                onChangeText={t => {
+                  setMomoNumber(t);
+                  setMomoError(null);
+                }}
                 keyboardType="phone-pad"
                 placeholder="024 000 0000"
                 returnKeyType="done"
                 accessibilityLabel="Mobile money number"
               />
+              {momoError && <Text style={styles.amountErrorText}>{momoError}</Text>}
             </View>
           )}
 
           <TouchableOpacity
             style={[styles.cta, method === 'CARD' && styles.ctaDisabled]}
             disabled={method === 'CARD'}
-            onPress={() => setPhase('confirm')}
+            onPress={() => {
+              if (method === 'MOMO') {
+                const error = validateMomoNumber(provider, momoNumber);
+                if (error) {
+                  setMomoError(error);
+                  return;
+                }
+              }
+              setPhase('confirm');
+            }}
             activeOpacity={0.85}
             accessibilityRole="button"
           >

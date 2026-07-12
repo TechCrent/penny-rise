@@ -10,6 +10,13 @@ import type { UnifiedTransactionItem } from '../../../src/screens/TransactionHis
 jest.mock('../../../src/api/transactionHistoryApi');
 jest.mock('../../../src/api/hooks/useTransactionDetail');
 
+const mockGoBack = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({ goBack: mockGoBack }),
+  useRoute: () => ({ params: undefined }),
+}));
+
 const baseTransaction: UnifiedTransactionItem = {
   transactionReference: 'STSH-202607-000001',
   transactionType: 'DEPOSIT',

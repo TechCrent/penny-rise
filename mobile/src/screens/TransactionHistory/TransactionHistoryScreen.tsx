@@ -1,5 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, View, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { FlatList, View, Text, ActivityIndicator, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { FilterTabs } from './components/FilterTabs';
 import { TransactionListItem } from './components/TransactionListItem';
 import { TransactionEmptyState } from './components/TransactionEmptyState';
@@ -7,7 +12,19 @@ import { ReceiptModal } from './components/ReceiptModal';
 import { useTransactionHistory } from './useTransactionHistory';
 import type { FilterTab, UnifiedTransactionItem } from './types';
 
+type Nav = NativeStackNavigationProp<RootStackParamList, 'TransactionHistory'>;
+type Route = RouteProp<RootStackParamList, 'TransactionHistory'>;
+
+const TITLE_BY_SCOPE = {
+  vault: 'Vault activity',
+  wallet: 'Wallet activity',
+} as const;
+
 export function TransactionHistoryScreen() {
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<Route>();
+  const scope = route.params?.scope;
+
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
   const [selectedTransaction, setSelectedTransaction] = useState<UnifiedTransactionItem | null>(
     null,
@@ -16,19 +33,33 @@ export function TransactionHistoryScreen() {
   const {
     transactions,
     isLoading,
+    isError,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
     isRefetching,
     refetch,
-  } = useTransactionHistory(activeTab);
+  } = useTransactionHistory(activeTab, scope);
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <View style={styles.container} testID="transaction-history-screen">
+    <SafeAreaView style={styles.container} testID="transaction-history-screen">
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Text style={styles.headerBtnIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{scope ? TITLE_BY_SCOPE[scope] : 'History'}</Text>
+        <View style={styles.headerBtn} />
+      </View>
+
       <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {isLoading ? (
@@ -42,7 +73,17 @@ export function TransactionHistoryScreen() {
           renderItem={({ item }) => (
             <TransactionListItem item={item} onPress={setSelectedTransaction} />
           )}
-          ListEmptyComponent={<TransactionEmptyState activeTab={activeTab} />}
+          ListEmptyComponent={
+            isError ? (
+              <View style={styles.centered} testID="history-error">
+                <Text style={styles.message}>
+                  Couldn&apos;t load transactions. Pull down to try again.
+                </Text>
+              </View>
+            ) : (
+              <TransactionEmptyState activeTab={activeTab} />
+            )
+          }
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
@@ -60,13 +101,27 @@ export function TransactionHistoryScreen() {
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDEDF0',
+    backgroundColor: '#F9FAFB',
+  },
+  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
+  headerBtnIcon: { fontSize: 22, color: '#1A1A2E' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A2E' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  message: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
   footerSpinner: { paddingVertical: 16 },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E5E7EB', marginLeft: 16 },
   emptyContent: { flexGrow: 1 },

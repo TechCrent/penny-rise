@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import { hasSeenOnboarding } from '../storage/onboardingStorage';
 
 import AuthenticatedBootstrapScreen from '../screens/AuthenticatedBootstrapScreen';
-import HomeScreen from '../screens/HomeScreen';
+import { AppLockSetupPromptScreen } from '../screens/AppLockSetupPromptScreen';
+import type { PostAuthRoute } from './resolvePostAuthNavigation';
+import MainTabNavigator, { type MainTabParamList } from './MainTabNavigator';
+import OnboardingScreen from '../screens/Onboarding/OnboardingScreen';
+import WelcomeScreen from '../screens/WelcomeScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import EmailVerificationPendingScreen from '../screens/EmailVerificationPendingScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -28,11 +34,13 @@ import {
   CreateSusuScreen,
   CreateSusuInviteScreen,
   JoinSusuScreen,
+  SusuModernComingSoonScreen,
 } from '../screens/susu';
 import { RecipientPickerScreen } from '../screens/transfer/RecipientPickerScreen';
 import { SendMoneyScreen } from '../screens/transfer/SendMoneyScreen';
 import { TransferSuccessScreen } from '../screens/transfer/TransferSuccessScreen';
 import { WalletScreen } from '../screens/wallet/WalletScreen';
+import { WalletWithdrawComingSoonScreen } from '../screens/wallet/WalletWithdrawComingSoonScreen';
 import { NotificationInboxScreen } from '../screens/NotificationInbox/NotificationInboxScreen';
 import { TransactionHistoryScreen } from '../screens/TransactionHistory/TransactionHistoryScreen';
 import { ChallengesListScreen } from '../screens/Challenges/ChallengesListScreen';
@@ -45,23 +53,27 @@ import { ProfileScreen } from '../screens/Settings/ProfileScreen';
 import { ChangePasswordScreen } from '../screens/Settings/ChangePasswordScreen';
 import { AppLockSettingsScreen } from '../screens/Settings/AppLockSettingsScreen';
 import { LegalScreen } from '../screens/Settings/LegalScreen';
+import { AccountPickerScreen } from '../screens/AccountPicker/AccountPickerScreen';
 import type { RecipientResult, TransferResult } from '../api/transfers';
 
 export type RootStackParamList = {
+  Onboarding: undefined;
+  Welcome: undefined;
   Register: undefined;
   Login: { successBanner?: string } | undefined;
   ForgotPassword: undefined;
   ResetPassword: { token: string };
   EmailVerificationPending: { email?: string; token?: string };
   AuthenticatedBootstrap: undefined;
-  Home: undefined;
-  KycFlow: undefined;
+  AppLockSetupPrompt: { nextRoute: PostAuthRoute };
+  Main: NavigatorScreenParams<MainTabParamList> | undefined;
   VaultList: undefined;
   VaultDetail: { vaultId: string; successMessage?: string };
   CreateVault: undefined;
   Wallet: undefined;
+  WalletWithdrawComingSoon: undefined;
   Notifications: undefined;
-  TransactionHistory: undefined;
+  TransactionHistory: { scope?: 'vault' | 'wallet' } | undefined;
   ChallengesList: undefined;
   ChallengeDetail: { challengeId: string };
   DeleteAccount: undefined;
@@ -75,6 +87,7 @@ export type RootStackParamList = {
     };
   };
   KycSubmissionPending: { submissionId: string };
+  AccountPicker: { mode: 'DEPOSIT' | 'WITHDRAW' };
   Deposit: { vaultId?: string };
   Withdraw: { vaultId: string };
   EarlyExit: { vaultId: string };
@@ -82,6 +95,7 @@ export type RootStackParamList = {
   SusuList: undefined;
   SusuDetail: { groupId: string };
   CreateSusu: undefined;
+  SusuModernComingSoon: undefined;
   CreateSusuInvite: {
     groupId: string;
     joinCode: string;
@@ -97,7 +111,7 @@ export type RootStackParamList = {
   SubscriptionUpgrade: undefined;
   SubscriptionDowngrade: undefined;
   Settings: undefined;
-  Profile: undefined;
+  EditProfile: undefined;
   ChangePassword: undefined;
   AppLockSettings: undefined;
   Legal: undefined;
@@ -123,8 +137,13 @@ export { linking };
 
 export default function RootNavigator() {
   const { isLoading, isAuthenticated } = useAuth();
+  const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
 
-  if (isLoading) {
+  useEffect(() => {
+    hasSeenOnboarding().then(setOnboardingSeen);
+  }, []);
+
+  if (isLoading || onboardingSeen === null) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" />
@@ -133,17 +152,22 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={isAuthenticated ? undefined : onboardingSeen ? 'Welcome' : 'Onboarding'}
+    >
       {isAuthenticated ? (
         <>
           <Stack.Screen name="AuthenticatedBootstrap" component={AuthenticatedBootstrapScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="AppLockSetupPrompt" component={AppLockSetupPromptScreen} />
+          <Stack.Screen name="Main" component={MainTabNavigator} />
           <Stack.Screen name="KycCardDetails" component={KycCardDetailsScreen} />
           <Stack.Screen name="KycDocumentUpload" component={KycDocumentUploadScreen} />
           <Stack.Screen name="KycSubmissionPending" component={KycSubmissionPendingScreen} />
           <Stack.Screen name="CreateVault" component={CreateVaultScreen} />
           <Stack.Screen name="VaultList" component={VaultListScreen} />
           <Stack.Screen name="VaultDetail" component={VaultDetailScreen} />
+          <Stack.Screen name="AccountPicker" component={AccountPickerScreen} />
           <Stack.Screen name="Deposit" component={DepositScreen} />
           <Stack.Screen name="Withdraw" component={WithdrawScreen} />
           <Stack.Screen name="EarlyExit" component={EarlyExitScreen} />
@@ -151,12 +175,17 @@ export default function RootNavigator() {
           <Stack.Screen name="SusuList" component={SusuListScreen} />
           <Stack.Screen name="SusuDetail" component={SusuDetailScreen} />
           <Stack.Screen name="CreateSusu" component={CreateSusuScreen} />
+          <Stack.Screen name="SusuModernComingSoon" component={SusuModernComingSoonScreen} />
           <Stack.Screen name="CreateSusuInvite" component={CreateSusuInviteScreen} />
           <Stack.Screen name="JoinSusu" component={JoinSusuScreen} />
           <Stack.Screen name="RecipientPicker" component={RecipientPickerScreen} />
           <Stack.Screen name="SendMoney" component={SendMoneyScreen} />
           <Stack.Screen name="TransferSuccess" component={TransferSuccessScreen} />
           <Stack.Screen name="Wallet" component={WalletScreen} />
+          <Stack.Screen
+            name="WalletWithdrawComingSoon"
+            component={WalletWithdrawComingSoonScreen}
+          />
           <Stack.Screen name="Notifications" component={NotificationInboxScreen} />
           <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
           <Stack.Screen name="ChallengesList" component={ChallengesListScreen} />
@@ -165,13 +194,15 @@ export default function RootNavigator() {
           <Stack.Screen name="SubscriptionUpgrade" component={UpgradeScreen} />
           <Stack.Screen name="SubscriptionDowngrade" component={DowngradeScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="EditProfile" component={ProfileScreen} />
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           <Stack.Screen name="AppLockSettings" component={AppLockSettingsScreen} />
           <Stack.Screen name="Legal" component={LegalScreen} />
         </>
       ) : (
         <>
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />

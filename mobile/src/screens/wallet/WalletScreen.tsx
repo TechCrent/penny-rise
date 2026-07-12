@@ -62,19 +62,14 @@ export function WalletScreen() {
     fetch: fetchStatement,
     loadMore,
     refresh,
-  } = useWalletStatement(balance?.accountId ?? null);
+  } = useWalletStatement();
 
   const isFirstLoad = (balanceLoading || stmtLoading) && entries.length === 0 && !balance;
 
   useEffect(() => {
     fetchBalance();
-  }, [fetchBalance]);
-
-  useEffect(() => {
-    if (balance?.accountId) {
-      fetchStatement();
-    }
-  }, [balance?.accountId, fetchStatement]);
+    fetchStatement();
+  }, [fetchBalance, fetchStatement]);
 
   const handleRefresh = useCallback(async () => {
     await fetchBalance();
@@ -118,22 +113,16 @@ export function WalletScreen() {
 
       <View style={styles.quickActions}>
         <QuickActionButton
-          icon="⬇"
-          label="Deposit"
-          onPress={() => navigation.navigate('Deposit')}
-          testID="deposit-btn"
-        />
-        <QuickActionButton
           icon="↗️"
           label="Send"
           onPress={() => navigation.navigate('RecipientPicker')}
           testID="send-btn"
         />
         <QuickActionButton
-          icon="🏦"
-          label="To vault"
-          onPress={() => navigation.navigate('MoveToVault')}
-          testID="vault-btn"
+          icon="⬆"
+          label="Withdraw"
+          onPress={() => navigation.navigate('WalletWithdrawComingSoon')}
+          testID="withdraw-btn"
         />
       </View>
 

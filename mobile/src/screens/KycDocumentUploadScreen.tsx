@@ -187,7 +187,14 @@ export default function KycDocumentUploadScreen() {
   );
 
   const handleContinue = () => {
-    navigation.navigate('KycSubmissionPending', { submissionId });
+    // reset (not navigate) so KycCardDetails/KycDocumentUpload drop off the
+    // stack — otherwise the back gesture/button would return the user to the
+    // still-mounted form screens, where they could edit and resubmit while
+    // the original submission is already under review.
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'KycSubmissionPending', params: { submissionId } }],
+    });
   };
 
   const uploadedCount = Object.values(docStates).filter(d => d.state === 'success').length;

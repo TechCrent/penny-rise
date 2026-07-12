@@ -7,7 +7,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getSubmissionStatus } from '../api/kyc';
-import { clearKycSubmission, markKycApprovalAcknowledged } from '../storage/kycStorage';
+import {
+  clearKycSubmission,
+  markKycApprovalAcknowledged,
+  markKycUnderReviewBannerPending,
+  clearKycUnderReviewBannerPending,
+} from '../storage/kycStorage';
 import { supportMailtoUrl } from '../constants/support';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycSubmissionPending'>;
@@ -40,10 +45,11 @@ export default function KycSubmissionPendingScreen() {
     stopPolling();
     await clearKycSubmission();
     await markKycApprovalAcknowledged();
+    await clearKycUnderReviewBannerPending();
     setScreenState({ kind: 'approved' });
 
     setTimeout(() => {
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'Main', params: { screen: 'Home' } }] });
     }, 2000);
   }, [stopPolling, navigation]);
 
@@ -51,6 +57,7 @@ export default function KycSubmissionPendingScreen() {
     async (reason: string | null) => {
       stopPolling();
       await clearKycSubmission();
+      await clearKycUnderReviewBannerPending();
       setScreenState({ kind: 'rejected', reason });
     },
     [stopPolling],
@@ -69,9 +76,11 @@ export default function KycSubmissionPendingScreen() {
           break;
         case 'REVIEWING':
         case 'SUBMITTED':
+          void markKycUnderReviewBannerPending();
           setScreenState({ kind: 'under_review' });
           break;
         default:
+          void markKycUnderReviewBannerPending();
           setScreenState({ kind: 'under_review' });
       }
     } catch (err) {

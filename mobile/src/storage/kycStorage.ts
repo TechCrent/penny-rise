@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const KYC_SUBMISSION_KEY = 'stash_kyc_submission';
 const KYC_APPROVAL_ACKNOWLEDGED_KEY = 'stash_kyc_approval_acknowledged';
+const KYC_UNDER_REVIEW_BANNER_KEY = 'stash_kyc_under_review_banner';
 
 export interface StoredKycSubmission {
   submissionId: string;
@@ -44,4 +45,29 @@ export async function hasAcknowledgedKycApproval(): Promise<boolean> {
 
 export async function markKycApprovalAcknowledged(): Promise<void> {
   await SecureStore.setItemAsync(KYC_APPROVAL_ACKNOWLEDGED_KEY, 'true');
+}
+
+/**
+ * Set whenever the app determines the signed-in user's KYC is under review
+ * (SUBMITTED/REVIEWING), cleared the moment it resolves (approved or
+ * rejected). Survives logout/session-expiry/reinstall so LoginScreen can
+ * show an "under review" banner even when there's no active session to
+ * check the real status against.
+ */
+export async function markKycUnderReviewBannerPending(): Promise<void> {
+  await SecureStore.setItemAsync(KYC_UNDER_REVIEW_BANNER_KEY, 'true');
+}
+
+export async function isKycUnderReviewBannerPending(): Promise<boolean> {
+  try {
+    const raw = await SecureStore.getItemAsync(KYC_UNDER_REVIEW_BANNER_KEY);
+    return raw === 'true';
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+export async function clearKycUnderReviewBannerPending(): Promise<void> {
+  await SecureStore.deleteItemAsync(KYC_UNDER_REVIEW_BANNER_KEY);
 }

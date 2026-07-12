@@ -35,9 +35,16 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 function fillForm(
   utils: ReturnType<typeof render>,
-  overrides: Partial<{ name: string; email: string; password: string; acceptTerms: boolean }> = {},
+  overrides: Partial<{
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    acceptTerms: boolean;
+  }> = {},
 ) {
   const { getByPlaceholderText, getByRole } = utils;
+  const password = overrides.password ?? 'SecureP@ss1';
   fireEvent.changeText(
     getByPlaceholderText('How should we call you?'),
     overrides.name ?? 'Test User',
@@ -46,9 +53,10 @@ function fillForm(
     getByPlaceholderText('you@example.com'),
     overrides.email ?? 'test@example.com',
   );
+  fireEvent.changeText(getByPlaceholderText('Min. 8 characters'), password);
   fireEvent.changeText(
-    getByPlaceholderText('Min. 8 characters'),
-    overrides.password ?? 'SecureP@ss1',
+    getByPlaceholderText('Re-enter your password'),
+    overrides.confirmPassword ?? password,
   );
   if (overrides.acceptTerms ?? true) {
     fireEvent.press(getByRole('checkbox'));
@@ -171,6 +179,19 @@ describe('RegisterScreen', () => {
         message: 'ok',
       });
     });
+  });
+
+  it('mismatched confirm password: inline validation error shown before API call', async () => {
+    const mockSignup = jest.spyOn(authApi, 'signup');
+    const utils = render(<RegisterScreen />, { wrapper });
+    fillForm(utils, { password: 'SecureP@ss1', confirmPassword: 'Different@ss1' });
+
+    fireEvent.press(utils.getByText('Create account'));
+
+    await waitFor(() => {
+      expect(utils.getByText('Passwords do not match')).toBeTruthy();
+    });
+    expect(mockSignup).not.toHaveBeenCalled();
   });
 
   it('referral field hidden by default, revealed on toggle', () => {

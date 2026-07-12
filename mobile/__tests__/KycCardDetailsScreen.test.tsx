@@ -45,6 +45,19 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('KycCardDetailsScreen', () => {
   beforeEach(() => jest.clearAllMocks());
 
+  it('Ghana Card field starts pre-filled with the GHA- prefix', () => {
+    const utils = render(<KycCardDetailsScreen />, { wrapper });
+    expect(utils.getByPlaceholderText('GHA-000000000-0').props.value).toBe('GHA-');
+  });
+
+  it('typing raw digits auto-formats with dashes and caps at 10 digits', () => {
+    const utils = render(<KycCardDetailsScreen />, { wrapper });
+
+    fireEvent.changeText(utils.getByPlaceholderText('GHA-000000000-0'), 'GHA-12345678901234');
+
+    expect(utils.getByPlaceholderText('GHA-000000000-0').props.value).toBe('GHA-123456789-0');
+  });
+
   it('happy path: creates submission and navigates to doc upload', async () => {
     (kycApi.createSubmission as jest.Mock).mockResolvedValue({
       id: 'sub-123',

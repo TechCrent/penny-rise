@@ -26,6 +26,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showReferralField, setShowReferralField] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
@@ -41,6 +42,7 @@ export default function RegisterScreen() {
       displayName: '',
       email: '',
       password: '',
+      confirmPassword: '',
       referralCode: '',
       termsAccepted: false,
     },
@@ -97,6 +99,10 @@ export default function RegisterScreen() {
         style={styles.flex}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow} hitSlop={8}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+
           <Text style={styles.heading}>Create your account</Text>
           <Text style={styles.subheading}>Start saving smarter with Stash.</Text>
 
@@ -155,6 +161,33 @@ export default function RegisterScreen() {
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                  </TouchableOpacity>
+                }
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <FormField
+                label="Confirm password"
+                placeholder="Re-enter your password"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.confirmPassword?.message}
+                secureTextEntry={!showConfirmPassword}
+                textContentType="newPassword"
+                returnKeyType="done"
+                rightElement={
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(v => !v)}
+                    style={styles.eyeButton}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.eyeText}>{showConfirmPassword ? 'Hide' : 'Show'}</Text>
                   </TouchableOpacity>
                 }
               />
@@ -239,6 +272,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FFFFFF' },
   flex: { flex: 1 },
   scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
+  backRow: { marginBottom: 20 },
+  backText: { color: '#1A1A1A', fontSize: 15 },
   heading: { fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 },
   subheading: { fontSize: 16, color: '#6B7280', marginBottom: 32 },
   eyeButton: { paddingHorizontal: 12 },

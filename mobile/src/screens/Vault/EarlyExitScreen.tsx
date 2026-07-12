@@ -22,22 +22,13 @@ import {
   type EarlyExitReason,
   type EarlyExitResponse,
 } from '../../api/hooks/useEarlyExit';
+import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EarlyExit'>;
 type Route = RouteProp<RootStackParamList, 'EarlyExit'>;
 type Phase = 'reason' | 'preview' | 'confirm' | 'done';
-
-// ── MoMo provider metadata (same set as DepositScreen/WithdrawScreen) ──────
-
-const PROVIDERS = [
-  { id: 'mtn', label: 'MTN MoMo', color: '#FBB01C' },
-  { id: 'vodafone', label: 'Vodafone Cash', color: '#E10A0A' },
-  { id: 'airteltigo', label: 'AirtelTigo', color: '#FF6200' },
-] as const;
-
-type ProviderId = (typeof PROVIDERS)[number]['id'];
 
 // Plain objects — accessed dynamically, so StyleSheet.create would flag them
 // as unused; object literals in JSX style props would trigger no-inline-styles.
@@ -132,7 +123,8 @@ export default function EarlyExitScreen() {
   const [exitResult, setExitResult] = useState<EarlyExitResponse | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const canProceedFromReason = !!reason && momoNumber.trim().length > 0;
+  const momoError = momoNumber.trim().length > 0 ? validateMomoNumber(provider, momoNumber) : null;
+  const canProceedFromReason = !!reason && momoNumber.trim().length > 0 && !momoError;
 
   // ── Submit ────────────────────────────────────────────────────────────
   const handleConfirm = useCallback(async () => {
@@ -271,6 +263,7 @@ export default function EarlyExitScreen() {
             returnKeyType="done"
             accessibilityLabel="Your MoMo number for the early-exit payout"
           />
+          {momoError && <Text style={styles.fieldError}>{momoError}</Text>}
 
           <TouchableOpacity
             style={[styles.cta, !canProceedFromReason && styles.ctaDisabled]}
@@ -797,6 +790,7 @@ const styles = StyleSheet.create({
     color: DARK,
     marginBottom: 16,
   },
+  fieldError: { fontSize: 12, color: '#DC2626', marginTop: -12, marginBottom: 16 },
 
   // Preview phase
   releaseHero: { alignItems: 'center', paddingVertical: 28 },

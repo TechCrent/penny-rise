@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { UnifiedTransactionPage } from '../screens/TransactionHistory/types';
+import type { HistScope, UnifiedTransactionPage } from '../screens/TransactionHistory/types';
 
 export interface FetchTransactionHistoryParams {
   transactionType?: string;
@@ -7,6 +7,7 @@ export interface FetchTransactionHistoryParams {
   toDate?: string;
   cursor?: string;
   limit?: number;
+  scope?: HistScope;
 }
 
 export async function fetchUnifiedTransactions(
@@ -19,6 +20,7 @@ export async function fetchUnifiedTransactions(
       toDate: params.toDate,
       cursor: params.cursor,
       limit: params.limit,
+      scope: params.scope,
     },
   });
   return data;

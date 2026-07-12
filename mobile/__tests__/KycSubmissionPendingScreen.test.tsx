@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import KycSubmissionPendingScreen from '../src/screens/KycSubmissionPendingScreen';
 import * as kycApi from '../src/api/kyc';
+import * as kycStorage from '../src/storage/kycStorage';
 import { AuthProvider } from '../src/auth/AuthContext';
 
 jest.mock('expo-secure-store', () => ({
@@ -23,6 +24,8 @@ jest.mock('../src/api/kyc');
 jest.mock('../src/storage/kycStorage', () => ({
   clearKycSubmission: jest.fn().mockResolvedValue(undefined),
   markKycApprovalAcknowledged: jest.fn().mockResolvedValue(undefined),
+  markKycUnderReviewBannerPending: jest.fn().mockResolvedValue(undefined),
+  clearKycUnderReviewBannerPending: jest.fn().mockResolvedValue(undefined),
 }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -60,6 +63,7 @@ describe('KycSubmissionPendingScreen', () => {
 
     const utils = render(<KycSubmissionPendingScreen />, { wrapper });
     await waitFor(() => expect(utils.getByText('Under review')).toBeTruthy());
+    expect(kycStorage.markKycUnderReviewBannerPending).toHaveBeenCalled();
   });
 
   it('APPROVED: shows success state and navigates to home', async () => {
@@ -79,6 +83,7 @@ describe('KycSubmissionPendingScreen', () => {
       jest.advanceTimersByTime(2000);
     });
     await waitFor(() => expect(mockReset).toHaveBeenCalled());
+    expect(kycStorage.clearKycUnderReviewBannerPending).toHaveBeenCalled();
   });
 
   it('REJECTED: shows rejection reason', async () => {

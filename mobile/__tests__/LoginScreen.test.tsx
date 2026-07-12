@@ -120,4 +120,29 @@ describe('LoginScreen', () => {
 
     expect(utils.getByText('Password reset successfully. Please sign in.')).toBeTruthy();
   });
+
+  it('shows the KYC under-review banner when a previous session left it under review', async () => {
+    const getItemAsync = jest.requireMock('expo-secure-store').getItemAsync as jest.Mock;
+    getItemAsync.mockImplementation((key: string) =>
+      Promise.resolve(key === 'stash_kyc_under_review_banner' ? 'true' : null),
+    );
+
+    const utils = render(<LoginScreen />, { wrapper });
+
+    await waitFor(() =>
+      expect(
+        utils.getByText('Your KYC verification is under review. Log in to check your status.'),
+      ).toBeTruthy(),
+    );
+  });
+
+  it('does not show the KYC under-review banner when nothing was flagged', async () => {
+    const utils = render(<LoginScreen />, { wrapper });
+
+    await waitFor(() => {
+      expect(
+        utils.queryByText('Your KYC verification is under review. Log in to check your status.'),
+      ).toBeNull();
+    });
+  });
 });

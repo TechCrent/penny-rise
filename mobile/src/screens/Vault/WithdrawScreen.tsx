@@ -19,21 +19,14 @@ import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
 import { useVaultWithdrawal } from '../../api/hooks/useVaultWithdrawal';
+import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Withdraw'>;
 type Route = RouteProp<RootStackParamList, 'Withdraw'>;
 
-type Phase = 'amount' | 'confirm' | 'pending';
-
-const PROVIDERS = [
-  { id: 'mtn', label: 'MTN MoMo', color: '#FBB01C' },
-  { id: 'vodafone', label: 'Vodafone Cash', color: '#E10A0A' },
-  { id: 'airteltigo', label: 'AirtelTigo', color: '#FF6200' },
-] as const;
-
-type ProviderId = (typeof PROVIDERS)[number]['id'];
+type Phase = 'amount' | 'confirm' | 'pending' | 'completed';
 
 // Plain objects — accessed dynamically, so StyleSheet.create would flag them
 // as unused; object literals in JSX style props would trigger no-inline-styles.
@@ -104,8 +97,9 @@ export default function WithdrawScreen() {
       setAmountError(`Amount exceeds your balance of GHS ${formatCedis(availablePesewas)}.`);
       return false;
     }
-    if (!momoNumber.trim()) {
-      setAmountError('Enter your MoMo number.');
+    const momoError = validateMomoNumber(provider, momoNumber);
+    if (momoError) {
+      setAmountError(momoError);
       return false;
     }
     setAmountError(null);
@@ -124,7 +118,7 @@ export default function WithdrawScreen() {
         idempotencyKey: idempotencyKeyRef.current,
       });
       setTxnRef(resp.transaction_reference);
-      setPhase('pending');
+      setPhase(resp.status === 'COMPLETED' ? 'completed' : 'pending');
     } catch (err: unknown) {
       console.error(err);
       const apiError = extractApiError(err);
@@ -346,6 +340,58 @@ export default function WithdrawScreen() {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // PHASE: completed
+  // ═══════════════════════════════════════════════════════════════════
+  if (phase === 'completed') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        {renderHeader('Withdrawal complete', () => navigation.navigate('VaultDetail', { vaultId }))}
+
+        <ScrollView
+          contentContainerStyle={[styles.content, styles.pendingContent]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pendingHero}>
+            <Text style={styles.pendingIcon}>✅</Text>
+            <Text style={styles.pendingTitle}>Money sent</Text>
+            <Text style={styles.pendingAmount}>GHS {formatCedis(amountPesewas)}</Text>
+            <Text style={styles.pendingDestination}>
+              → {PROVIDERS.find(p => p.id === provider)?.label} · {momoNumber}
+            </Text>
+          </View>
+
+          {txnRef && (
+            <View style={styles.refCard}>
+              <Text style={styles.refLabel}>Reference</Text>
+              <Text style={styles.refValue} selectable>
+                {txnRef}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.cta}
+            onPress={() => navigation.navigate('VaultDetail', { vaultId })}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Back to vault"
+          >
+            <Text style={styles.ctaText}>Back to vault</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.homeLink}
+            onPress={() => navigation.navigate('Main', { screen: 'Home' })}
+            accessibilityRole="button"
+          >
+            <Text style={styles.homeLinkText}>Go to home screen</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // PHASE: pending
   // ═══════════════════════════════════════════════════════════════════
   return (
@@ -422,7 +468,7 @@ export default function WithdrawScreen() {
 
         <TouchableOpacity
           style={styles.homeLink}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
           accessibilityRole="button"
         >
           <Text style={styles.homeLinkText}>Go to home screen</Text>

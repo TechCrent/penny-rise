@@ -1,11 +1,5 @@
-// The backend has no read endpoint for challenges — only POST
-// /api/v1/challenges/{id}/join exists (challenge/api/ChallengeController.java).
-// This is the proposed contract for the missing GET /api/v1/challenges and
-// GET /api/v1/challenges/{id}, field-compatible with the real
-// JoinChallengeResponse DTO's camelCase (id, challengeId, status,
-// targetAmount, progressAmount, enrolledAt) and the real
-// challenge.savings_challenges / challenge.user_challenges / challenge.badges
-// column names — see the PR notes for the full proposal.
+// Mirrors ChallengeResponse (monolith challenge/api/dto/ChallengeResponse.java)
+// verbatim — GET /api/v1/challenges and GET /api/v1/challenges/{id}.
 
 export type ChallengeEnrollmentStatus = 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'ABANDONED';
 

@@ -6,6 +6,8 @@ import { AuthProvider } from './auth/AuthContext';
 import { AppLockGate } from './auth/AppLockGate';
 import RootNavigator, { linking } from './navigation/RootNavigator';
 import { configureNotificationHandler } from './features/notifications/notificationHandler';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { OfflineBanner } from './components/OfflineBanner';
 
 configureNotificationHandler();
 
@@ -14,15 +16,18 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppLockGate>
-            <NavigationContainer linking={linking}>
-              <RootNavigator />
-            </NavigationContainer>
-          </AppLockGate>
-        </AuthProvider>
-      </QueryClientProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <OfflineBanner />
+            <AppLockGate>
+              <NavigationContainer linking={linking}>
+                <RootNavigator />
+              </NavigationContainer>
+            </AppLockGate>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

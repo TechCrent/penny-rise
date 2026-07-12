@@ -16,6 +16,12 @@ export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 
 export type FilterTab = 'ALL' | 'DEPOSIT' | 'WITHDRAWAL' | 'TRANSFER' | 'SUSU';
 
+// Which account's activity to show — set once by the entry point (Home's
+// Savings/Wallet state, or Explore/unscoped), not user-toggled inside the
+// screen. Independent of FilterTab: both apply together, per the redesign
+// decision to keep scope and type as separate filter dimensions.
+export type HistScope = 'vault' | 'wallet';
+
 // Maps FilterTab to the transactionType query param the endpoint accepts.
 // 'ALL' sends no filter. The filter is a single exact-match value server-side
 // (no OR/IN semantics), so 'SUSU' can only target one of the two susu

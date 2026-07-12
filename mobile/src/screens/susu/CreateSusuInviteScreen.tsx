@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,7 +13,7 @@ export function CreateSusuInviteScreen() {
   const { groupId, joinCode, groupName, contributionCedis, frequency, targetMemberCount } =
     route.params;
 
-  const { group, fetch } = useSusuDetail(groupId);
+  const { group, loading, error, fetch } = useSusuDetail(groupId);
 
   useEffect(() => {
     fetch();
@@ -63,11 +63,26 @@ export function CreateSusuInviteScreen() {
         <View style={styles.progressBg}>
           <View style={[styles.memberFill, memberFillStyle]} />
         </View>
-        {memberCount < targetMemberCount && (
+        {memberCount < targetMemberCount && !error && (
           <Text style={styles.memberProgressHint}>
             Waiting for {targetMemberCount - memberCount} more member
             {targetMemberCount - memberCount !== 1 ? 's' : ''} to join.
           </Text>
+        )}
+        {loading && (
+          <View style={styles.memberProgressLoading} testID="member-progress-loading">
+            <ActivityIndicator size="small" color="#111827" />
+          </View>
+        )}
+        {error && (
+          <View style={styles.memberProgressError} testID="member-progress-error">
+            <Text style={styles.memberProgressErrorText}>
+              Couldn&apos;t refresh member count. It may be out of date.
+            </Text>
+            <TouchableOpacity onPress={() => fetch()} testID="member-progress-retry">
+              <Text style={styles.memberProgressRetryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -159,6 +174,10 @@ const styles = StyleSheet.create({
   memberProgressCount: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 8 },
   memberFill: { height: 4, backgroundColor: '#111827', borderRadius: 2 },
   memberProgressHint: { color: '#9CA3AF', fontSize: 12, marginTop: 6 },
+  memberProgressLoading: { marginTop: 8, alignItems: 'flex-start' },
+  memberProgressError: { marginTop: 8 },
+  memberProgressErrorText: { color: '#EF4444', fontSize: 12 },
+  memberProgressRetryText: { color: '#111827', fontSize: 12, fontWeight: '700', marginTop: 4 },
   summary: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 24 },
   summaryTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 4 },
   summaryMeta: { fontSize: 13, color: '#6B7280' },

@@ -1,17 +1,18 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchUnifiedTransactions } from '../../api/transactionHistoryApi';
 import { FILTER_TO_QUERY_PARAM } from './types';
-import type { FilterTab, UnifiedTransactionItem } from './types';
+import type { FilterTab, HistScope, UnifiedTransactionItem } from './types';
 
-export const TRANSACTIONS_QUERY_KEY = (tab: FilterTab) => ['transactions', 'history', tab] as const;
+export const TRANSACTIONS_QUERY_KEY = (tab: FilterTab, scope?: HistScope) =>
+  ['transactions', 'history', tab, scope ?? 'all'] as const;
 
-export function useTransactionHistory(activeTab: FilterTab) {
+export function useTransactionHistory(activeTab: FilterTab, scope?: HistScope) {
   const transactionType = FILTER_TO_QUERY_PARAM[activeTab];
 
   const query = useInfiniteQuery({
-    queryKey: TRANSACTIONS_QUERY_KEY(activeTab),
+    queryKey: TRANSACTIONS_QUERY_KEY(activeTab, scope),
     queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
-      fetchUnifiedTransactions({ transactionType, cursor: pageParam, limit: 20 }),
+      fetchUnifiedTransactions({ transactionType, cursor: pageParam, limit: 20, scope }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: lastPage =>
       lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,

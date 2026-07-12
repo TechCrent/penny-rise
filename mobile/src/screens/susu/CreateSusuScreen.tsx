@@ -114,6 +114,31 @@ export function CreateSusuScreen() {
         </View>
 
         <View style={styles.field}>
+          <Text style={styles.label}>Susu type</Text>
+          <View style={styles.pillRow} testID="group-type-picker">
+            <TouchableOpacity
+              style={[styles.pill, styles.pillActive]}
+              testID="group-type-traditional"
+              accessibilityState={{ selected: true }}
+            >
+              <Text style={[styles.pillText, styles.pillTextActive]}>Traditional</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.pill}
+              onPress={() => navigation.navigate('SusuModernComingSoon')}
+              testID="group-type-modern"
+              accessibilityState={{ selected: false }}
+              accessibilityLabel="Modern — coming soon"
+            >
+              <Text style={styles.pillText}>Modern</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>
+            Traditional: interest-free rotating credit — each round, one member gets the pot.
+          </Text>
+        </View>
+
+        <View style={styles.field}>
           <Text style={styles.label}>Group name</Text>
           <TextInput
             style={[styles.input, errors.name && styles.inputError]}

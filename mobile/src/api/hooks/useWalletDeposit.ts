@@ -14,6 +14,7 @@ export function useWalletDeposit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
       queryClient.invalidateQueries({ queryKey: ['statement'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }

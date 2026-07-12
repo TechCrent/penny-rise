@@ -21,22 +21,22 @@ export interface StatementPage {
   total_entries_on_page: number;
 }
 
-export function useStatement(ledgerAccountId: string, enabled = true) {
+export function useStatement(vaultId: string, enabled = true) {
   return useInfiniteQuery<StatementPage>({
-    queryKey: ['statement', ledgerAccountId],
+    queryKey: ['statement', vaultId],
     queryFn: async ({ pageParam }) => {
       const params: Record<string, string> = { limit: '20' };
       if (pageParam) params.cursor = pageParam as string;
 
       const { data } = await apiClient.get<StatementPage>(
-        `/api/v1/accounts/${ledgerAccountId}/statement`,
+        `/api/v1/vaults/${vaultId}/statement`,
         { params },
       );
       return data;
     },
     initialPageParam: null,
     getNextPageParam: lastPage => lastPage.next_cursor ?? undefined,
-    enabled: !!ledgerAccountId && enabled,
+    enabled: !!vaultId && enabled,
     staleTime: 20_000,
   });
 }

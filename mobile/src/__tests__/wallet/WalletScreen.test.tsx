@@ -91,18 +91,19 @@ describe('WalletScreen', () => {
 
   // ── Quick actions ──────────────────────────────────────────────────
 
-  it('renders all three quick action buttons', () => {
+  it('renders only Send and Withdraw quick action buttons', () => {
     render(<WalletScreen />);
-    expect(screen.getByTestId('deposit-btn')).toBeTruthy();
     expect(screen.getByTestId('send-btn')).toBeTruthy();
-    expect(screen.getByTestId('vault-btn')).toBeTruthy();
+    expect(screen.getByTestId('withdraw-btn')).toBeTruthy();
+    expect(screen.queryByTestId('deposit-btn')).toBeNull();
+    expect(screen.queryByTestId('vault-btn')).toBeNull();
   });
 
-  it('navigates to Deposit on deposit tap', () => {
+  it('navigates to the withdraw coming-soon placeholder on withdraw tap', () => {
     mockNavigate.mockClear();
     render(<WalletScreen />);
-    fireEvent.press(screen.getByTestId('deposit-btn'));
-    expect(mockNavigate).toHaveBeenCalledWith('Deposit');
+    fireEvent.press(screen.getByTestId('withdraw-btn'));
+    expect(mockNavigate).toHaveBeenCalledWith('WalletWithdrawComingSoon');
   });
 
   it('navigates to RecipientPicker on send tap', () => {

@@ -148,6 +148,8 @@ export default function VaultDetailScreen() {
   const {
     data: vault,
     isLoading: vaultLoading,
+    isError: vaultErrored,
+    error: vaultError,
     refetch: refetchVault,
     isFetching: vaultFetching,
   } = useVaultDetail(vaultId);
@@ -159,24 +161,39 @@ export default function VaultDetailScreen() {
     hasNextPage,
     fetchNextPage,
     refetch: refetchStatement,
-  } = useStatement(vault?.ledger_account_id ?? '', !!vault?.ledger_account_id);
+  } = useStatement(vaultId, !!vaultId);
 
   const allEntries: StatementEntry[] = (statementData?.pages ?? []).flatMap(p => p.entries);
 
   const onRefresh = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['vault', vaultId] }),
-      queryClient.invalidateQueries({ queryKey: ['statement', vault?.ledger_account_id] }),
+      queryClient.invalidateQueries({ queryKey: ['statement', vaultId] }),
       refetchVault(),
       refetchStatement(),
     ]);
-  }, [queryClient, vaultId, vault?.ledger_account_id, refetchVault, refetchStatement]);
+  }, [queryClient, vaultId, refetchVault, refetchStatement]);
 
-  if (vaultLoading || !vault) {
+  if (vaultLoading) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingCenter}>
           <ActivityIndicator size="large" color={INDIGO} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (vaultErrored || !vault) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingCenter}>
+          <Text style={styles.errorText}>
+            {vaultError instanceof Error ? vaultError.message : 'Could not load this vault.'}
+          </Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => refetchVault()}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -330,7 +347,15 @@ const BACKGROUND = '#F8F9FF';
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BACKGROUND },
-  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  errorText: { color: '#EF4444', fontSize: 14, textAlign: 'center', marginBottom: 16 },
+  retryBtn: {
+    backgroundColor: INDIGO,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  retryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   listContent: { paddingBottom: 24 },
 
   header: {

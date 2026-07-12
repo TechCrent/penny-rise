@@ -29,6 +29,7 @@ export function useVaultDeposit(vaultId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vault', vaultId] });
       queryClient.invalidateQueries({ queryKey: ['vaults'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 }

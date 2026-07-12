@@ -58,7 +58,7 @@ export function TransferSuccessScreen() {
 
         <TouchableOpacity
           style={styles.doneBtn}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
           testID="done-btn"
         >
           <Text style={styles.doneBtnText}>Done</Text>

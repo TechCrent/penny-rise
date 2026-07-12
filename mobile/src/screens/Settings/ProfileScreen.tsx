@@ -20,7 +20,7 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { extractApiError } from '../../api/client';
 import { useProfile } from './useProfile';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'EditProfile'>;
 
 interface FormValues {
   displayName: string;

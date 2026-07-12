@@ -1,11 +1,10 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { RefreshControl } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import HomeScreen from '../src/screens/HomeScreen';
 import * as vaultsApi from '../src/api/vaults';
+import * as susuApiModule from '../src/api/susu';
 import { AuthProvider } from '../src/auth/AuthContext';
 import type { VaultListItem, VaultListResponse } from '../src/api/vaults';
 
@@ -19,13 +18,27 @@ jest.mock('../src/hooks/useKycResumability', () => ({
   useKycResumability: jest.fn(),
 }));
 
+jest.mock('../src/screens/Challenges/useChallenges', () => ({
+  useChallenges: () => ({ data: [] }),
+}));
+
+let tabPressHandler: (() => void) | null = null;
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({ navigate: mockNavigate }),
+  useNavigation: () => ({
+    navigate: mockNavigate,
+    addListener: (event: string, handler: () => void) => {
+      if (event === 'tabPress') tabPressHandler = handler;
+      return () => {
+        tabPressHandler = null;
+      };
+    },
+  }),
 }));
 
 jest.mock('../src/api/vaults');
+jest.mock('../src/api/susu');
 
 const wrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -37,9 +50,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NavigationContainer>{children}</NavigationContainer>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
@@ -79,18 +90,19 @@ const lockedVault: VaultListItem = {
   created_at: '2026-06-01T00:00:00Z',
 };
 
-const earlyExitVault: VaultListItem = {
-  ...lockedVault,
-  id: 'vault-003',
-  name: 'Car Fund',
-  status: 'EARLY_EXIT_PENDING',
-  early_exit_in_progress: true,
-};
-
 describe('HomeScreen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    tabPressHandler = null;
+    (susuApiModule.susuApi.listGroups as jest.Mock).mockResolvedValue([]);
+    (susuApiModule.walletApi.getBalance as jest.Mock).mockResolvedValue({
+      account_id: 'wallet-001',
+      balance_pesewas: 50_000,
+      balance_cedis: '500.00',
+    });
+  });
 
-  it('renders greeting and vault cards when data is loaded', async () => {
+  it('renders greeting and defaults to Total state with the combined balance', async () => {
     mockVaultsResponse({
       vaults: [standardVault, lockedVault],
       total_count: 2,
@@ -99,66 +111,24 @@ describe('HomeScreen', () => {
 
     const utils = render(<HomeScreen />, { wrapper });
 
-    await waitFor(() => expect(utils.getByText('Emergency Fund')).toBeTruthy());
-    expect(utils.getByText(/Good (morning|afternoon|evening)/)).toBeTruthy();
-    expect(utils.getByText('University Fund')).toBeTruthy();
-    expect(utils.getByText('1,000.00')).toBeTruthy();
-    expect(utils.getByText('2,000.00')).toBeTruthy();
+    await waitFor(() => expect(utils.getByText(/Good (morning|afternoon|evening)/)).toBeTruthy());
+    expect(utils.getByText('Total balance')).toBeTruthy();
+    // 3,000.00 (vaults) + 500.00 (wallet) = 3,500.00
+    await waitFor(() => expect(utils.getByText('3,500.00')).toBeTruthy());
   });
 
-  it('shows STANDARD and LOCKED type badges correctly', async () => {
-    mockVaultsResponse({
-      vaults: [standardVault, lockedVault],
-      total_count: 2,
-      balance_unavailable_count: 0,
-    });
-
-    const utils = render(<HomeScreen />, { wrapper });
-
-    await waitFor(() => expect(utils.getByText('STANDARD')).toBeTruthy());
-    expect(utils.getByText('LOCKED')).toBeTruthy();
-  });
-
-  it('shows EARLY EXIT pill for EARLY_EXIT_PENDING vault', async () => {
-    mockVaultsResponse({
-      vaults: [earlyExitVault],
-      total_count: 1,
-      balance_unavailable_count: 0,
-    });
-
-    const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText('EARLY EXIT')).toBeTruthy());
-  });
-
-  it('shows empty state when user has no vaults', async () => {
+  it('shows the segmented switcher with Total active by default', async () => {
     mockVaultsResponse({ vaults: [], total_count: 0, balance_unavailable_count: 0 });
 
     const utils = render(<HomeScreen />, { wrapper });
 
-    await waitFor(() => expect(utils.getByText('No vaults yet')).toBeTruthy());
-    expect(utils.getByText('Create your first vault')).toBeTruthy();
-    expect(utils.queryByText('See all')).toBeNull();
+    await waitFor(() => expect(utils.getByTestId('home-state-switcher')).toBeTruthy());
+    expect(utils.getByText('Total')).toBeTruthy();
+    expect(utils.getByText('Savings')).toBeTruthy();
+    expect(utils.getByText('Wallet')).toBeTruthy();
   });
 
-  it('shows — for vaults with null balance when Payments Service unavailable', async () => {
-    const unavailableVault: VaultListItem = {
-      ...standardVault,
-      balance_pesewas: null,
-      balance_cedis: null,
-    };
-    mockVaultsResponse({
-      vaults: [unavailableVault],
-      total_count: 1,
-      balance_unavailable_count: 1,
-    });
-
-    const utils = render(<HomeScreen />, { wrapper });
-
-    await waitFor(() => expect(utils.getAllByText('—').length).toBeGreaterThanOrEqual(1));
-    expect(utils.getByText(/1 balance unavailable/)).toBeTruthy();
-  });
-
-  it('shows correct total balance across all vaults', async () => {
+  it('switching to Savings state shows the vault list', async () => {
     mockVaultsResponse({
       vaults: [standardVault, lockedVault],
       total_count: 2,
@@ -166,10 +136,31 @@ describe('HomeScreen', () => {
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText('3,000.00')).toBeTruthy());
+    await waitFor(() => expect(utils.getByText('Savings')).toBeTruthy());
+
+    fireEvent.press(utils.getByText('Savings'));
+
+    await waitFor(() => expect(utils.getByText('Savings total')).toBeTruthy());
+    expect(utils.getByText('Emergency Fund')).toBeTruthy();
+    expect(utils.getByText('University Fund')).toBeTruthy();
+    expect(utils.getByText('Vault activity')).toBeTruthy();
   });
 
-  it('pull-to-refresh re-fetches vaults', async () => {
+  it('switching to Wallet state shows wallet balance and susu section', async () => {
+    mockVaultsResponse({ vaults: [], total_count: 0, balance_unavailable_count: 0 });
+
+    const utils = render(<HomeScreen />, { wrapper });
+    await waitFor(() => expect(utils.getByText('Wallet')).toBeTruthy());
+
+    fireEvent.press(utils.getByText('Wallet'));
+
+    await waitFor(() => expect(utils.getByText('Wallet balance')).toBeTruthy());
+    expect(utils.getByText('500.00')).toBeTruthy();
+    expect(utils.getByText('Your susus')).toBeTruthy();
+    expect(utils.getByText('Wallet activity')).toBeTruthy();
+  });
+
+  it('Total state: Deposit opens the account picker when vaults exist', async () => {
     mockVaultsResponse({
       vaults: [standardVault],
       total_count: 1,
@@ -177,16 +168,23 @@ describe('HomeScreen', () => {
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText('Emergency Fund')).toBeTruthy());
-    expect(vaultsApi.listVaults).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(utils.getByLabelText('Deposit')).toBeTruthy());
 
-    const refreshControl = utils.UNSAFE_getByType(RefreshControl);
-    refreshControl.props.onRefresh();
-
-    await waitFor(() => expect(vaultsApi.listVaults).toHaveBeenCalledTimes(2));
+    fireEvent.press(utils.getByLabelText('Deposit'));
+    expect(mockNavigate).toHaveBeenCalledWith('AccountPicker', { mode: 'DEPOSIT' });
   });
 
-  it('shows "See all" link and navigates to VaultList when vaults exist', async () => {
+  it('Total state: Deposit goes straight to CreateVault when there are no vaults', async () => {
+    mockVaultsResponse({ vaults: [], total_count: 0, balance_unavailable_count: 0 });
+
+    const utils = render(<HomeScreen />, { wrapper });
+    await waitFor(() => expect(utils.getByLabelText('Deposit')).toBeTruthy());
+
+    fireEvent.press(utils.getByLabelText('Deposit'));
+    expect(mockNavigate).toHaveBeenCalledWith('CreateVault');
+  });
+
+  it('Total state: Withdraw opens the account picker when vaults exist', async () => {
     mockVaultsResponse({
       vaults: [standardVault],
       total_count: 1,
@@ -194,25 +192,36 @@ describe('HomeScreen', () => {
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText('See all')).toBeTruthy());
+    await waitFor(() => expect(utils.getByLabelText('Withdraw')).toBeTruthy());
 
-    fireEvent.press(utils.getByText('See all'));
-    expect(mockNavigate).toHaveBeenCalledWith('VaultList');
+    fireEvent.press(utils.getByLabelText('Withdraw'));
+    expect(mockNavigate).toHaveBeenCalledWith('AccountPicker', { mode: 'WITHDRAW' });
   });
 
-  it('shows overflow card when more than 2 vaults exist', async () => {
-    const v3: VaultListItem = { ...standardVault, id: 'vault-004', name: 'Holiday Fund' };
+  it('Total state: Send navigates directly to the recipient picker', async () => {
+    mockVaultsResponse({ vaults: [], total_count: 0, balance_unavailable_count: 0 });
+
+    const utils = render(<HomeScreen />, { wrapper });
+    await waitFor(() => expect(utils.getByLabelText('Send')).toBeTruthy());
+
+    fireEvent.press(utils.getByLabelText('Send'));
+    expect(mockNavigate).toHaveBeenCalledWith('RecipientPicker');
+  });
+
+  it('Total state: portfolio summary shows vault and susu counts', async () => {
     mockVaultsResponse({
-      vaults: [standardVault, lockedVault, v3],
-      total_count: 3,
+      vaults: [standardVault, lockedVault],
+      total_count: 2,
       balance_unavailable_count: 0,
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText(/\+1 more vault/)).toBeTruthy());
+
+    await waitFor(() => expect(utils.getByTestId('portfolio-summary')).toBeTruthy());
+    expect(utils.getByText('2')).toBeTruthy();
   });
 
-  it('navigates to VaultDetail when a vault card is pressed', async () => {
+  it('Savings state: tapping a vault card navigates to VaultDetail', async () => {
     mockVaultsResponse({
       vaults: [standardVault],
       total_count: 1,
@@ -220,38 +229,40 @@ describe('HomeScreen', () => {
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText('Emergency Fund')).toBeTruthy());
+    fireEvent.press(await utils.findByText('Savings'));
+    fireEvent.press(await utils.findByText('Emergency Fund'));
 
-    fireEvent.press(utils.getByText('Emergency Fund'));
     expect(mockNavigate).toHaveBeenCalledWith('VaultDetail', { vaultId: 'vault-001' });
   });
 
-  it('shows unlock date label for date-based locked vault', async () => {
+  it('Savings state: "See all" navigates to VaultList', async () => {
     mockVaultsResponse({
-      vaults: [lockedVault],
+      vaults: [standardVault],
       total_count: 1,
       balance_unavailable_count: 0,
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText(/Unlocks on/)).toBeTruthy());
+    fireEvent.press(await utils.findByText('Savings'));
+    fireEvent.press((await utils.findAllByText('See all'))[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith('VaultList');
   });
 
-  it('shows goal label for amount-based locked vault', async () => {
-    const amountVault: VaultListItem = {
-      ...lockedVault,
-      id: 'vault-005',
-      unlock_at: null,
-      unlock_amount: 500_000,
-      unlock_condition_logic: null,
-    };
+  it('pressing the Home tab while on Savings resets to Total state', async () => {
     mockVaultsResponse({
-      vaults: [amountVault],
+      vaults: [standardVault],
       total_count: 1,
       balance_unavailable_count: 0,
     });
 
     const utils = render(<HomeScreen />, { wrapper });
-    await waitFor(() => expect(utils.getByText(/Goal: GHS 5000\.00/)).toBeTruthy());
+    fireEvent.press(await utils.findByText('Savings'));
+    await waitFor(() => expect(utils.getByText('Savings total')).toBeTruthy());
+
+    expect(tabPressHandler).not.toBeNull();
+    tabPressHandler?.();
+
+    await waitFor(() => expect(utils.getByText('Total balance')).toBeTruthy());
   });
 });

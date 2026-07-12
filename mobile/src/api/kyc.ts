@@ -104,23 +104,35 @@ export async function uploadDocumentToSignedUrl(
 ): Promise<void> {
   const reachableUrl = normalizeSignedUrlForDeviceReachability(signedUrl);
 
-  const result = await FileSystem.uploadAsync(reachableUrl, fileUri, {
-    httpMethod: 'PUT',
-    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-    headers: {
-      'Content-Type': contentType,
+  // createUploadTask (not uploadAsync) — same underlying binary PUT, but it
+  // streams real totalBytesSent/totalBytesExpectedToSend via native events,
+  // so the progress bar actually moves instead of sitting at 0% until the
+  // whole file lands.
+  const task = FileSystem.createUploadTask(
+    reachableUrl,
+    fileUri,
+    {
+      httpMethod: 'PUT',
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      headers: {
+        'Content-Type': contentType,
+      },
     },
-  });
+    data => {
+      if (onProgress && data.totalBytesExpectedToSend > 0) {
+        onProgress(data.totalBytesSent / data.totalBytesExpectedToSend);
+      }
+    },
+  );
 
-  if (result.status >= 200 && result.status < 300) {
+  const result = await task.uploadAsync();
+
+  if (result && result.status >= 200 && result.status < 300) {
+    onProgress?.(1);
     return;
   }
 
-  if (onProgress) {
-    onProgress(1);
-  }
-
-  throw new Error(`Upload failed with status ${result.status}`);
+  throw new Error(`Upload failed with status ${result?.status}`);
 }
 
 export async function confirmDocumentUpload(

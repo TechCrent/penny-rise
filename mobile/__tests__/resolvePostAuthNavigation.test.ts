@@ -23,7 +23,10 @@ describe('resolvePostAuthNavigation', () => {
   });
 
   it('routes APPROVED users to Home', async () => {
-    await expect(resolvePostAuthNavigation('APPROVED')).resolves.toEqual({ name: 'Home' });
+    await expect(resolvePostAuthNavigation('APPROVED')).resolves.toEqual({
+      name: 'Main',
+      params: { screen: 'Home' },
+    });
   });
 
   it('routes PENDING users to KycCardDetails when no in-progress submission', async () => {

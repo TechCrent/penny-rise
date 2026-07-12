@@ -48,7 +48,7 @@ export function SettingsScreen() {
 
         <Text style={styles.sectionLabel}>Account</Text>
         <View style={styles.section}>
-          <SettingsRow label="Profile" onPress={() => navigation.navigate('Profile')} />
+          <SettingsRow label="Profile" onPress={() => navigation.navigate('EditProfile')} />
           <SettingsRow
             label="Change password"
             onPress={() => navigation.navigate('ChangePassword')}

@@ -1,8 +1,9 @@
 # reset-local-data.ps1
 # Wipes local dev data so the app starts from a clean slate: truncates every
 # table in all 4 service databases (keeping schema/migrations and admin
-# accounts intact), clears local KYC document storage, purges RabbitMQ queues,
-# and empties the Mailpit test inbox.
+# accounts intact), re-seeds fixed reference data that Flyway won't reinsert
+# on its own (system ledger accounts, challenge templates), clears local KYC
+# document storage, purges RabbitMQ queues, and empties the Mailpit test inbox.
 #
 # Run from the repo root:  .\reset-local-data.ps1
 # Skip the confirmation prompt:  .\reset-local-data.ps1 -Force
@@ -60,6 +61,38 @@ $databases = @(
     @{ Container = "stash-audit-db";    User = "stash_audit";    Db = "audit_db" }
 )
 
+# Flyway migrations that seed fixed reference data (system ledger accounts,
+# challenge templates) only ever run once — Flyway skips them on every later
+# startup because their checksum still matches what's recorded, even though
+# the truncate above just deleted the rows they inserted. Without re-seeding
+# here, every deposit/withdrawal/challenge feature breaks after a reset
+# (found the hard way: two stuck deposits traced back to the missing
+# PAYSTACK_SETTLEMENT ledger account after a reset wiped it out).
+$paymentsSeedSql = @'
+INSERT INTO ledger.ledger_accounts (id, account_type, owner_type, owner_id, external_reference, status, description, created_at) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'PAYSTACK_SETTLEMENT', 'SYSTEM', NULL, 'paystack-settlement-master', 'ACTIVE', 'Represents funds received by Paystack on behalf of Stash. DEBIT leg for all charge.success deposits.', NOW()),
+    ('00000000-0000-0000-0000-000000000002', 'FEE_REVENUE', 'SYSTEM', NULL, NULL, 'ACTIVE', 'Platform fee revenue - early-exit penalties and transaction fees.', NOW()),
+    ('00000000-0000-0000-0000-000000000003', 'PENALTY_REVENUE', 'SYSTEM', NULL, NULL, 'ACTIVE', 'Platform penalty revenue - susu late-payment fees (50% share).', NOW())
+ON CONFLICT (id) DO NOTHING;
+'@
+
+$monolithSeedSql = @'
+INSERT INTO challenge.badges (id, badge_code, badge_name, asset_name) VALUES
+    ('a1000000-0000-4000-8000-000000000001', 'STARTER_SAVER',    'Starter Saver',    'badge_starter_saver'),
+    ('a1000000-0000-4000-8000-000000000002', 'CONSISTENT_SAVER', 'Consistent Saver', 'badge_consistent_saver'),
+    ('a1000000-0000-4000-8000-000000000003', 'DEDICATED_SAVER',  'Dedicated Saver',  'badge_dedicated_saver'),
+    ('a1000000-0000-4000-8000-000000000004', 'NO_BREAK_30D',     'No-Break 30',      'badge_no_break_30')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO challenge.savings_challenges
+    (id, name, description, challenge_type, target_amount, target_duration_days, system_owned, creator_user_id, is_active, badge_id) VALUES
+    ('b2000000-0000-4000-8000-000000000001', 'Save GHS 50 in 7 Days', 'A quick starter challenge - save GHS 50 across any vault within a week.', 'SAVE_AMOUNT', 5000, 7, true, NULL, true, 'a1000000-0000-4000-8000-000000000001'),
+    ('b2000000-0000-4000-8000-000000000002', 'Save GHS 200 in 30 Days', 'Build a saving habit - GHS 200 over a month.', 'SAVE_AMOUNT', 20000, 30, true, NULL, true, 'a1000000-0000-4000-8000-000000000002'),
+    ('b2000000-0000-4000-8000-000000000003', 'Save GHS 1000 in 90 Days', 'The long game - GHS 1000 saved over three months.', 'SAVE_AMOUNT', 100000, 90, true, NULL, true, 'a1000000-0000-4000-8000-000000000003'),
+    ('b2000000-0000-4000-8000-000000000004', 'No-Withdrawal Streak: 30 Days', 'Go 30 days without a single withdrawal from any vault.', 'NO_WITHDRAWAL', NULL, 30, true, NULL, true, 'a1000000-0000-4000-8000-000000000004')
+ON CONFLICT (id) DO NOTHING;
+'@
+
 Write-Host "`nTruncating databases..." -ForegroundColor Cyan
 foreach ($d in $databases) {
     $running = docker ps --filter "name=$($d.Container)" --format "{{.Names}}" 2>$null
@@ -74,6 +107,17 @@ foreach ($d in $databases) {
     }
     else {
         Write-Host "  WARNING: failed to clear $($d.Db)" -ForegroundColor Yellow
+    }
+
+    $reseedSql = if ($d.Db -eq "payments_db") { $paymentsSeedSql } elseif ($d.Db -eq "monolith_db") { $monolithSeedSql } else { $null }
+    if ($reseedSql) {
+        $reseedSql | docker exec -i $d.Container psql -U $d.User -d $d.Db -v ON_ERROR_STOP=1 -q 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  Re-seeded fixed reference data in $($d.Db)" -ForegroundColor Green
+        }
+        else {
+            Write-Host "  WARNING: failed to re-seed reference data in $($d.Db)" -ForegroundColor Yellow
+        }
     }
 }
 

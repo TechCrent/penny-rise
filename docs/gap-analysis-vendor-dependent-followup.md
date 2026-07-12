@@ -166,27 +166,38 @@ These surfaced while actually running the app end-to-end for
 is either a separate pre-existing feature (not something this branch
 touched) or bigger than the specific bug it was found alongside.
 
-### `IntegrationPaymentsClient`'s remaining stub methods
+### `IntegrationPaymentsClient`'s remaining stub methods — fixed 2026-07-11
 
-Finding 8 fixed `getUnifiedTransactionHistory` (it was blocking this
-branch's own statement-export feature). The other four methods on that
-same class are still hardcoded stubs, each serving a real, separate
-tracked gap:
+Finding 8 fixed `getUnifiedTransactionHistory`. The other four methods on
+that same class were still hardcoded stubs; all four are now wired to real
+Payments Service endpoints, following the pattern Finding 8 established
+(`CallerContext.isInternal()`-gated, `RestClient` + shared
+internal-service-token):
 
-- `getRecentTransactionsForUser` / `getTransactionById` — used by the admin
-  user-detail page; an admin looking at a user's account today sees no
-  transaction history at all.
-- `closeLedgerAccount` — v0.5-019's account-deletion saga's step 3/4 is a
-  no-op; deleting an account today does not actually close its ledger
-  account in Payments Service.
-- `getLedgerAccountBalance` — `AdminUserService.toVaultSummary` hardcodes
-  vault balances to `0L` in the admin user-detail view for the same reason.
+- `getRecentTransactionsForUser` — reuses the existing
+  `GET /api/v1/transactions?user_id=&limit=` endpoint (no new endpoint
+  needed). Wired into `AdminUserService.getDetail`, already the caller.
+- `getTransactionById` — new `GET /api/v1/transactions/by-id/{id}` endpoint
+  on `TransactionDetailController` (internal-only), since the existing
+  by-reference lookup couldn't serve `disputes.related_entity_id`, which is
+  a UUID. Backed by a new `TransactionDetailService.getDetailById`.
+- `closeLedgerAccount` — new `POST /internal/v1/ledger/accounts/{id}/close`
+  endpoint (`LedgerAccountCloseController`, guarded by
+  `InternalServiceAuthFilter` like the existing provisioning endpoint) and
+  a new `AccountCloseService`: idempotent no-op if already `CLOSED`,
+  rejects with 422 (`AccountBalanceNotZeroException`) if balance != 0.
+  Wired into `DeletionExecutionService`'s step 3a/3b.
+- `getLedgerAccountBalance` — reuses the existing
+  `GET /api/v1/accounts/{id}/balance` endpoint (internal callers bypass
+  ownership checks). Wired into both `AdminSusuGroupService` (already the
+  caller) and `AdminUserService.toVaultSummary` (previously hardcoded to
+  `0L` — now calls the client when a vault has a ledger account).
 
-Each needs its own real Payments Service endpoint, following the same
-pattern Finding 8 established (`CallerContext.isInternal()`-gated, called
-via `RestClient`/`WebClient` with the shared internal-service-token
-convention). Recommend doing these as one follow-up pass rather than
-piecemeal, since they're all the same shape of fix.
+Not part of this pass — still open, tracked separately below and in
+`docs/hands-on-testing-findings.md`:
+- Transaction history's narrative/business-reference enrichment (still
+  null on every row).
+- Swallowed exception messages in payments-client catch blocks.
 
 ### Transaction history has no narrative or vault/susu-name enrichment
 
@@ -201,6 +212,24 @@ than a quick join. Every other field (type, amount, direction, status,
 counterparty *name*, date) is real and correct today — this is polish, not
 a blocker, but worth closing so a transfer's "why" isn't blank in a user's
 exported statement.
+
+### Linked accounts — removed from Profile 2026-07-12, not backed by real data
+
+Profile's "Linked accounts · MTN MoMo" row was a static hardcoded string —
+not backed by any query against the user's actual MoMo usage (a user who
+deposited via Vodafone would still see "MTN MoMo"). Removed from
+`ProfileHomeScreen.tsx` per explicit instruction rather than leave a banner
+that lies about the user's real linked-account state.
+
+To build this for real: MoMo provider/number isn't currently persisted as a
+first-class "linked account" anywhere — it's only stored per-transaction
+(`destination_momo_number`/`momo_provider` on withdrawal/early-exit rows,
+`mobile_number`/`mobile_provider` on deposit rows). A real implementation
+would need to decide whether "linked" means "every distinct number/provider
+pair ever used" (derivable from existing transaction data, no new table) or
+a deliberate one-time verification step the user completes explicitly (new
+table + flow, closer to how KYC works). No vendor blocker either way — this
+is a product-scope decision, not a missing credential.
 
 ### Swallowed exception messages in payments-client catch blocks
 

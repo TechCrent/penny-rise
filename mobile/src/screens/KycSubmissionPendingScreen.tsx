@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -16,7 +15,7 @@ import {
   clearKycUnderReviewBannerPending,
 } from '../storage/kycStorage';
 import { supportMailtoUrl } from '../constants/support';
-import { PressableScale } from '../components/ui';
+import { Icon, PressableScale } from '../components/ui';
 import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycSubmissionPending'>;
@@ -119,7 +118,7 @@ export default function KycSubmissionPendingScreen() {
       <SafeAreaView style={styles.safe}>
         <Animated.View entering={FadeIn.duration(400)} style={styles.centered}>
           <View style={[styles.resultIconBadge, styles.successIconBadge]}>
-            <Ionicons name="checkmark-circle" size={40} color={colors.status.success} />
+            <Icon name="checkmark-circle" size={40} color={colors.status.success} />
           </View>
           <Text style={styles.heading}>Identity approved!</Text>
           <Text style={styles.body}>Your KYC is approved. Taking you to Stash…</Text>
@@ -133,7 +132,7 @@ export default function KycSubmissionPendingScreen() {
       <SafeAreaView style={styles.safe}>
         <Animated.View entering={FadeIn.duration(400)} style={styles.centered}>
           <View style={[styles.resultIconBadge, styles.errorIconBadge]}>
-            <Ionicons name="close-circle" size={40} color={colors.status.error} />
+            <Icon name="close-circle" size={40} color={colors.status.error} />
           </View>
           <Text style={styles.heading}>Verification unsuccessful</Text>
           {screenState.reason ? (

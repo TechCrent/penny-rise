@@ -1,12 +1,10 @@
 import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
-import { PressableScale } from '../ui';
+import { Icon, PressableScale, type IconName } from '../ui';
 import { colors, radii, spacing } from '../../theme';
 
 interface Props {
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   label: string;
   onPress: () => void;
   testID?: string;
@@ -16,7 +14,7 @@ export function QuickActionButton({ icon, label, onPress, testID }: Props) {
   return (
     <PressableScale style={styles.btn} onPress={onPress} testID={testID}>
       <View style={styles.iconCircle}>
-        <Ionicons name={icon} size={20} color={colors.gold.text} />
+        <Icon name={icon} size={20} color={colors.gold.text} />
       </View>
       <Text style={styles.label}>{label}</Text>
     </PressableScale>

@@ -3,12 +3,11 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useCancelEarlyExit } from '../../api/hooks/useEarlyExit';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CancelEarlyExit'>;
@@ -62,7 +61,7 @@ export default function CancelEarlyExitScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.introCard}>
           <View style={styles.introIconWrap}>
-            <Ionicons name="arrow-undo-outline" size={26} color={colors.gold.text} />
+            <Icon name="arrow-undo-outline" size={26} color={colors.gold.text} />
           </View>
           <Text style={styles.introTitle}>Cancel this exit request?</Text>
           <Text style={styles.introBody}>
@@ -162,7 +161,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   serverErrorText: { fontSize: 13, color: colors.status.errorText },
 

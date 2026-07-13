@@ -2,15 +2,20 @@ import React, { useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Pressable, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated from 'react-native-reanimated';
 
 import { useWalletBalance } from '../../hooks/useWalletBalance';
 import { useWalletStatement } from '../../hooks/useWalletStatement';
 import { ActivityRow } from '../../components/wallet/ActivityRow';
 import { WalletSkeleton } from '../../components/wallet/WalletSkeleton';
 import { QuickActionButton } from '../../components/wallet/QuickActionButton';
-import { EmptyState as UiEmptyState } from '../../components/ui';
+import { AnimatedNumber, EmptyState as UiEmptyState, fadeInUp } from '../../components/ui';
 import { colors, spacing } from '../../theme';
 import type { WalletActivity } from '../../types/wallet';
+
+function formatWalletCedis(pesewas: number): string {
+  return (pesewas / 100).toFixed(2);
+}
 
 function EmptyState() {
   return (
@@ -102,7 +107,7 @@ export function WalletScreen() {
         ) : (
           <>
             <Text style={styles.balanceAmount} testID="balance-amount">
-              GHS {balance?.balanceCedis ?? '—'}
+              GHS {balance ? <AnimatedNumber value={balance.balancePesewas} formatter={formatWalletCedis} /> : '—'}
             </Text>
             <Text style={styles.balanceAccountId} numberOfLines={1}>
               Wallet · {balance?.accountId?.slice(0, 8) ?? ''}
@@ -111,7 +116,7 @@ export function WalletScreen() {
         )}
       </LinearGradient>
 
-      <View style={styles.quickActions}>
+      <Animated.View entering={fadeInUp(60)} style={styles.quickActions}>
         <QuickActionButton
           icon="paper-plane-outline"
           label="Send"
@@ -124,7 +129,7 @@ export function WalletScreen() {
           onPress={() => navigation.navigate('WalletWithdrawComingSoon')}
           testID="withdraw-btn"
         />
-      </View>
+      </Animated.View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent activity</Text>

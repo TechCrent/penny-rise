@@ -14,13 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
 import { useCreateVault } from '../../api/hooks/useCreateVault';
 import { useVaults } from '../../api/hooks/useVaults';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultTypeCard } from './components/VaultTypeCard';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CreateVault'>;
@@ -187,7 +186,7 @@ export default function CreateVaultScreen() {
         </Text>
 
         <View style={styles.warningBox}>
-          <Ionicons name="warning-outline" size={18} color={colors.status.warningText} />
+          <Icon name="warning-outline" size={18} color={colors.status.warningText} />
           <View style={styles.warningBody}>
             <Text style={styles.warningTitle}>Early exit penalty</Text>
             <Text style={styles.warningDesc}>
@@ -483,11 +482,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.status.warningBorder,
   },
   warningBody: { flex: 1 },
   warningTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText, marginBottom: 3 },
-  warningDesc: { fontSize: 13, color: '#78350F', lineHeight: 18 },
+  warningDesc: { fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
   warningBold: { fontWeight: '700' },
 
   logicRow: { marginTop: spacing.xl, marginBottom: spacing.xs },
@@ -511,7 +510,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.lg,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   serverErrorText: { fontSize: 13, color: colors.status.errorText, lineHeight: 19 },
   upgradeLink: { marginTop: spacing.sm, alignItems: 'center', paddingVertical: spacing.xs },

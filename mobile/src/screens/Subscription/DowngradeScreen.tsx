@@ -4,14 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
 import {
   fetchDowngradePreview,
   commitDowngrade,
   DowngradePreviewResponse,
 } from '../../api/subscriptionApi';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SubscriptionDowngrade'>;
@@ -172,7 +171,7 @@ export function DowngradeScreen() {
               style={[styles.checkbox, acknowledged && styles.checkboxChecked]}
               testID="downgrade-ack-checkbox"
             >
-              {acknowledged && <Ionicons name="checkmark" size={14} color={colors.neutral[900]} />}
+              {acknowledged && <Icon name="checkmark" size={14} color={colors.neutral[900]} />}
             </View>
             <Text style={styles.checkboxLabel}>
               I understand my resources listed above will be frozen.

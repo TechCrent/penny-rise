@@ -2,11 +2,13 @@ import React, { useMemo } from 'react';
 import { SectionList, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import { useChallenges } from './useChallenges';
 import { ChallengeCard } from './components/ChallengeCard';
 import { sectionFor } from './types';
 import type { Challenge, ChallengeSection } from './types';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { fadeInUp } from '../../components/ui';
 import { colors, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ChallengesList'>;
@@ -57,11 +59,13 @@ export function ChallengesListScreen() {
       style={styles.list}
       sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item }) => (
-        <ChallengeCard
-          challenge={item}
-          onPress={c => navigation.navigate('ChallengeDetail', { challengeId: c.id })}
-        />
+      renderItem={({ item, index }) => (
+        <Animated.View entering={fadeInUp(Math.min(index, 4) * 40)}>
+          <ChallengeCard
+            challenge={item}
+            onPress={c => navigation.navigate('ChallengeDetail', { challengeId: c.id })}
+          />
+        </Animated.View>
       )}
       renderSectionHeader={({ section: { title } }) => (
         <Text style={styles.sectionHeader}>{title}</Text>

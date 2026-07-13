@@ -8,10 +8,9 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { susuApi } from '../../api/susu';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
-import { PressableScale } from '../ui';
+import { Icon, PressableScale } from '../ui';
 import { colors, radii, spacing, typography } from '../../theme';
 import type { SusuGroupDetailResponse } from '../../types/susu';
 
@@ -94,7 +93,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
           {succeeded ? (
             <View testID="success-state" style={styles.successContainer}>
               <View style={styles.successIconBadge}>
-                <Ionicons name="checkmark-circle" size={40} color={colors.status.success} />
+                <Icon name="checkmark-circle" size={40} color={colors.status.success} />
               </View>
               <Text style={styles.successTitle}>Payment sent!</Text>
               <Text style={styles.successSub}>
@@ -114,7 +113,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
                   testID="close-btn"
                   hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
                 >
-                  <Ionicons name="close" size={20} color={colors.textSecondary} />
+                  <Icon name="close" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 

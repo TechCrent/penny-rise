@@ -5,11 +5,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { MainTabParamList } from '../../navigation/MainTabNavigator';
 import { useProfile } from '../Settings/useProfile';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = CompositeNavigationProp<
@@ -45,7 +44,7 @@ export function ProfileHomeScreen() {
           <View style={styles.identityHeader}>
             <Text style={styles.identityTitle}>Identity verification</Text>
             <View style={[styles.pill, styles.pillVerified]}>
-              <Ionicons name="checkmark-circle" size={12} color={colors.status.successText} />
+              <Icon name="checkmark-circle" size={12} color={colors.status.successText} />
               <Text style={[styles.pillText, styles.pillTextVerified]}>Verified</Text>
             </View>
           </View>

@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Ionicons } from '@expo/vector-icons';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { PinEntryPad } from '../components/PinEntryPad';
 import {
@@ -16,6 +15,7 @@ import {
 } from '../auth/appLock';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { colors, radii, spacing, typography } from '../theme';
+import { Icon } from '../components/ui';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AppLockSetupPrompt'>;
 type Route = RouteProp<RootStackParamList, 'AppLockSetupPrompt'>;
@@ -127,7 +127,7 @@ export function AppLockSetupPromptScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.content}>
         <View style={styles.iconBadge}>
-          <Ionicons name="lock-closed-outline" size={30} color={colors.gold.text} />
+          <Icon name="lock-closed-outline" size={30} color={colors.gold.text} />
         </View>
         <Text style={styles.heading}>Lock Stash?</Text>
         <Text style={styles.subheading}>

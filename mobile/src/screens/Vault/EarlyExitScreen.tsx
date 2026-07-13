@@ -12,8 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,7 +23,7 @@ import {
   type EarlyExitResponse,
 } from '../../api/hooks/useEarlyExit';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale, type IconName } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -53,7 +51,7 @@ const REASON_OPTIONS: Array<{
   id: EarlyExitReason;
   label: string;
   description: string;
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
 }> = [
   {
     id: 'SCHOOL_FEES_EMERGENCY',
@@ -189,7 +187,7 @@ export default function EarlyExitScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Explainer — honest, not shaming */}
           <View style={styles.explainerCard}>
-            <Ionicons name="lock-open-outline" size={30} color={colors.gold.text} />
+            <Icon name="lock-open-outline" size={30} color={colors.gold.text} />
             <Text style={styles.explainerTitle}>Breaking this lock early</Text>
             <Text style={styles.explainerBody}>
               Life happens. You can exit this vault before your conditions are met. A{' '}
@@ -226,7 +224,7 @@ export default function EarlyExitScreen() {
               accessibilityState={{ selected: reason === opt.id }}
               accessibilityLabel={`${opt.label}. ${opt.description}`}
             >
-              <Ionicons
+              <Icon
                 name={opt.icon}
                 size={22}
                 color={reason === opt.id ? colors.gold.text : colors.textSecondary}
@@ -334,7 +332,7 @@ export default function EarlyExitScreen() {
           {/* Cool-off explanation */}
           <View style={styles.coolOffCard}>
             <View style={styles.coolOffTitleRow}>
-              <Ionicons name="hourglass-outline" size={16} color={colors.status.warningText} />
+              <Icon name="hourglass-outline" size={16} color={colors.status.warningText} />
               <Text style={styles.coolOffTitle}>72-hour cool-off</Text>
             </View>
             <Text style={styles.coolOffBody}>
@@ -348,7 +346,7 @@ export default function EarlyExitScreen() {
 
           {/* Deposit note */}
           <View style={styles.depositNote}>
-            <Ionicons name="bulb-outline" size={15} color={colors.gold.text} style={styles.depositNoteIcon} />
+            <Icon name="bulb-outline" size={15} color={colors.gold.text} style={styles.depositNoteIcon} />
             <Text style={styles.depositNoteText}>
               Any deposits you make{' '}
               <Text style={styles.depositNoteBold}>during the 72-hour window</Text> will be included
@@ -391,7 +389,7 @@ export default function EarlyExitScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Deliberate confirmation copy */}
           <View style={styles.confirmIntro}>
-            <Ionicons name="warning-outline" size={26} color={colors.status.error} />
+            <Icon name="warning-outline" size={26} color={colors.status.error} />
             <Text style={styles.confirmIntroTitle}>You&apos;re starting the exit process</Text>
             <Text style={styles.confirmIntroBody}>
               Once confirmed, the 72-hour cool-off begins. Your vault will show as{' '}
@@ -455,7 +453,7 @@ export default function EarlyExitScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.doneIconBadge}>
-            <Ionicons name="hourglass-outline" size={36} color={colors.gold.text} />
+            <Icon name="hourglass-outline" size={36} color={colors.gold.text} />
           </View>
           <Text style={styles.doneTitle}>Your exit request is in</Text>
           <Text style={styles.doneCountdown}>
@@ -565,7 +563,7 @@ export function EarlyExitStatusPanel({
     <View style={panelStyles.container}>
       {/* Header row */}
       <View style={panelStyles.headerRow}>
-        <Ionicons name="hourglass-outline" size={20} color={colors.status.warningText} />
+        <Icon name="hourglass-outline" size={20} color={colors.status.warningText} />
         <View style={panelStyles.headerBody}>
           <Text style={panelStyles.headerTitle}>Early exit in progress</Text>
           <Text style={panelStyles.headerCountdown}>{formatCountdown(scheduledReleaseAt)}</Text>
@@ -824,11 +822,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.status.warningBorder,
   },
   coolOffTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
   coolOffTitle: { fontSize: 14, fontWeight: '700', color: colors.status.warningText },
-  coolOffBody: { fontSize: 13, color: '#78350F', lineHeight: 19 },
+  coolOffBody: { fontSize: 13, color: colors.status.warningInk, lineHeight: 19 },
   coolOffBold: { fontWeight: '700' },
 
   depositNote: {
@@ -855,7 +853,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   confirmIntroTitle: {
     fontSize: 16,
@@ -882,7 +880,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
@@ -977,7 +975,7 @@ const panelStyles = StyleSheet.create({
     padding: spacing.xl,
     margin: spacing.lg,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.status.warningBorder,
   },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.lg },
   headerBody: { flex: 1 },
@@ -993,19 +991,19 @@ const panelStyles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   amountItem: { flex: 1, alignItems: 'center' },
-  amountDivider: { width: 1, height: 36, backgroundColor: '#FDE68A' },
+  amountDivider: { width: 1, height: 36, backgroundColor: colors.status.warningBorder },
   amountLabel: {
     fontSize: 11,
-    color: '#B45309',
+    color: colors.status.warningInkSoft,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: spacing.xs,
   },
-  amountValue: { fontSize: 16, fontWeight: '800', color: '#78350F' },
+  amountValue: { fontSize: 16, fontWeight: '800', color: colors.status.warningInk },
   amountPositive: { color: colors.status.successText },
 
-  releaseDate: { fontSize: 12, color: '#B45309', marginBottom: spacing.md, textAlign: 'center' },
+  releaseDate: { fontSize: 12, color: colors.status.warningInkSoft, marginBottom: spacing.md, textAlign: 'center' },
 
   cancelBtn: {
     borderWidth: 1.5,
@@ -1019,6 +1017,6 @@ const panelStyles = StyleSheet.create({
   cancelBtnDisabled: { opacity: 0.5 },
   cancelBtnText: { fontSize: 14, fontWeight: '700', color: colors.status.error },
 
-  cancelNote: { fontSize: 12, color: '#B45309', textAlign: 'center' },
+  cancelNote: { fontSize: 12, color: colors.status.warningInkSoft, textAlign: 'center' },
   cancelError: { fontSize: 12, color: colors.status.error, marginBottom: spacing.sm, textAlign: 'center' },
 });

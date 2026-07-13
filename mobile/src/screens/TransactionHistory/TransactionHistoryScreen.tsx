@@ -8,6 +8,7 @@ import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { FilterTabs } from './components/FilterTabs';
 import { TransactionListItem } from './components/TransactionListItem';
 import { TransactionEmptyState } from './components/TransactionEmptyState';
+import { TransactionHistorySkeleton } from './components/TransactionHistorySkeleton';
 import { ReceiptModal } from './components/ReceiptModal';
 import { useTransactionHistory } from './useTransactionHistory';
 import { colors, spacing, typography } from '../../theme';
@@ -64,9 +65,7 @@ export function TransactionHistoryScreen() {
       <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator testID="history-loading" color={colors.gold.base} />
-        </View>
+        <TransactionHistorySkeleton />
       ) : (
         <FlatList
           data={transactions}

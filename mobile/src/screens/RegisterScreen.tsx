@@ -13,13 +13,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Ionicons } from '@expo/vector-icons';
 
 import { type RootStackParamList } from '../navigation/RootNavigator';
 import { registerSchema, type RegisterFormValues } from './RegisterScreen.schema';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { PressableScale } from '../components/ui';
+import { Icon, PressableScale } from '../components/ui';
 import { signup } from '../api/auth';
 import { extractApiError } from '../api/client';
 import { colors, spacing, typography } from '../theme';
@@ -236,7 +235,7 @@ export default function RegisterScreen() {
                 >
                   <View style={[styles.checkbox, value ? styles.checkboxChecked : null]}>
                     {value ? (
-                      <Ionicons name="checkmark" size={13} color={colors.neutral[900]} />
+                      <Icon name="checkmark" size={13} color={colors.neutral[900]} />
                     ) : null}
                   </View>
                   <Text style={styles.termsText}>

@@ -12,19 +12,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useStatement, type StatementEntry } from '../../api/hooks/useStatement';
 import type { VaultListItem } from '../../api/hooks/useVaults';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultActionBar } from './components/VaultActionBar';
 import { TransactionReceiptModal } from './components/TransactionReceiptModal';
-import { PressableScale } from '../../components/ui';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { AnimatedNumber, Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'VaultDetail'>;
 type RouteProps = RouteProp<RootStackParamList, 'VaultDetail'>;
+
+function formatVaultCedis(pesewas: number): string {
+  return (pesewas / 100).toLocaleString('en-GH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GH', {
@@ -125,6 +138,29 @@ function StatementRow({ entry, onPress }: { entry: StatementEntry; onPress: () =
   );
 }
 
+// ─── Animated goal progress fill ─────────────────────────────────────────────
+
+function AnimatedProgressFill({ progress }: { progress: number }) {
+  const width = useSharedValue(0);
+
+  React.useEffect(() => {
+    width.value = withTiming(Math.min(progress, 100), {
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [progress, width]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${width.value}%`,
+  }));
+
+  return (
+    <View style={styles.progressTrack}>
+      <Animated.View style={[styles.progressFill, animatedStyle]} />
+    </View>
+  );
+}
+
 // ─── MetaRow ──────────────────────────────────────────────────────────────────
 
 function MetaRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
@@ -194,9 +230,7 @@ export default function VaultDetailScreen() {
           <Text style={styles.errorText}>
             {vaultError instanceof Error ? vaultError.message : 'Could not load this vault.'}
           </Text>
-          <PressableScale style={styles.retryBtn} onPress={() => refetchVault()}>
-            <Text style={styles.retryText}>Retry</Text>
-          </PressableScale>
+          <PrimaryButton title="Retry" onPress={() => refetchVault()} style={styles.retryBtn} />
         </View>
       </SafeAreaView>
     );
@@ -242,7 +276,7 @@ export default function VaultDetailScreen() {
                 onPress={() => setShowSuccess(false)}
                 activeOpacity={0.9}
               >
-                <Ionicons name="checkmark-circle" size={15} color={colors.status.successText} />
+                <Icon name="checkmark-circle" size={15} color={colors.status.successText} />
                 <Text style={styles.successText}>{successMessage}</Text>
               </TouchableOpacity>
             )}
@@ -267,19 +301,18 @@ export default function VaultDetailScreen() {
               ) : (
                 <View style={styles.heroBalanceRow}>
                   <Text style={styles.heroCurrency}>GHS </Text>
-                  <Text style={styles.heroBalance}>{vault.balance_cedis}</Text>
+                  <AnimatedNumber
+                    value={vault.balance_pesewas}
+                    formatter={formatVaultCedis}
+                    style={styles.heroBalance}
+                  />
                 </View>
               )}
 
               {isLocked && unlockInfo && (
                 <View style={styles.unlockSection}>
                   <Text style={styles.unlockLabel}>{unlockInfo.label}</Text>
-                  {unlockInfo.progress !== null && (
-                    <View style={styles.progressTrack}>
-                      {/* eslint-disable-next-line react-native/no-inline-styles */}
-                      <View style={[styles.progressFill, { width: `${unlockInfo.progress}%` }]} />
-                    </View>
-                  )}
+                  {unlockInfo.progress !== null && <AnimatedProgressFill progress={unlockInfo.progress} />}
                   {unlockInfo.progress !== null && (
                     <Text style={styles.progressPct}>
                       {unlockInfo.progress.toFixed(0)}% of goal
@@ -313,7 +346,7 @@ export default function VaultDetailScreen() {
           ) : (
             <View style={styles.emptyStatement}>
               <View style={styles.emptyIconWrap}>
-                <Ionicons name="receipt-outline" size={22} color={colors.neutral[400]} />
+                <Icon name="receipt-outline" size={22} color={colors.neutral[400]} />
               </View>
               <Text style={styles.emptyText}>No transactions yet</Text>
               <Text style={styles.emptySubtext}>
@@ -355,13 +388,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
   errorText: { color: colors.status.error, fontSize: 14, textAlign: 'center', marginBottom: spacing.md },
-  retryBtn: {
-    backgroundColor: colors.gold.base,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radii.sm,
-  },
-  retryText: { color: colors.neutral[900], fontSize: 14, fontWeight: '700' },
+  retryBtn: { paddingHorizontal: spacing.xl },
   listContent: { paddingBottom: spacing.xl },
 
   header: {

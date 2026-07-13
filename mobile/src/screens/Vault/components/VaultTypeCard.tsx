@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { PressableScale } from '../../../components/ui';
+import { Icon, PressableScale } from '../../../components/ui';
 import { colors, radii, spacing, typography } from '../../../theme';
 
 type VaultType = 'STANDARD' | 'LOCKED';
@@ -49,7 +48,7 @@ export function VaultTypeCard({
     >
       <View style={styles.topRow}>
         <View style={styles.iconWrap}>
-          <Ionicons name={meta.icon} size={20} color={colors.gold.text} />
+          <Icon name={meta.icon} size={20} color={colors.gold.text} />
         </View>
         <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
           {selected && <View style={styles.radioInner} />}
@@ -61,7 +60,7 @@ export function VaultTypeCard({
 
       {type === 'LOCKED' && meta.note && (
         <View style={styles.penaltyRow}>
-          <Ionicons name="warning-outline" size={13} color={colors.status.warningText} />
+          <Icon name="warning-outline" size={13} color={colors.status.warningText} />
           <Text style={styles.penaltyText}>{meta.note}</Text>
         </View>
       )}

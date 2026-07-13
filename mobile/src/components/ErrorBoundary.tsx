@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { PressableScale } from './ui';
+import { Icon, PressableScale } from './ui';
 import { colors, radii, spacing, typography } from '../theme';
 
 interface Props {
@@ -38,7 +37,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <SafeAreaView style={styles.safe}>
           <View style={styles.content}>
             <View style={styles.iconBadge}>
-              <Ionicons name="warning-outline" size={28} color={colors.status.error} />
+              <Icon name="warning-outline" size={28} color={colors.status.error} />
             </View>
             <Text style={styles.heading}>Something went wrong</Text>
             <Text style={styles.body}>

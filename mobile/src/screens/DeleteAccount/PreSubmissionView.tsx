@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 import type { DeletionBlocker } from './types';
 
@@ -71,7 +70,7 @@ export function PreSubmissionView({
           style={[styles.checkbox, acknowledged && styles.checkboxChecked]}
           testID="ack-checkbox"
         >
-          {acknowledged && <Ionicons name="checkmark" size={14} color={colors.neutral[0]} />}
+          {acknowledged && <Icon name="checkmark" size={14} color={colors.neutral[0]} />}
         </View>
         <Text style={styles.checkboxLabel}>
           I understand this will begin a 30-day account deletion process.

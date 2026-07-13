@@ -6,9 +6,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
+import { Icon } from '../components/ui';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -149,7 +149,7 @@ export default function KycCardDetailsScreen() {
           />
 
           <View style={styles.infoBox}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={colors.status.successText} />
+            <Icon name="shield-checkmark-outline" size={16} color={colors.status.successText} />
             <Text style={styles.infoText}>
               Your documents are encrypted and used only for identity verification. They are
               automatically deleted 24 hours after a decision is made.

@@ -1,14 +1,13 @@
 import React, { useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { PressableScale } from './ui';
+import { Icon, PressableScale } from './ui';
 import { colors, radii, spacing, typography } from '../theme';
 
 export type UploadState = 'idle' | 'uploading' | 'success' | 'error';
@@ -89,7 +88,7 @@ export function DocumentUploadSlot({
         <View style={styles.successSlot}>
           <Image source={{ uri: previewUri }} style={styles.preview} resizeMode="cover" />
           <View style={styles.successBadgeRow}>
-            <Ionicons name="checkmark-circle" size={15} color={colors.status.success} />
+            <Icon name="checkmark-circle" size={15} color={colors.status.success} />
             <Text style={styles.successBadge}>Uploaded</Text>
           </View>
           <PressableScale onPress={pickImage} style={styles.retakeButton}>
@@ -107,11 +106,11 @@ export function DocumentUploadSlot({
           ) : (
             <View style={styles.buttonRow}>
               <PressableScale style={styles.captureButton} onPress={takePhoto}>
-                <Ionicons name="camera-outline" size={16} color={colors.textPrimary} />
+                <Icon name="camera-outline" size={16} color={colors.textPrimary} />
                 <Text style={styles.captureButtonText}>Camera</Text>
               </PressableScale>
               <PressableScale style={styles.captureButton} onPress={pickImage}>
-                <Ionicons name="images-outline" size={16} color={colors.textPrimary} />
+                <Icon name="images-outline" size={16} color={colors.textPrimary} />
                 <Text style={styles.captureButtonText}>Gallery</Text>
               </PressableScale>
             </View>

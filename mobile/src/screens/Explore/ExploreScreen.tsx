@@ -5,15 +5,13 @@ import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { MainTabParamList } from '../../navigation/MainTabNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
 import { useChallenges } from '../Challenges/useChallenges';
 import { sectionFor } from '../Challenges/types';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale, type IconName } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = CompositeNavigationProp<
@@ -34,7 +32,7 @@ function DestinationCard({
   summary,
   onPress,
 }: {
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   title: string;
   summary: string;
   onPress: () => void;
@@ -47,7 +45,7 @@ function DestinationCard({
       accessibilityLabel={`${title}. ${summary}`}
     >
       <View style={styles.cardIcon}>
-        <Ionicons name={icon} size={20} color={colors.gold.text} />
+        <Icon name={icon} size={20} color={colors.gold.text} />
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle}>{title}</Text>

@@ -14,9 +14,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { Icon } from '../components/ui';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -60,7 +60,7 @@ export default function ForgotPasswordScreen() {
       <SafeAreaView style={styles.safe}>
         <Animated.View entering={FadeIn.duration(400)} style={styles.confirmedContainer}>
           <View style={styles.iconBadge}>
-            <Ionicons name="mail-outline" size={32} color={colors.gold.text} />
+            <Icon name="mail-outline" size={32} color={colors.gold.text} />
           </View>
           <Text style={styles.heading}>Check your inbox</Text>
           <Text style={styles.body}>

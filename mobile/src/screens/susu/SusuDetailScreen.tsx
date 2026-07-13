@@ -9,19 +9,26 @@ import {
   Alert,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSusuDetail } from '../../hooks/useSusuDetail';
 import { susuApi } from '../../api/susu';
 import { RotationRing } from '../../components/susu/RotationRing';
 import { ContributionStatusPill } from '../../components/susu/ContributionStatusPill';
 import { ContributeBottomSheet } from '../../components/susu/ContributeBottomSheet';
-import { PressableScale } from '../../components/ui';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { AnimatedNumber, Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing } from '../../theme';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { ContributionStatus } from '../../types/susu';
 
 type SusuDetailRoute = RouteProp<RootStackParamList, 'SusuDetail'>;
+
+function formatPotCedis(pesewas: number): string {
+  return (pesewas / 100).toLocaleString('en-GH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -84,9 +91,7 @@ export function SusuDetailScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error ?? 'Group not found.'}</Text>
-        <PressableScale onPress={() => fetch()} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Retry</Text>
-        </PressableScale>
+        <PrimaryButton title="Retry" onPress={() => fetch()} style={styles.retryBtn} />
       </View>
     );
   }
@@ -149,14 +154,16 @@ export function SusuDetailScreen() {
               Round {round.round_number} of {round.total_rounds}
             </Text>
             <Text style={styles.recipientName}>{round.recipient_display_name}</Text>
-            <Text style={styles.potAmount}>GHS {round.expected_pot_amount_cedis} pot</Text>
+            <Text style={styles.potAmount}>
+              GHS <AnimatedNumber value={round.expected_pot_amount} formatter={formatPotCedis} /> pot
+            </Text>
             {round.scheduled_collection_at && (
               <Text style={styles.dueDate}>Due {formatDate(round.scheduled_collection_at)}</Text>
             )}
 
             {isDisbursing && (
               <View style={styles.disbursingBadge} testID="disbursing-badge">
-                <Ionicons
+                <Icon
                   name={round.status === 'DISBURSED' ? 'checkmark-circle' : 'hourglass-outline'}
                   size={13}
                   color={colors.status.success}
@@ -294,13 +301,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   errorText: { color: colors.status.error, fontSize: 14, textAlign: 'center', marginBottom: spacing.md },
-  retryBtn: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.sm,
-  },
-  retryText: { color: colors.neutral[900], fontWeight: '700' },
+  retryBtn: { paddingHorizontal: spacing.xl },
 
   pendingBanner: { backgroundColor: colors.status.warningBg, padding: spacing.lg },
   pendingBannerText: { color: colors.status.warningText, fontSize: 13, fontWeight: '500' },

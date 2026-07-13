@@ -9,9 +9,20 @@ interface PrimaryButtonProps {
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
+  testID?: string;
+  /** Overrides the default a11y label (which is `title`) when they differ. */
+  accessibilityLabel?: string;
 }
 
-export function PrimaryButton({ title, onPress, loading, disabled, style }: PrimaryButtonProps) {
+export function PrimaryButton({
+  title,
+  onPress,
+  loading,
+  disabled,
+  style,
+  testID,
+  accessibilityLabel,
+}: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
 
   return (
@@ -20,8 +31,9 @@ export function PrimaryButton({ title, onPress, loading, disabled, style }: Prim
       onPress={onPress}
       disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: isDisabled }}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator color={colors.neutral[900]} size="small" />

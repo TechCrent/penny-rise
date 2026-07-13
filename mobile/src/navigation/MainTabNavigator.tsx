@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import HomeScreen from '../screens/HomeScreen';
 import { ExploreScreen } from '../screens/Explore/ExploreScreen';
 import { ProfileHomeScreen } from '../screens/Profile/ProfileHomeScreen';
-import { colors } from '../theme';
+import { Icon, type IconName } from '../components/ui';
+import { colors, radii, shadows } from '../theme';
 
 export type MainTabParamList = {
   Home: undefined;
@@ -14,32 +16,61 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TAB_ICONS: Record<keyof MainTabParamList, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
-  Home: { active: 'home', inactive: 'home-outline' },
-  Explore: { active: 'compass', inactive: 'compass-outline' },
-  Profile: { active: 'person-circle', inactive: 'person-circle-outline' },
+const TAB_ICONS: Record<keyof MainTabParamList, IconName> = {
+  Home: 'home',
+  Explore: 'compass',
+  Profile: 'person-circle',
 };
+
+function TabIcon({ icon, focused, size }: { icon: IconName; focused: boolean; size: number }) {
+  const progress = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withSpring(focused ? 1 : 0, { damping: 16, stiffness: 220 });
+  }, [focused, progress]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{ scale: 0.7 + progress.value * 0.3 }],
+  }));
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + progress.value * 0.08 }],
+  }));
+
+  return (
+    <View style={styles.tabIconWrap}>
+      <Animated.View style={[styles.tabPill, pillStyle]} />
+      <Animated.View style={iconStyle}>
+        <Icon
+          name={icon}
+          size={size}
+          strokeWidth={focused ? 2.4 : 1.8}
+          color={focused ? colors.gold.text : colors.textTertiary}
+        />
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function MainTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused, size }) => {
-          const icons = TAB_ICONS[route.name as keyof MainTabParamList];
-          return (
-            <Ionicons
-              name={focused ? icons.active : icons.inactive}
-              size={size}
-              color={focused ? colors.gold.text : colors.textTertiary}
-            />
-          );
-        },
+        tabBarIcon: ({ focused, size }) => (
+          <TabIcon icon={TAB_ICONS[route.name as keyof MainTabParamList]} focused={focused} size={size} />
+        ),
         tabBarActiveTintColor: colors.gold.text,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          borderTopLeftRadius: radii.xl,
+          borderTopRightRadius: radii.xl,
+          height: 64,
+          paddingTop: 8,
+          ...shadows.md,
         },
       })}
     >
@@ -49,3 +80,19 @@ export default function MainTabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabIconWrap: {
+    width: 44,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabPill: {
+    position: 'absolute',
+    width: 44,
+    height: 30,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+  },
+});

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
+import { Icon, type IconName } from '../ui';
 import type { TransactionType } from '../../types/wallet';
 import { colors, radii } from '../../theme';
 
@@ -9,7 +8,7 @@ interface BadgeConfig {
   label: string;
   bg: string;
   text: string;
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
 }
 
 const CONFIG: Record<TransactionType, BadgeConfig> = {
@@ -34,7 +33,7 @@ export function TransactionBadge({ type }: Props) {
   const config = CONFIG[type] ?? CONFIG.OTHER;
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]} testID={`badge-${type}`}>
-      <Ionicons name={config.icon} size={11} color={config.text} />
+      <Icon name={config.icon} size={11} color={config.text} />
       <Text style={[styles.label, { color: config.text }]}>{config.label}</Text>
     </View>
   );

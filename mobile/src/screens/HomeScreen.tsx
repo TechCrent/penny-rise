@@ -16,8 +16,6 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { MainTabParamList } from '../navigation/MainTabNavigator';
@@ -35,7 +33,8 @@ import { ChallengeCard } from './Challenges/components/ChallengeCard';
 import { VaultCard } from '../components/VaultCard';
 import { SusuCard } from '../components/susu/SusuCard';
 import { HomeSkeleton } from '../components/HomeSkeleton';
-import { AnimatedNumber, EmptyState, PressableScale, ProgressRing, fadeInUp } from '../components/ui';
+import { AnimatedNumber, EmptyState, Icon, PressableScale, ProgressRing, fadeInUp } from '../components/ui';
+import type { IconName } from '../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../theme';
 import type { VaultListItem } from '../api/vaults';
 import type { UnifiedTransactionItem } from './TransactionHistory/types';
@@ -159,7 +158,7 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Open profile"
             >
-              <Ionicons name="person" size={18} color={colors.gold.text} />
+              <Icon name="person" size={18} color={colors.gold.text} />
             </PressableScale>
             <View>
               <Text style={styles.greeting}>{greeting()}</Text>
@@ -173,7 +172,7 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Notifications"
             >
-              <Ionicons name="notifications-outline" size={19} color={colors.textPrimary} />
+              <Icon name="notifications-outline" size={19} color={colors.textPrimary} />
               {unreadNotificationsCount > 0 && (
                 <View style={styles.bellBadge}>
                   <Text style={styles.bellBadgeText}>
@@ -211,7 +210,7 @@ export default function HomeScreen() {
           <View style={styles.heroTopRow}>
             <Text style={styles.heroLabel}>{heroLabel}</Text>
             <View style={styles.heroIconBadge}>
-              <Ionicons name="sparkles" size={13} color={colors.gold.base} />
+              <Icon name="sparkles" size={13} color={colors.gold.base} />
             </View>
           </View>
           {heroValue === null ? (
@@ -274,7 +273,7 @@ export default function HomeScreen() {
 const QUICK_ACTIONS: {
   key: string;
   label: string;
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   emphasis?: boolean;
 }[] = [
   { key: 'deposit', label: 'Deposit', icon: 'arrow-down', emphasis: true },
@@ -321,7 +320,7 @@ function TotalStateBody({
             accessibilityLabel={action.label}
           >
             <View style={[styles.actionIconWrap, action.emphasis && styles.actionIconWrapGold]}>
-              <Ionicons
+              <Icon
                 name={action.icon}
                 size={18}
                 color={action.emphasis ? colors.neutral[900] : colors.textPrimary}
@@ -383,7 +382,7 @@ function PortfolioInsight({ vaultCount, susuCount }: { vaultCount: number; susuC
     return (
       <View style={styles.insightCard}>
         <View style={styles.insightIconWrap}>
-          <Ionicons name="flash-outline" size={16} color={colors.gold.text} />
+          <Icon name="flash-outline" size={16} color={colors.gold.text} />
         </View>
         <Text style={styles.insightText}>
           Start your first vault to begin building your savings.
@@ -394,7 +393,7 @@ function PortfolioInsight({ vaultCount, susuCount }: { vaultCount: number; susuC
   return (
     <View style={styles.insightCard}>
       <View style={styles.insightIconWrap}>
-        <Ionicons name="flash-outline" size={16} color={colors.gold.text} />
+        <Icon name="flash-outline" size={16} color={colors.gold.text} />
       </View>
       <Text style={styles.insightText}>
         You&apos;re actively saving across {vaultCount} vault{vaultCount !== 1 ? 's' : ''}
@@ -627,7 +626,7 @@ function IdlePayoutNudge({ onPress }: { onPress: () => void }) {
         accessibilityLabel={`GHS ${payout.amountCedis} is sitting in your wallet. Move it into a vault to keep it safe.`}
       >
         <View style={styles.nudgeIconWrap}>
-          <Ionicons name="sparkles" size={15} color={colors.gold.text} />
+          <Icon name="sparkles" size={15} color={colors.gold.text} />
         </View>
         <Text style={styles.nudgeText}>
           <Text style={styles.nudgeAmount}>GHS {payout.amountCedis} is sitting in your wallet</Text> ·{' '}
@@ -642,7 +641,7 @@ function IdlePayoutNudge({ onPress }: { onPress: () => void }) {
 // Activity preview (shared by Savings/Wallet states)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TX_ICON: Record<string, ComponentProps<typeof Ionicons>['name']> = {
+const TX_ICON: Record<string, IconName> = {
   DEPOSIT: 'arrow-down-circle-outline',
   WITHDRAWAL: 'arrow-up-circle-outline',
   TRANSFER: 'swap-horizontal-outline',
@@ -673,7 +672,7 @@ function ActivityPreview({
           style={[styles.activityRow, index === items.length - 1 && styles.activityRowLast]}
         >
           <View style={styles.activityIconWrap}>
-            <Ionicons
+            <Icon
               name={TX_ICON[item.transactionType] ?? 'ellipse-outline'}
               size={18}
               color={colors.neutral[600]}

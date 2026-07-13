@@ -14,6 +14,7 @@ import { useNotificationsList } from '../../features/notifications/useNotificati
 import { navigateForNotification } from '../../features/notifications/deepLinkRouter';
 import { NotificationListItem } from './components/NotificationListItem';
 import { NotificationEmptyState } from './components/NotificationEmptyState';
+import { NotificationInboxSkeleton } from './components/NotificationInboxSkeleton';
 import { colors, spacing } from '../../theme';
 import type { NotificationItem } from '../../features/notifications/types';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
@@ -52,11 +53,7 @@ export function NotificationInboxScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator testID="inbox-loading" color={colors.gold.base} />
-      </View>
-    );
+    return <NotificationInboxSkeleton />;
   }
 
   return (
@@ -99,7 +96,6 @@ export function NotificationInboxScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

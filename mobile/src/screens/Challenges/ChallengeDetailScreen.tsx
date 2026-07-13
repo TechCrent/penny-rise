@@ -5,8 +5,8 @@ import { useChallengeDetail, useJoinChallenge } from './useChallenges';
 import { BadgePreview } from './components/BadgePreview';
 import { JoinConfirmationSheet } from './components/JoinConfirmationSheet';
 import { ProgressBar } from '../../components/ProgressBar';
-import { PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { colors, spacing, typography } from '../../theme';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 type Route = RouteProp<RootStackParamList, 'ChallengeDetail'>;
@@ -37,9 +37,12 @@ export function ChallengeDetailScreen() {
         <Text style={styles.message} testID="challenge-detail-error">
           Couldn&apos;t load this challenge.
         </Text>
-        <PressableScale style={styles.retryButton} onPress={() => refetch()} testID="challenge-detail-retry">
-          <Text style={styles.retryButtonLabel}>Retry</Text>
-        </PressableScale>
+        <PrimaryButton
+          title="Retry"
+          onPress={() => refetch()}
+          style={styles.retryButton}
+          testID="challenge-detail-retry"
+        />
       </View>
     );
   }
@@ -106,14 +109,12 @@ export function ChallengeDetailScreen() {
       )}
 
       {isUnenrolled && (
-        <PressableScale
-          style={styles.enrolButton}
+        <PrimaryButton
+          title="Join Challenge"
           onPress={() => setShowConfirmSheet(true)}
-          accessibilityRole="button"
+          style={styles.enrolButton}
           accessibilityLabel="Join this challenge"
-        >
-          <Text style={styles.enrolButtonLabel}>Join Challenge</Text>
-        </PressableScale>
+        />
       )}
 
       <JoinConfirmationSheet
@@ -136,13 +137,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing.xl },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
   message: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md },
-  retryButton: {
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-  },
-  retryButtonLabel: { color: colors.neutral[900], fontSize: 14, fontWeight: '700' },
+  retryButton: { paddingHorizontal: spacing.xl },
   badgeSection: { alignItems: 'center', marginBottom: spacing.xl },
   badgeEarnedLabel: { fontSize: 15, fontWeight: '700', color: colors.status.successText, marginTop: spacing.sm },
   title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
@@ -159,12 +154,5 @@ const styles = StyleSheet.create({
   detailValueSmall: { fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs },
   progressSection: { marginTop: spacing.xl },
   progressText: { fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs },
-  enrolButton: {
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.sm,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing['2xl'],
-  },
-  enrolButtonLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
+  enrolButton: { marginTop: spacing['2xl'] },
 });

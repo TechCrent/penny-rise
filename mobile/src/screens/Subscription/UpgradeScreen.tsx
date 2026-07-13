@@ -6,12 +6,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
 import { extractApiError } from '../../api/client';
 import { initiateUpgrade, confirmUpgrade } from '../../api/subscriptionApi';
 import { useSubscriptionStatus } from '../../api/hooks/useSubscriptionStatus';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SubscriptionUpgrade'>;
@@ -141,7 +140,7 @@ export function UpgradeScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
           <View style={styles.successIconBadge}>
-            <Ionicons name="checkmark-circle" size={40} color={colors.status.success} />
+            <Icon name="checkmark-circle" size={40} color={colors.status.success} />
           </View>
           <Text style={styles.title} testID="upgrade-success">
             You&apos;re now on Premium!
@@ -165,7 +164,7 @@ export function UpgradeScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
           <View style={styles.failureIconBadge}>
-            <Ionicons name="close-circle" size={40} color={colors.status.error} />
+            <Icon name="close-circle" size={40} color={colors.status.error} />
           </View>
           <Text style={styles.title} testID="upgrade-error-title">
             {phase === 'network_error' ? "Couldn't reach Stash" : "Upgrade didn't complete"}
@@ -204,7 +203,7 @@ export function UpgradeScreen() {
         <View style={styles.benefitsList}>
           {PREMIUM_BENEFITS.map((benefit, i) => (
             <View key={i} style={styles.benefitRow}>
-              <Ionicons name="checkmark-circle" size={17} color={colors.status.success} style={styles.benefitIcon} />
+              <Icon name="checkmark-circle" size={17} color={colors.status.success} style={styles.benefitIcon} />
               <Text style={styles.benefitText}>{benefit}</Text>
             </View>
           ))}

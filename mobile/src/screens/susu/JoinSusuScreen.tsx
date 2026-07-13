@@ -10,10 +10,9 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { susuApi } from '../../api/susu';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 const CODE_LENGTH = 8;
@@ -218,7 +217,7 @@ export function JoinSusuScreen() {
           </View>
 
           <View style={styles.joinedBadge} testID="joined-badge">
-            <Ionicons name="checkmark-circle" size={15} color={colors.status.successText} />
+            <Icon name="checkmark-circle" size={15} color={colors.status.successText} />
             <Text style={styles.joinedBadgeText}>You&apos;ve joined!</Text>
           </View>
 

@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
+import { Icon } from './Icon';
+import type { IconName } from './Icon';
 import { colors, radii, spacing, typography } from '../../theme';
 
 interface EmptyStateProps {
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   title: string;
   message?: string;
   testID?: string;
@@ -16,7 +16,7 @@ export function EmptyState({ icon, title, message, testID }: EmptyStateProps) {
   return (
     <View style={styles.container} testID={testID}>
       <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={20} color={colors.neutral[400]} />
+        <Icon name={icon} size={20} color={colors.neutral[400]} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}

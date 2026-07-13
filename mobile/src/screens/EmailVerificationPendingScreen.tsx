@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '../components/ui';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { resendVerification, verifyEmail } from '../api/auth';
 import { extractApiError, apiClient } from '../api/client';
@@ -153,7 +153,7 @@ export default function EmailVerificationPendingScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.iconBadge}>
-          <Ionicons name="mail-outline" size={32} color={colors.gold.text} />
+          <Icon name="mail-outline" size={32} color={colors.gold.text} />
         </View>
         <Text style={styles.heading}>Check your inbox</Text>
         <Text style={styles.body}>

@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
@@ -22,7 +21,7 @@ import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
 import { useVaultWithdrawal } from '../../api/hooks/useVaultWithdrawal';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -265,7 +264,7 @@ export default function WithdrawScreen() {
             />
 
             <View style={styles.warningBox}>
-              <Ionicons name="time-outline" size={16} color={colors.status.warningText} />
+              <Icon name="time-outline" size={16} color={colors.status.warningText} />
               <Text style={styles.warningText}>
                 MoMo transfers usually arrive within{' '}
                 <Text style={styles.warningBold}>5–10 minutes</Text>. Occasionally up to 24 hours
@@ -317,7 +316,7 @@ export default function WithdrawScreen() {
           </LinearGradient>
 
           <View style={styles.settlementNote}>
-            <Ionicons name="hourglass-outline" size={20} color={colors.status.warningText} />
+            <Icon name="hourglass-outline" size={20} color={colors.status.warningText} />
             <View style={styles.settlementBody}>
               <Text style={styles.settlementTitle}>Takes a few minutes</Text>
               <Text style={styles.settlementDesc}>
@@ -366,7 +365,7 @@ export default function WithdrawScreen() {
         >
           <View style={styles.pendingHero}>
             <View style={styles.successIconBadge}>
-              <Ionicons name="checkmark-circle" size={40} color={colors.status.success} />
+              <Icon name="checkmark-circle" size={40} color={colors.status.success} />
             </View>
             <Text style={styles.pendingTitle}>Money sent</Text>
             <Text style={styles.pendingAmount}>GHS {formatCedis(amountPesewas)}</Text>
@@ -418,7 +417,7 @@ export default function WithdrawScreen() {
       >
         <View style={styles.pendingHero}>
           <View style={styles.pendingIconBadge}>
-            <Ionicons name="rocket-outline" size={36} color={colors.gold.text} />
+            <Icon name="rocket-outline" size={36} color={colors.gold.text} />
           </View>
           <Text style={styles.pendingTitle}>Transfer in progress</Text>
           <Text style={styles.pendingAmount}>GHS {formatCedis(amountPesewas)}</Text>
@@ -431,7 +430,7 @@ export default function WithdrawScreen() {
           <View style={styles.statusRow}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>Sent to Paystack</Text>
-            <Ionicons name="checkmark" size={16} color={colors.status.success} style={styles.statusIndicator} />
+            <Icon name="checkmark" size={16} color={colors.status.success} style={styles.statusIndicator} />
           </View>
           <View style={styles.statusConnector} />
           <View style={styles.statusRow}>
@@ -588,7 +587,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   exceedsText: { fontSize: 13, color: colors.status.errorText, fontWeight: '500' },
   fieldError: { fontSize: 12, color: colors.status.error, marginBottom: spacing.sm },
@@ -623,10 +622,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.status.warningBorder,
     marginBottom: spacing['2xl'],
   },
-  warningText: { flex: 1, fontSize: 13, color: '#78350F', lineHeight: 18 },
+  warningText: { flex: 1, fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
   warningBold: { fontWeight: '700' },
 
   // Confirm phase
@@ -660,12 +659,12 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.status.warningBorder,
     marginBottom: spacing.xl,
   },
   settlementBody: { flex: 1 },
   settlementTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText, marginBottom: 3 },
-  settlementDesc: { fontSize: 13, color: '#78350F', lineHeight: 18 },
+  settlementDesc: { fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
 
   serverErrorBox: {
     backgroundColor: colors.status.errorBg,
@@ -673,7 +672,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   serverErrorText: { fontSize: 13, color: colors.status.errorText },
 

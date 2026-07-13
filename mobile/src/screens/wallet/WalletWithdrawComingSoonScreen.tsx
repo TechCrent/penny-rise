@@ -3,9 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'WalletWithdrawComingSoon'>;
@@ -34,7 +33,7 @@ export function WalletWithdrawComingSoonScreen() {
 
       <View style={styles.body}>
         <View style={styles.iconBadge}>
-          <Ionicons name="construct-outline" size={30} color={colors.gold.text} />
+          <Icon name="construct-outline" size={30} color={colors.gold.text} />
         </View>
         <Text style={styles.title}>Wallet withdrawals are coming soon</Text>
         <Text style={styles.description}>

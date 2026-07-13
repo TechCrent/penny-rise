@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Ionicons } from '@expo/vector-icons';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { PinEntryPad } from '../components/PinEntryPad';
 import { isAppLockEnabled, getAppLockMethod, verifyPin, type AppLockMethod } from './appLock';
 import { useAuth } from './AuthContext';
 import { colors, radii, spacing, typography } from '../theme';
+import { Icon } from '../components/ui';
 
 type UnlockMode = 'system' | 'pin';
 
@@ -98,7 +98,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.content}>
           <View style={styles.iconBadge}>
-            <Ionicons name="lock-closed" size={28} color={colors.gold.text} />
+            <Icon name="lock-closed" size={28} color={colors.gold.text} />
           </View>
           <Text style={styles.heading}>Stash is locked</Text>
 

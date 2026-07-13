@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import type { VaultListItem } from '../../../api/hooks/useVaults';
-import { PressableScale } from '../../../components/ui';
+import { Icon, PressableScale } from '../../../components/ui';
 import { colors, radii, shadows, spacing } from '../../../theme';
 
 interface Props {
@@ -43,7 +42,7 @@ export function VaultActionBar({
     return (
       <View style={styles.container}>
         <View style={styles.coolOffBanner}>
-          <Ionicons name="hourglass-outline" size={18} color={colors.status.warningText} />
+          <Icon name="hourglass-outline" size={18} color={colors.status.warningText} />
           <View style={styles.coolOffBody}>
             <Text style={styles.coolOffTitle}>Early exit in progress</Text>
             <Text style={styles.coolOffSub}>72-hr cool-off in progress</Text>
@@ -76,7 +75,7 @@ export function VaultActionBar({
       <View style={styles.container}>
         {unlocked && (
           <View style={styles.unlockedBanner}>
-            <Ionicons name="lock-open-outline" size={14} color={colors.status.successText} />
+            <Icon name="lock-open-outline" size={14} color={colors.status.successText} />
             <Text style={styles.unlockedText}>Vault unlocked — withdraw freely, no penalty</Text>
           </View>
         )}
@@ -105,7 +104,7 @@ export function VaultActionBar({
   return (
     <View style={styles.container}>
       <View style={styles.penaltyNotice}>
-        <Ionicons name="warning-outline" size={13} color={colors.status.warningText} />
+        <Icon name="warning-outline" size={13} color={colors.status.warningText} />
         <Text style={styles.penaltyText}>
           Early exit incurs a <Text style={styles.penaltyBold}>5% penalty</Text>
         </Text>
@@ -159,7 +158,7 @@ const styles = StyleSheet.create({
   },
   destructiveButton: {
     borderWidth: 1.5,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
     backgroundColor: colors.status.errorBg,
   },
   buttonText: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
@@ -177,7 +176,7 @@ const styles = StyleSheet.create({
   },
   coolOffBody: { flex: 1 },
   coolOffTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText },
-  coolOffSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
+  coolOffSub: { fontSize: 12, color: colors.status.warningInkSoft, marginTop: 2 },
 
   unlockedBanner: {
     flexDirection: 'row',

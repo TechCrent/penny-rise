@@ -34,12 +34,21 @@ const status = {
   error: '#EF4444',
   errorBg: '#FEF2F2',
   errorText: '#991B1B',
+  // Softer red used for the outline of "danger" panels (early-exit /
+  // penalty confirmations) — sits between errorBg and error in weight.
+  errorBorder: '#FCA5A5',
   info: '#3B82F6',
   infoBg: '#EFF6FF',
   infoText: '#1E40AF',
   warning: '#F59E0B',
   warningBg: '#FFFBEB',
   warningText: '#92400E',
+  // Amber ramp for the cool-off / early-exit warning panels. These were
+  // duplicated as raw hex across the Vault screens; centralised here so the
+  // whole family stays consistent.
+  warningBorder: '#FDE68A',
+  warningInk: '#78350F',
+  warningInkSoft: '#B45309',
 } as const;
 
 export const colors = {

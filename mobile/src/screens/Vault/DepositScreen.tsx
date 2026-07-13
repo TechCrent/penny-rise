@@ -16,7 +16,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
@@ -26,7 +25,7 @@ import { useVaultDeposit } from '../../api/hooks/useVaultDeposit';
 import { useWalletDeposit } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -343,7 +342,7 @@ export default function DepositScreen() {
                 accessibilityState={{ selected: method === m }}
                 accessibilityLabel={m === 'MOMO' ? 'Mobile money' : 'Card — coming soon'}
               >
-                <Ionicons
+                <Icon
                   name={m === 'MOMO' ? 'phone-portrait-outline' : 'card-outline'}
                   size={26}
                   color={method === m ? colors.gold.text : colors.textSecondary}
@@ -541,7 +540,7 @@ export default function DepositScreen() {
         {renderHeader('Deposit complete', false)}
         <View style={styles.resultCenter}>
           <View style={styles.successIconBadge}>
-            <Ionicons name="checkmark-circle" size={48} color={colors.status.success} />
+            <Icon name="checkmark-circle" size={48} color={colors.status.success} />
           </View>
           <Text style={styles.resultTitle}>Deposit successful!</Text>
           <Text style={styles.resultAmount}>GHS {formatCedis(amountPesewas)}</Text>
@@ -587,7 +586,7 @@ export default function DepositScreen() {
       {renderHeader('Deposit failed', false)}
       <View style={styles.resultCenter}>
         <View style={styles.failureIconBadge}>
-          <Ionicons name="close-circle" size={48} color={colors.status.error} />
+          <Icon name="close-circle" size={48} color={colors.status.error} />
         </View>
         <Text style={styles.resultTitle}>Deposit wasn&apos;t completed</Text>
         <Text style={styles.failureSubtitle}>
@@ -853,7 +852,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
   serverErrorText: { fontSize: 13, color: colors.status.errorText },
 

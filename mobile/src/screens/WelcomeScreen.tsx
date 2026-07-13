@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   offlineRetryButton: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
     borderRadius: radii.sm,
     paddingVertical: 10,
     paddingHorizontal: spacing.xl,

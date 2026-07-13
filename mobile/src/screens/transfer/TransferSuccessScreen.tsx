@@ -4,10 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
+import { Icon, PressableScale } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'TransferSuccess'>;
@@ -22,7 +21,7 @@ export function TransferSuccessScreen() {
     <SafeAreaView style={styles.screen}>
       <Animated.View entering={FadeIn.duration(400)} style={styles.card}>
         <View style={styles.iconBadge}>
-          <Ionicons name="checkmark-circle" size={40} color={colors.status.success} />
+          <Icon name="checkmark-circle" size={40} color={colors.status.success} />
         </View>
         <Text style={styles.title}>Transfer Sent!</Text>
         <Text style={styles.subtitle} testID="recipient-label">

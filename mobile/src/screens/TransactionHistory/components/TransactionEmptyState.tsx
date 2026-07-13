@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { EmptyState } from '../../../components/ui';
 import type { FilterTab } from '../types';
 
 const EMPTY_COPY: Record<FilterTab, { title: string; subtitle: string }> = {
@@ -24,22 +24,5 @@ const EMPTY_COPY: Record<FilterTab, { title: string; subtitle: string }> = {
 
 export function TransactionEmptyState({ activeTab }: { activeTab: FilterTab }) {
   const { title, subtitle } = EMPTY_COPY[activeTab];
-  return (
-    <View style={styles.container} testID="empty-state">
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-    </View>
-  );
+  return <EmptyState icon="receipt-outline" title={title} message={subtitle} testID="empty-state" />;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
-});

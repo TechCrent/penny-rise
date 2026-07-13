@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { TransactionBadge } from './TransactionBadge';
+import { colors, spacing } from '../../theme';
 import type { WalletActivity } from '../../types/wallet';
 
 interface Props {
@@ -47,19 +48,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: colors.neutral[100],
+    backgroundColor: colors.surface,
   },
-  left: { flex: 1, flexDirection: 'column', gap: 6 },
+  left: { flex: 1, flexDirection: 'column', gap: spacing.sm },
   textGroup: { gap: 2 },
-  narrative: { fontSize: 14, fontWeight: '500', color: '#111827' },
-  time: { fontSize: 11, color: '#9CA3AF' },
-  right: { alignItems: 'flex-end', marginLeft: 12 },
+  narrative: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
+  time: { fontSize: 11, color: colors.textTertiary },
+  right: { alignItems: 'flex-end', marginLeft: spacing.md },
   amount: { fontSize: 15, fontWeight: '700' },
-  credit: { color: '#065F46' },
-  debit: { color: '#111827' },
-  runningBalance: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  credit: { color: colors.status.successText },
+  debit: { color: colors.textPrimary },
+  runningBalance: { fontSize: 11, color: colors.textTertiary, marginTop: 2 },
 });

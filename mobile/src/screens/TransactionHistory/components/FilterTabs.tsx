@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, Pressable, Text, StyleSheet } from 'react-native';
+import { colors, radii, spacing } from '../../../theme';
 import type { FilterTab } from '../types';
 
 const TABS: { key: FilterTab; label: string }[] = [
@@ -44,14 +45,14 @@ export function FilterTabs({ activeTab, onTabChange }: Props) {
 
 const styles = StyleSheet.create({
   container: { maxHeight: 48, flexGrow: 0 },
-  content: { paddingHorizontal: 16, gap: 8 },
+  content: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[100],
   },
-  activeTab: { backgroundColor: '#1A1A1A' },
-  tabLabel: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
-  activeTabLabel: { color: '#FFFFFF', fontWeight: '700' },
+  activeTab: { backgroundColor: colors.gold.base },
+  tabLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
+  activeTabLabel: { color: colors.neutral[900], fontWeight: '700' },
 });

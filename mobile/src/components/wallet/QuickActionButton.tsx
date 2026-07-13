@@ -1,8 +1,10 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
+import { Icon, PressableScale, type IconName } from '../ui';
+import { colors, radii, spacing } from '../../theme';
 
 interface Props {
-  icon: string;
+  icon: IconName;
   label: string;
   onPress: () => void;
   testID?: string;
@@ -10,12 +12,12 @@ interface Props {
 
 export function QuickActionButton({ icon, label, onPress, testID }: Props) {
   return (
-    <TouchableOpacity style={styles.btn} onPress={onPress} activeOpacity={0.85} testID={testID}>
+    <PressableScale style={styles.btn} onPress={onPress} testID={testID}>
       <View style={styles.iconCircle}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Icon name={icon} size={20} color={colors.gold.text} />
       </View>
       <Text style={styles.label}>{label}</Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -24,12 +26,11 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 52,
     height: 52,
-    borderRadius: 26,
-    backgroundColor: '#F3F4F6',
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: spacing.sm,
   },
-  icon: { fontSize: 22 },
-  label: { fontSize: 12, fontWeight: '600', color: '#374151' },
+  label: { fontSize: 12, fontWeight: '600', color: colors.neutral[700] },
 });

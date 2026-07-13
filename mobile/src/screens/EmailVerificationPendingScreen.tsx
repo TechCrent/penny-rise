@@ -4,9 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Icon } from '../components/ui';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { resendVerification, verifyEmail } from '../api/auth';
 import { extractApiError, apiClient } from '../api/client';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EmailVerificationPending'>;
 type Route = RouteProp<RootStackParamList, 'EmailVerificationPending'>;
@@ -140,7 +142,7 @@ export default function EmailVerificationPendingScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={[styles.container, styles.centered]}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.gold.base} />
           <Text style={styles.verifyingText}>Verifying your email…</Text>
         </View>
       </SafeAreaView>
@@ -150,7 +152,9 @@ export default function EmailVerificationPendingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Text style={styles.emoji}>✉️</Text>
+        <View style={styles.iconBadge}>
+          <Icon name="mail-outline" size={32} color={colors.gold.text} />
+        </View>
         <Text style={styles.heading}>Check your inbox</Text>
         <Text style={styles.body}>
           {email ? (
@@ -180,7 +184,7 @@ export default function EmailVerificationPendingScreen() {
           style={[styles.resendButton, !canResend ? styles.resendDisabled : null]}
         >
           {resendState === 'loading' ? (
-            <ActivityIndicator size="small" color="#1A1A1A" />
+            <ActivityIndicator size="small" color={colors.textPrimary} />
           ) : (
             <Text style={[styles.resendText, !canResend ? styles.resendTextDisabled : null]}>
               {cooldownRemaining > 0
@@ -201,33 +205,40 @@ export default function EmailVerificationPendingScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 80, alignItems: 'center' },
+  safe: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: 80, alignItems: 'center' },
   centered: { justifyContent: 'center' },
-  verifyingText: { marginTop: 16, fontSize: 16, color: '#6B7280' },
-  emoji: { fontSize: 56, marginBottom: 24 },
+  verifyingText: { marginTop: spacing.lg, fontSize: 16, color: colors.textSecondary },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing['2xl'],
+  },
   heading: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 16,
+    ...typography.h1,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
   body: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 32,
+    marginBottom: spacing['3xl'],
   },
-  email: { fontWeight: '600', color: '#111827' },
-  sentText: { color: '#059669', fontSize: 14, fontWeight: '600', marginBottom: 12 },
-  errorText: { color: '#EF4444', fontSize: 14, marginBottom: 12 },
-  resendButton: { paddingVertical: 12, paddingHorizontal: 16 },
+  email: { fontWeight: '600', color: colors.textPrimary },
+  sentText: { color: colors.status.success, fontSize: 14, fontWeight: '600', marginBottom: spacing.md },
+  errorText: { color: colors.status.error, fontSize: 14, marginBottom: spacing.md },
+  resendButton: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   resendDisabled: { opacity: 0.5 },
-  resendText: { color: '#1A1A1A', fontSize: 15, textDecorationLine: 'underline' },
+  resendText: { color: colors.textPrimary, fontSize: 15, textDecorationLine: 'underline' },
   resendTextDisabled: { textDecorationLine: 'none' },
-  hint: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginTop: 24 },
-  loginLink: { marginTop: 32, padding: 12 },
-  loginLinkText: { color: '#6B7280', fontSize: 14 },
+  hint: { fontSize: 13, color: colors.textTertiary, textAlign: 'center', marginTop: spacing.xl },
+  loginLink: { marginTop: spacing['3xl'], padding: spacing.md },
+  loginLinkText: { color: colors.textSecondary, fontSize: 14 },
 });

@@ -2,11 +2,14 @@ import React, { useMemo } from 'react';
 import { SectionList, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import { useChallenges } from './useChallenges';
 import { ChallengeCard } from './components/ChallengeCard';
 import { sectionFor } from './types';
 import type { Challenge, ChallengeSection } from './types';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { fadeInUp } from '../../components/ui';
+import { colors, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ChallengesList'>;
 
@@ -38,7 +41,7 @@ export function ChallengesListScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator testID="challenges-loading" />
+        <ActivityIndicator testID="challenges-loading" color={colors.gold.base} />
       </View>
     );
   }
@@ -56,11 +59,13 @@ export function ChallengesListScreen() {
       style={styles.list}
       sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item }) => (
-        <ChallengeCard
-          challenge={item}
-          onPress={c => navigation.navigate('ChallengeDetail', { challengeId: c.id })}
-        />
+      renderItem={({ item, index }) => (
+        <Animated.View entering={fadeInUp(Math.min(index, 4) * 40)}>
+          <ChallengeCard
+            challenge={item}
+            onPress={c => navigation.navigate('ChallengeDetail', { challengeId: c.id })}
+          />
+        </Animated.View>
       )}
       renderSectionHeader={({ section: { title } }) => (
         <Text style={styles.sectionHeader}>{title}</Text>
@@ -77,16 +82,16 @@ export function ChallengesListScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { paddingVertical: 12 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  message: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
+  list: { flex: 1, backgroundColor: colors.background },
+  content: { paddingVertical: spacing.md },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
+  message: { fontSize: 14, color: colors.textSecondary, textAlign: 'center' },
   sectionHeader: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#F9FAFB',
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.background,
   },
 });

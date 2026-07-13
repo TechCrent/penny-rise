@@ -1,19 +1,13 @@
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { VaultCard } from '../../components/VaultCard';
+import { PressableScale, EmptyState } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 import type { VaultListItem } from '../../api/vaults';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'VaultList'>;
@@ -41,7 +35,7 @@ export default function VaultListScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#111827" />
+          <ActivityIndicator size="large" color={colors.gold.base} />
         </View>
       </SafeAreaView>
     );
@@ -65,9 +59,9 @@ export default function VaultListScreen() {
       {error && activeVaults.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>Could not load vaults.</Text>
-          <TouchableOpacity onPress={() => refetch()} style={styles.retryButton}>
+          <PressableScale onPress={() => refetch()} style={styles.retryButton}>
             <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       ) : (
         <FlatList
@@ -76,19 +70,29 @@ export default function VaultListScreen() {
           renderItem={renderVault}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={isFetching && !isLoading} onRefresh={onRefresh} />
+            <RefreshControl
+              refreshing={isFetching && !isLoading}
+              onRefresh={onRefresh}
+              tintColor={colors.gold.base}
+              colors={[colors.gold.base]}
+            />
           }
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyHeading}>No vaults yet</Text>
-              <Text style={styles.emptyBody}>Create a vault to start saving toward a goal.</Text>
-              <TouchableOpacity
+            <EmptyState
+              icon="lock-closed-outline"
+              title="No vaults yet"
+              message="Create a vault to start saving toward a goal."
+            />
+          }
+          ListFooterComponent={
+            activeVaults.length === 0 ? (
+              <PressableScale
                 style={styles.emptyButton}
                 onPress={() => navigation.navigate('CreateVault')}
               >
                 <Text style={styles.emptyButtonText}>Create vault</Text>
-              </TouchableOpacity>
-            </View>
+              </PressableScale>
+            ) : null
           }
         />
       )}
@@ -97,37 +101,36 @@ export default function VaultListScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: { minWidth: 64 },
-  backText: { fontSize: 15, color: '#1A1A1A', fontWeight: '600' },
-  title: { fontSize: 17, fontWeight: '700', color: '#111827' },
+  backText: { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
+  title: { ...typography.h3, color: colors.textPrimary },
   createButton: { minWidth: 64, alignItems: 'flex-end' },
-  createText: { fontSize: 15, color: '#1A1A1A', fontWeight: '700' },
-  list: { paddingHorizontal: 16, paddingBottom: 32 },
-  errorText: { color: '#EF4444', fontSize: 14, marginBottom: 12 },
+  createText: { fontSize: 15, color: colors.textPrimary, fontWeight: '700' },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing['3xl'] },
+  errorText: { color: colors.status.error, fontSize: 14, marginBottom: spacing.md },
   retryButton: {
-    backgroundColor: '#111827',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: colors.gold.base,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
   },
-  retryText: { color: '#FFFFFF', fontWeight: '600' },
-  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
-  emptyHeading: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  emptyBody: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 20 },
+  retryText: { color: colors.neutral[900], fontWeight: '600' },
   emptyButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    alignSelf: 'center',
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    marginTop: -spacing.md,
   },
-  emptyButtonText: { color: '#FFFFFF', fontWeight: '700' },
+  emptyButtonText: { color: colors.neutral[900], fontWeight: '700' },
 });

@@ -1,12 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,17 +10,12 @@ import {
   DowngradePreviewResponse,
 } from '../../api/subscriptionApi';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import { Icon, PressableScale } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SubscriptionDowngrade'>;
 
 type Step = 'preview' | 'confirm' | 'confirming' | 'success' | 'error';
-
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const INDIGO = '#4F46E5';
-const BACKGROUND = '#F8F9FF';
-const BLUE = '#1E40AF';
-const RED = '#DC2626';
 
 export function DowngradeScreen() {
   const navigation = useNavigation<Nav>();
@@ -78,7 +66,7 @@ export function DowngradeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={INDIGO} testID="downgrade-loading" />
+          <ActivityIndicator size="large" color={colors.gold.base} testID="downgrade-loading" />
         </View>
       </SafeAreaView>
     );
@@ -90,14 +78,14 @@ export function DowngradeScreen() {
         <View style={styles.centered}>
           <Text style={styles.title}>Couldn&apos;t load your downgrade preview</Text>
           <Text style={styles.subtitle}>Please try again.</Text>
-          <TouchableOpacity
+          <PressableScale
             style={styles.secondaryButton}
             onPress={handleCancel}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
             <Text style={styles.secondaryButtonLabel}>Back</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </SafeAreaView>
     );
@@ -113,14 +101,14 @@ export function DowngradeScreen() {
           <Text style={styles.subtitle}>
             Any frozen resources remain visible — you can re-upgrade any time to unfreeze them.
           </Text>
-          <TouchableOpacity
+          <PressableScale
             style={styles.primaryButton}
             onPress={handleCancel}
             accessibilityRole="button"
             accessibilityLabel="Done"
           >
             <Text style={styles.primaryButtonLabel}>Done</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </SafeAreaView>
     );
@@ -134,22 +122,22 @@ export function DowngradeScreen() {
             Downgrade didn&apos;t complete
           </Text>
           <Text style={styles.subtitle}>{errorMessage}</Text>
-          <TouchableOpacity
+          <PressableScale
             style={styles.primaryButton}
             onPress={handleBackToPreview}
             accessibilityRole="button"
             accessibilityLabel="Retry downgrade"
           >
             <Text style={styles.primaryButtonLabel}>Try Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </PressableScale>
+          <PressableScale
             style={styles.secondaryButton}
             onPress={handleCancel}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
             <Text style={styles.secondaryButtonLabel}>Back</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </SafeAreaView>
     );
@@ -172,7 +160,7 @@ export function DowngradeScreen() {
             </Text>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={styles.checkboxRow}
             onPress={() => setAcknowledged(!acknowledged)}
             accessibilityRole="checkbox"
@@ -183,24 +171,25 @@ export function DowngradeScreen() {
               style={[styles.checkbox, acknowledged && styles.checkboxChecked]}
               testID="downgrade-ack-checkbox"
             >
-              {acknowledged && <Text style={styles.checkmark}>✓</Text>}
+              {acknowledged && <Icon name="checkmark" size={14} color={colors.neutral[900]} />}
             </View>
             <Text style={styles.checkboxLabel}>
               I understand my resources listed above will be frozen.
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={handleCancel}
               disabled={step === 'confirming'}
+              activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Cancel downgrade"
             >
               <Text style={styles.cancelLabel}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            <PressableScale
               style={[
                 styles.confirmButton,
                 (!acknowledged || step === 'confirming') && styles.disabledButton,
@@ -212,14 +201,14 @@ export function DowngradeScreen() {
               accessibilityState={{ disabled: !acknowledged || step === 'confirming' }}
             >
               {step === 'confirming' ? (
-                <ActivityIndicator color="#FFFFFF" testID="downgrade-confirming-spinner" />
+                <ActivityIndicator color={colors.neutral[0]} testID="downgrade-confirming-spinner" />
               ) : (
                 <Text style={styles.confirmLabel}>Confirm Downgrade</Text>
               )}
-            </TouchableOpacity>
+            </PressableScale>
           </View>
 
-          <TouchableOpacity
+          <PressableScale
             onPress={handleBackToPreview}
             disabled={step === 'confirming'}
             style={styles.backLink}
@@ -227,7 +216,7 @@ export function DowngradeScreen() {
             accessibilityLabel="Back to preview"
           >
             <Text style={styles.backLinkLabel}>Back to preview</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </SafeAreaView>
     );
@@ -286,6 +275,7 @@ export function DowngradeScreen() {
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={handleCancel}
+            activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Cancel downgrade"
           >
@@ -294,6 +284,7 @@ export function DowngradeScreen() {
           <TouchableOpacity
             style={styles.continueButton}
             onPress={handleContinue}
+            activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Continue to confirmation"
           >
@@ -310,77 +301,76 @@ function hasImpact(preview: DowngradePreviewResponse): boolean {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
-  content: { padding: 20 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  title: { fontSize: 20, fontWeight: '800', color: DARK, marginBottom: 16 },
-  subtitle: { fontSize: 14, color: MUTED, lineHeight: 21, marginBottom: 16, textAlign: 'center' },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: DARK, marginBottom: 8, marginTop: 8 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.xl },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
+  title: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.lg },
+  subtitle: { fontSize: 14, color: colors.textSecondary, lineHeight: 21, marginBottom: spacing.lg, textAlign: 'center' },
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm, marginTop: spacing.sm },
   resourceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
-  resourceName: { fontSize: 14, color: DARK },
-  resourceType: { fontSize: 12, color: MUTED },
-  warningCopy: { fontSize: 13, color: '#92400E', marginTop: 16, marginBottom: 8, lineHeight: 19 },
-  noImpactText: { fontSize: 14, color: MUTED, marginBottom: 24 },
-  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 20 },
+  resourceName: { fontSize: 14, color: colors.textPrimary },
+  resourceType: { fontSize: 12, color: colors.textSecondary },
+  warningCopy: { fontSize: 13, color: colors.status.warningText, marginTop: spacing.lg, marginBottom: spacing.sm, lineHeight: 19 },
+  noImpactText: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing['2xl'] },
+  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: spacing.xl },
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 4,
+    borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: spacing.sm,
     marginTop: 2,
   },
-  checkboxChecked: { backgroundColor: INDIGO, borderColor: INDIGO },
-  checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  checkboxLabel: { fontSize: 14, color: DARK, flex: 1, lineHeight: 20 },
-  buttonRow: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  checkboxChecked: { backgroundColor: colors.gold.base, borderColor: colors.gold.base },
+  checkboxLabel: { fontSize: 14, color: colors.textPrimary, flex: 1, lineHeight: 20 },
+  buttonRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
   cancelButton: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
+    borderColor: colors.borderStrong,
   },
   continueButton: {
     flex: 1,
-    backgroundColor: INDIGO,
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   confirmButton: {
     flex: 1,
-    backgroundColor: RED,
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: colors.status.error,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   disabledButton: { opacity: 0.4 },
-  cancelLabel: { fontSize: 15, fontWeight: '700', color: DARK },
-  continueLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  confirmLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  backLink: { alignItems: 'center', marginTop: 20 },
-  backLinkLabel: { fontSize: 14, color: INDIGO },
+  cancelLabel: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  continueLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
+  confirmLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[0] },
+  backLink: { alignItems: 'center', marginTop: spacing.xl },
+  backLinkLabel: { fontSize: 14, color: colors.gold.text },
   primaryButton: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing['2xl'],
     alignSelf: 'stretch',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
-  primaryButtonLabel: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  secondaryButton: { paddingVertical: 12, marginTop: 8 },
-  secondaryButtonLabel: { fontSize: 14, color: BLUE },
+  primaryButtonLabel: { fontSize: 16, fontWeight: '700', color: colors.neutral[900] },
+  secondaryButton: { paddingVertical: spacing.md, marginTop: spacing.sm },
+  secondaryButtonLabel: { fontSize: 14, color: colors.status.infoText },
 });

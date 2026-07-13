@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { SusuMemberSummary } from '../../types/susu';
+import { colors } from '../../theme';
 
 interface Props {
   members: SusuMemberSummary[];
@@ -12,7 +13,7 @@ interface Props {
 
 /**
  * Circular rotation ring — one node per member arranged around a circle.
- * - Current recipient: filled dark (primary brand colour)
+ * - Current recipient: filled gold (the one thing to look at this round)
  * - Completed positions (round_number < current): mid-gray
  * - Future positions: outlined only
  * - PENDING state: all nodes outlined (greyed out)
@@ -61,20 +62,20 @@ export function RotationRing({
         const isCompleted = !isPending && currentRoundNumber !== null && pos < currentRoundNumber;
 
         const bgColor = isPending
-          ? '#F3F4F6'
+          ? colors.neutral[100]
           : isCurrent
-            ? '#111827'
+            ? colors.gold.base
             : isCompleted
-              ? '#9CA3AF'
+              ? colors.neutral[400]
               : 'transparent';
         const borderColor = isPending
-          ? '#D1D5DB'
+          ? colors.neutral[300]
           : isCurrent
-            ? '#111827'
+            ? colors.gold.base
             : isCompleted
-              ? '#9CA3AF'
-              : '#374151';
-        const textColor = isCurrent || isCompleted ? '#FFFFFF' : '#374151';
+              ? colors.neutral[400]
+              : colors.neutral[700];
+        const textColor = isCurrent ? colors.neutral[900] : isCompleted ? colors.neutral[0] : colors.neutral[700];
 
         const labelX = center + (radius + 24) * Math.cos(angle);
         const labelY = center + (radius + 24) * Math.sin(angle);
@@ -119,8 +120,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     borderWidth: 1.5,
   },
-  ringLinePending: { borderColor: '#D1D5DB' },
-  ringLineActive: { borderColor: '#374151' },
+  ringLinePending: { borderColor: colors.neutral[300] },
+  ringLineActive: { borderColor: colors.neutral[700] },
   node: {
     position: 'absolute',
     borderWidth: 2,
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
   label: {
     position: 'absolute',
     fontSize: 10,
-    color: '#6B7280',
+    color: colors.textSecondary,
     width: 72,
     textAlign: 'center',
   },

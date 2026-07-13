@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  View,
   Text,
   StyleSheet,
   TouchableOpacity,
@@ -15,12 +14,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { resetPassword } from '../api/auth';
 import { extractApiError } from '../api/client';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ResetPassword'>;
 type Route = RouteProp<RootStackParamList, 'ResetPassword'>;
@@ -98,14 +99,14 @@ export default function ResetPasswordScreen() {
           </Text>
 
           {globalError ? (
-            <View style={styles.globalError}>
+            <Animated.View entering={FadeInUp.duration(300)} style={styles.globalError}>
               <Text style={styles.globalErrorText}>{globalError}</Text>
               {globalError.includes('expired') || globalError.includes('already been used') ? (
                 <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
                   <Text style={styles.requestNewLink}>Request a new reset link →</Text>
                 </TouchableOpacity>
               ) : null}
-            </View>
+            </Animated.View>
           ) : null}
 
           <Controller
@@ -168,20 +169,25 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
-  heading: { fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 16, color: '#6B7280', marginBottom: 32 },
-  globalError: { backgroundColor: '#FEF2F2', borderRadius: 8, padding: 14, marginBottom: 20 },
-  globalErrorText: { color: '#991B1B', fontSize: 14, marginBottom: 8 },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  globalError: {
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  globalErrorText: { color: colors.status.errorText, fontSize: 14, marginBottom: spacing.sm },
   requestNewLink: {
-    color: '#991B1B',
+    color: colors.status.errorText,
     fontSize: 13,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
-  eyeButton: { paddingHorizontal: 12 },
-  eyeText: { color: '#6B7280', fontSize: 14 },
-  submitButton: { marginTop: 8 },
+  eyeButton: { paddingHorizontal: spacing.md },
+  eyeText: { color: colors.textSecondary, fontSize: 14 },
+  submitButton: { marginTop: spacing.sm },
 });

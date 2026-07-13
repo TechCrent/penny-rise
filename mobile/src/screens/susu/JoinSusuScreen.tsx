@@ -12,6 +12,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { susuApi } from '../../api/susu';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { Icon, PressableScale } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 const CODE_LENGTH = 8;
 
@@ -164,7 +166,7 @@ export function JoinSusuScreen() {
 
       {joining && (
         <View style={styles.center} testID="joining-indicator">
-          <ActivityIndicator color="#111827" />
+          <ActivityIndicator color={colors.gold.base} />
           <Text style={styles.joiningText}>{'Looking up group…'}</Text>
         </View>
       )}
@@ -215,16 +217,17 @@ export function JoinSusuScreen() {
           </View>
 
           <View style={styles.joinedBadge} testID="joined-badge">
-            <Text style={styles.joinedBadgeText}>{"✓ You've joined!"}</Text>
+            <Icon name="checkmark-circle" size={15} color={colors.status.successText} />
+            <Text style={styles.joinedBadgeText}>You&apos;ve joined!</Text>
           </View>
 
-          <TouchableOpacity
+          <PressableScale
             style={styles.viewGroupBtn}
             onPress={handleConfirmNavigate}
             testID="view-group-btn"
           >
             <Text style={styles.viewGroupBtnText}>{'View group →'}</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       )}
     </ScrollView>
@@ -232,71 +235,70 @@ export function JoinSusuScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 24, paddingBottom: 40 },
-  heading: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 15, color: '#6B7280', marginBottom: 32 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
+  heading: { ...typography.h1, fontSize: 24, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 15, color: colors.textSecondary, marginBottom: spacing['3xl'] },
 
-  codeRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
+  codeRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, marginBottom: spacing['2xl'] },
   codeBox: {
     width: 36,
     height: 48,
-    borderRadius: 8,
+    borderRadius: radii.sm,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  codeBoxEmpty: { borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' },
-  codeBoxFilled: { borderColor: '#111827', backgroundColor: '#F3F4F6' },
-  codeBoxCursor: { borderColor: '#111827' },
-  codeChar: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  codeBoxEmpty: { borderColor: colors.border, backgroundColor: colors.surface },
+  codeBoxFilled: { borderColor: colors.gold.base, backgroundColor: colors.gold.light },
+  codeBoxCursor: { borderColor: colors.gold.base },
+  codeChar: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
   hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
 
-  center: { alignItems: 'center', paddingVertical: 24 },
-  joiningText: { color: '#6B7280', marginTop: 8, fontSize: 13 },
+  center: { alignItems: 'center', paddingVertical: spacing['2xl'] },
+  joiningText: { color: colors.textSecondary, marginTop: spacing.sm, fontSize: 13 },
 
   previewCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    ...shadows.sm,
   },
-  errorCard: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
-  errorCardText: { color: '#991B1B', fontSize: 14, marginBottom: 8 },
-  errorCardLink: { color: '#1D4ED8', fontWeight: '600', fontSize: 14 },
+  errorCard: { backgroundColor: colors.status.errorBg, borderWidth: 1, borderColor: '#FECACA' },
+  errorCardText: { color: colors.status.errorText, fontSize: 14, marginBottom: spacing.sm },
+  errorCardLink: { color: colors.status.infoText, fontWeight: '600', fontSize: 14 },
 
-  previewName: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 16 },
+  previewName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.lg },
   previewRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  previewKey: { fontSize: 13, color: '#6B7280' },
-  previewValue: { fontSize: 13, fontWeight: '600', color: '#111827' },
-  statusPending: { color: '#92400E' },
-  statusActive: { color: '#065F46' },
+  previewKey: { fontSize: 13, color: colors.textSecondary },
+  previewValue: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  statusPending: { color: colors.status.warningText },
+  statusActive: { color: colors.status.successText },
 
   joinedBadge: {
-    backgroundColor: '#D1FAE5',
-    borderRadius: 8,
-    padding: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 12,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
-  joinedBadgeText: { color: '#065F46', fontWeight: '700', fontSize: 15 },
+  joinedBadgeText: { color: colors.status.successText, fontWeight: '700', fontSize: 15 },
 
   viewGroupBtn: {
-    backgroundColor: '#111827',
-    paddingVertical: 14,
-    borderRadius: 10,
+    backgroundColor: colors.gold.base,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
-  viewGroupBtnText: { color: '#FFFFFF', fontWeight: '700' },
+  viewGroupBtnText: { color: colors.neutral[900], fontWeight: '700' },
 });

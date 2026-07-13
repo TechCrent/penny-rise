@@ -6,7 +6,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
+import { Icon } from '../components/ui';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -17,6 +19,7 @@ import { useAuth } from '../auth/AuthContext';
 import { decodeUserIdFromJwt } from '../auth/jwt';
 import { useKycResumability } from '../hooks/useKycResumability';
 import { formatGhanaCardInput } from '../utils/ghanaCard';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycCardDetails'>;
 
@@ -104,9 +107,9 @@ export default function KycCardDetailsScreen() {
           </Text>
 
           {globalError ? (
-            <View style={styles.globalError}>
+            <Animated.View entering={FadeInUp.duration(300)} style={styles.globalError}>
               <Text style={styles.globalErrorText}>{globalError}</Text>
-            </View>
+            </Animated.View>
           ) : null}
 
           <Controller
@@ -146,6 +149,7 @@ export default function KycCardDetailsScreen() {
           />
 
           <View style={styles.infoBox}>
+            <Icon name="shield-checkmark-outline" size={16} color={colors.status.successText} />
             <Text style={styles.infoText}>
               Your documents are encrypted and used only for identity verification. They are
               automatically deleted 24 hours after a decision is made.
@@ -165,23 +169,29 @@ export default function KycCardDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
-  stepIndicator: { marginBottom: 24 },
-  stepText: { fontSize: 13, color: '#9CA3AF', fontWeight: '500' },
-  heading: { fontSize: 26, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 15, color: '#6B7280', marginBottom: 28 },
-  globalError: { backgroundColor: '#FEF2F2', borderRadius: 8, padding: 14, marginBottom: 20 },
-  globalErrorText: { color: '#991B1B', fontSize: 14 },
-  infoBox: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
+  stepIndicator: { marginBottom: spacing.xl },
+  stepText: { fontSize: 13, color: colors.textTertiary, fontWeight: '500' },
+  heading: { ...typography.h1, fontSize: 26, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 15, color: colors.textSecondary, marginBottom: spacing['2xl'] },
+  globalError: {
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
   },
-  infoText: { fontSize: 13, color: '#166534', lineHeight: 20 },
-  submitButton: { marginTop: 4 },
+  globalErrorText: { color: colors.status.errorText, fontSize: 14 },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  infoText: { flex: 1, fontSize: 13, color: colors.status.successText, lineHeight: 20 },
+  submitButton: { marginTop: spacing.xxs },
 });

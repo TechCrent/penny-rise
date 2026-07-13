@@ -16,6 +16,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
@@ -24,6 +25,8 @@ import { useVaultDeposit, useVaultDepositOtp } from '../../api/hooks/useVaultDep
 import { useWalletDeposit, useWalletDepositOtp } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
+import { Icon, PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,9 +70,8 @@ function isHttpUrl(value: string | null | undefined): boolean {
 }
 
 // ── Provider mapping ───────────────────────────────────────────────────────
-// Plain objects (not StyleSheet.create) — accessed via dynamic key so no-unused-styles
-// would flag them if inside StyleSheet.create, and no-inline-styles would flag
-// object literals directly in JSX style props.
+// Real MoMo network brand colors — not part of the app's design system, kept
+// as-is since they identify a specific third-party provider.
 const PROVIDER_BORDER: Record<ProviderId, { borderColor: string }> = {
   mtn: { borderColor: '#FBB01C' },
   vodafone: { borderColor: '#E10A0A' },
@@ -189,7 +191,7 @@ export default function DepositScreen() {
       if (isHttpUrl(resp.authorisation_url)) {
         setPhase('authorising');
         await WebBrowser.openBrowserAsync(resp.authorisation_url!, {
-          toolbarColor: '#1A1A2E',
+          toolbarColor: colors.neutral[900],
           showTitle: false,
           enableBarCollapsing: false,
         });
@@ -328,7 +330,7 @@ export default function DepositScreen() {
                 }}
                 keyboardType="decimal-pad"
                 placeholder="0.00"
-                placeholderTextColor="#D1D5DB"
+                placeholderTextColor={colors.neutral[300]}
                 returnKeyType="done"
                 autoFocus
                 accessibilityLabel="Deposit amount in Ghana cedis"
@@ -369,17 +371,16 @@ export default function DepositScreen() {
               />
             </View>
 
-            <TouchableOpacity
+            <PressableScale
               style={styles.cta}
               onPress={() => {
                 if (validateAmount()) setPhase('method');
               }}
-              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Continue to payment method"
             >
               <Text style={styles.ctaText}>Continue</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -409,7 +410,12 @@ export default function DepositScreen() {
                 accessibilityState={{ selected: method === m }}
                 accessibilityLabel={m === 'MOMO' ? 'Mobile money' : 'Card — coming soon'}
               >
-                <Text style={styles.methodIcon}>{m === 'MOMO' ? '📱' : '💳'}</Text>
+                <Icon
+                  name={m === 'MOMO' ? 'phone-portrait-outline' : 'card-outline'}
+                  size={26}
+                  color={method === m ? colors.gold.text : colors.textSecondary}
+                  style={styles.methodIcon}
+                />
                 <Text style={[styles.methodLabel, method === m && styles.methodLabelActive]}>
                   {m === 'MOMO' ? 'Mobile Money' : 'Card'}
                 </Text>
@@ -462,6 +468,7 @@ export default function DepositScreen() {
                 }}
                 keyboardType="phone-pad"
                 placeholder="024 000 0000"
+                placeholderTextColor={colors.textTertiary}
                 returnKeyType="done"
                 accessibilityLabel="Mobile money number"
               />
@@ -469,7 +476,7 @@ export default function DepositScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={[styles.cta, method === 'CARD' && styles.ctaDisabled]}
             disabled={method === 'CARD'}
             onPress={() => {
@@ -482,13 +489,12 @@ export default function DepositScreen() {
               }
               setPhase('confirm');
             }}
-            activeOpacity={0.85}
             accessibilityRole="button"
           >
             <Text style={styles.ctaText}>
               {method === 'CARD' ? 'Card payments coming soon' : 'Review deposit'}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </SafeAreaView>
     );
@@ -505,7 +511,12 @@ export default function DepositScreen() {
         {renderHeader('Confirm deposit')}
 
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.summaryCard}>
+          <LinearGradient
+            colors={[colors.heroFrom, colors.heroTo]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.summaryCard}
+          >
             <Text style={styles.summaryHeading}>You&apos;re depositing</Text>
             <Text style={styles.summaryAmount}>GHS {formatCedis(amountPesewas)}</Text>
             <View style={styles.summaryDivider} />
@@ -515,7 +526,7 @@ export default function DepositScreen() {
               value={method === 'MOMO' ? `${providerLabel} · ${momoNumber}` : 'Card'}
             />
             <SummaryRow label="Fee" value="Free" />
-          </View>
+          </LinearGradient>
 
           <Text style={styles.confirmNotice}>
             By confirming, you authorise this MoMo charge. You&apos;ll approve the payment on your
@@ -528,21 +539,20 @@ export default function DepositScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={[styles.cta, isPending && styles.ctaDisabled]}
             onPress={handleConfirm}
             disabled={isPending}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityState={{ busy: isPending }}
             accessibilityLabel={`Confirm deposit of GHS ${formatCedis(amountPesewas)}`}
           >
             {isPending ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.neutral[900]} size="small" />
             ) : (
               <Text style={styles.ctaText}>Confirm deposit · GHS {formatCedis(amountPesewas)}</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </SafeAreaView>
     );
@@ -581,7 +591,7 @@ export default function DepositScreen() {
               maxLength={8}
               autoFocus
               placeholder="••••••"
-              placeholderTextColor="#D1D5DB"
+              placeholderTextColor={colors.neutral[300]}
               returnKeyType="done"
               accessibilityLabel="Verification code"
             />
@@ -592,21 +602,20 @@ export default function DepositScreen() {
               </View>
             )}
 
-            <TouchableOpacity
+            <PressableScale
               style={[styles.cta, isOtpPending && styles.ctaDisabled]}
               onPress={handleOtpSubmit}
               disabled={isOtpPending}
-              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityState={{ busy: isOtpPending }}
               accessibilityLabel="Verify and continue"
             >
               {isOtpPending ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={colors.neutral[900]} size="small" />
               ) : (
                 <Text style={styles.ctaText}>Verify and continue</Text>
               )}
-            </TouchableOpacity>
+            </PressableScale>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -621,7 +630,7 @@ export default function DepositScreen() {
       <SafeAreaView style={styles.safe}>
         {renderHeader('Authorising', false)}
         <View style={styles.waitingCenter}>
-          <ActivityIndicator size="large" color={INDIGO} />
+          <ActivityIndicator size="large" color={colors.gold.base} />
           <Text style={styles.waitingTitle}>Approve on your phone</Text>
           <Text style={styles.waitingSubtitle}>
             Approve the MoMo prompt on your phone, then return here when you&apos;re done.
@@ -639,7 +648,7 @@ export default function DepositScreen() {
       <SafeAreaView style={styles.safe}>
         {renderHeader('Processing', false)}
         <View style={styles.waitingCenter}>
-          <ActivityIndicator size="large" color={INDIGO} />
+          <ActivityIndicator size="large" color={colors.gold.base} />
           <Text style={styles.waitingTitle}>Processing your deposit</Text>
           <Text style={styles.waitingSubtitle}>
             Confirming with your network. This usually takes under a minute.
@@ -662,7 +671,9 @@ export default function DepositScreen() {
       <SafeAreaView style={styles.safe}>
         {renderHeader('Deposit complete', false)}
         <View style={styles.resultCenter}>
-          <Text style={styles.successIcon}>✅</Text>
+          <View style={styles.successIconBadge}>
+            <Icon name="checkmark-circle" size={48} color={colors.status.success} />
+          </View>
           <Text style={styles.resultTitle}>Deposit successful!</Text>
           <Text style={styles.resultAmount}>GHS {formatCedis(amountPesewas)}</Text>
           <Text style={styles.resultSubtitle}>
@@ -676,7 +687,7 @@ export default function DepositScreen() {
               {txnRef}
             </Text>
           )}
-          <TouchableOpacity
+          <PressableScale
             style={styles.ctaSuccess}
             onPress={() => {
               idempotencyKeyRef.current = generateKey();
@@ -693,7 +704,7 @@ export default function DepositScreen() {
             <Text style={styles.ctaText}>
               {isWalletDeposit ? 'Back to wallet' : 'Back to vault'}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </SafeAreaView>
     );
@@ -706,7 +717,9 @@ export default function DepositScreen() {
     <SafeAreaView style={styles.safe}>
       {renderHeader('Deposit failed', false)}
       <View style={styles.resultCenter}>
-        <Text style={styles.failureIcon}>❌</Text>
+        <View style={styles.failureIconBadge}>
+          <Icon name="close-circle" size={48} color={colors.status.error} />
+        </View>
         <Text style={styles.resultTitle}>Deposit wasn&apos;t completed</Text>
         <Text style={styles.failureSubtitle}>
           {polledTxn?.status === 'FAILED'
@@ -718,7 +731,7 @@ export default function DepositScreen() {
             {txnRef}
           </Text>
         )}
-        <TouchableOpacity
+        <PressableScale
           style={styles.ctaFailure}
           onPress={() => {
             setPhase('confirm');
@@ -728,7 +741,7 @@ export default function DepositScreen() {
           accessibilityLabel="Try again"
         >
           <Text style={styles.ctaText}>Try again</Text>
-        </TouchableOpacity>
+        </PressableScale>
         <TouchableOpacity
           style={styles.cancelLink}
           onPress={() => {
@@ -788,92 +801,87 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const BACKGROUND = '#F8F9FF';
-const GREEN = '#059669';
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: BACKGROUND,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: DARK },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
 
   // Amount phase
   vaultContextCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 24,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginBottom: spacing['2xl'],
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
   vaultContextLabel: {
     fontSize: 11,
-    color: MUTED,
+    color: colors.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
-  vaultContextName: { fontSize: 16, fontWeight: '700', color: DARK, marginBottom: 2 },
-  vaultContextBalance: { fontSize: 12, color: MUTED },
+  vaultContextName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  vaultContextBalance: { fontSize: 12, color: colors.textSecondary },
 
   amountBlock: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
-  ghsPrefix: { fontSize: 24, fontWeight: '600', color: MUTED, marginRight: 8, marginTop: 8 },
+  ghsPrefix: { fontSize: 24, fontWeight: '600', color: colors.textSecondary, marginRight: spacing.sm, marginTop: spacing.sm },
   amountInput: {
     fontSize: 56,
     fontWeight: '800',
-    color: DARK,
+    color: colors.textPrimary,
     letterSpacing: -2,
     minWidth: 120,
     textAlign: 'center',
   },
-  amountErrorText: { color: '#DC2626', fontSize: 13, textAlign: 'center', marginBottom: 8 },
+  amountErrorText: { color: colors.status.error, fontSize: 13, textAlign: 'center', marginBottom: spacing.sm },
 
   pillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.sm,
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: spacing['2xl'],
   },
   pill: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    paddingHorizontal: 16,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 9,
   },
-  pillActive: { borderColor: INDIGO, backgroundColor: '#EEF2FF' },
-  pillText: { fontSize: 14, fontWeight: '600', color: MUTED },
-  pillTextActive: { color: INDIGO },
+  pillActive: { borderColor: colors.gold.base, backgroundColor: colors.gold.light },
+  pillText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
+  pillTextActive: { color: colors.gold.text },
 
   feeSummary: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    marginBottom: 28,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    marginBottom: spacing['3xl'],
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
 
@@ -881,236 +889,231 @@ const styles = StyleSheet.create({
   sectionHeading: {
     fontSize: 14,
     fontWeight: '700',
-    color: MUTED,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  methodCards: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  methodCards: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing['2xl'] },
   methodCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
-  methodCardActive: { borderColor: INDIGO, backgroundColor: '#F5F3FF' },
-  methodIcon: { fontSize: 28, marginBottom: 6 },
-  methodLabel: { fontSize: 13, fontWeight: '600', color: MUTED },
-  methodLabelActive: { color: INDIGO },
+  methodCardActive: { borderColor: colors.gold.base, backgroundColor: colors.gold.light },
+  methodIcon: { marginBottom: spacing.xs },
+  methodLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  methodLabelActive: { color: colors.gold.text },
   comingSoonPill: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.neutral[100],
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    marginTop: 6,
+    marginTop: spacing.xs,
   },
-  comingSoonText: { fontSize: 10, fontWeight: '600', color: MUTED },
+  comingSoonText: { fontSize: 10, fontWeight: '600', color: colors.textSecondary },
 
-  momoSection: { marginBottom: 24 },
-  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  momoSection: { marginBottom: spacing['2xl'] },
+  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xs },
   providerPill: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: 7,
   },
-  providerPillActive: { backgroundColor: '#FAFAFA' },
-  providerLabel: { fontSize: 12, fontWeight: '600', color: MUTED },
+  providerPillActive: { backgroundColor: colors.neutral[50] },
+  providerLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
 
   fieldLabelMoMo: {
     fontSize: 12,
     fontWeight: '600',
-    color: DARK,
-    marginBottom: 6,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginTop: 16,
+    marginTop: spacing.lg,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === 'ios' ? 14 : 11,
     fontSize: 15,
-    color: DARK,
+    color: colors.textPrimary,
   },
 
   // Confirm phase
   summaryCard: {
-    backgroundColor: DARK,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: DARK,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 14,
-    elevation: 5,
+    borderRadius: radii['2xl'],
+    padding: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   summaryHeading: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textOnDarkMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   summaryAmount: {
     fontSize: 44,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.textOnDark,
     letterSpacing: -2,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
-  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginBottom: 16 },
+  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginBottom: spacing.md },
   confirmNotice: {
     fontSize: 13,
-    color: MUTED,
+    color: colors.textSecondary,
     lineHeight: 19,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   serverErrorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
-  serverErrorText: { fontSize: 13, color: '#991B1B' },
+  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   // OTP phase
   otpTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: DARK,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   otpSubtitle: {
     fontSize: 14,
-    color: MUTED,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 21,
-    marginBottom: 28,
+    marginBottom: spacing['2xl'],
   },
   otpInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === 'ios' ? 16 : 12,
     fontSize: 28,
     fontWeight: '700',
-    color: DARK,
+    color: colors.textPrimary,
     letterSpacing: 8,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
 
   // Waiting / result screens
-  waitingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  waitingTitle: { fontSize: 20, fontWeight: '700', color: DARK, marginTop: 20, marginBottom: 8 },
-  waitingSubtitle: { fontSize: 14, color: MUTED, textAlign: 'center', lineHeight: 21 },
+  waitingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
+  waitingTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginTop: spacing.xl, marginBottom: spacing.sm },
+  waitingSubtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 21 },
 
-  resultCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  successIcon: { fontSize: 64, marginBottom: 12 },
-  failureIcon: { fontSize: 64, marginBottom: 12 },
-  resultTitle: { fontSize: 22, fontWeight: '800', color: DARK, marginBottom: 8 },
+  resultCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
+  successIconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: radii.pill,
+    backgroundColor: colors.status.successBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  failureIconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: radii.pill,
+    backgroundColor: colors.status.errorBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  resultTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
   resultAmount: {
     fontSize: 36,
     fontWeight: '800',
-    color: GREEN,
+    color: colors.status.successText,
     letterSpacing: -1,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   resultSubtitle: {
     fontSize: 15,
-    color: MUTED,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
-  resultVaultName: { fontWeight: '700', color: DARK },
+  resultVaultName: { fontWeight: '700', color: colors.textPrimary },
   failureSubtitle: {
     fontSize: 14,
-    color: MUTED,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 21,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   refText: {
     fontSize: 11,
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-    color: '#9CA3AF',
-    marginTop: 8,
+    color: colors.textTertiary,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
 
-  cancelLink: { marginTop: 16 },
-  cancelLinkText: { fontSize: 14, color: MUTED, textDecorationLine: 'underline' },
+  cancelLink: { marginTop: spacing.lg },
+  cancelLinkText: { fontSize: 14, color: colors.textSecondary, textDecorationLine: 'underline' },
 
   // Shared CTA variants
   cta: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  ctaDisabled: { backgroundColor: '#A5B4FC', shadowOpacity: 0, elevation: 0 },
+  ctaDisabled: { backgroundColor: colors.neutral[300] },
   ctaSuccess: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
-    marginTop: 32,
+    marginTop: spacing['2xl'],
     alignItems: 'center',
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
   },
   ctaFailure: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
-    marginTop: 28,
+    marginTop: spacing.xl,
     alignItems: 'center',
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  ctaText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  ctaText: { fontSize: 16, fontWeight: '700', color: colors.neutral[900] },
 });
 
 const feeStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
+    paddingHorizontal: spacing.md,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  label: { fontSize: 13, color: MUTED },
-  value: { fontSize: 13, fontWeight: '600', color: DARK },
+  label: { fontSize: 13, color: colors.textSecondary },
+  value: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   bold: { fontSize: 14, fontWeight: '800' },
-  highlight: { color: GREEN },
+  highlight: { color: colors.status.successText },
 });
 
 const sumStyles = StyleSheet.create({
@@ -1118,8 +1121,8 @@ const sumStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
   },
-  label: { fontSize: 13, color: 'rgba(255,255,255,0.6)', flex: 1 },
-  value: { fontSize: 14, fontWeight: '700', color: '#FFFFFF', flex: 2, textAlign: 'right' },
+  label: { fontSize: 13, color: colors.textOnDarkMuted, flex: 1 },
+  value: { fontSize: 14, fontWeight: '700', color: colors.textOnDark, flex: 2, textAlign: 'right' },
 });

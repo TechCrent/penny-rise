@@ -5,6 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { useAuth } from '../../auth/AuthContext';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -16,12 +18,12 @@ interface SettingsRowConfig {
 
 function SettingsRow({ label, onPress, destructive }: SettingsRowConfig) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+    <PressableScale style={styles.row} onPress={onPress}>
       <Text style={[styles.rowLabel, destructive ? styles.rowLabelDestructive : null]}>
         {label}
       </Text>
       <Text style={styles.chevron}>›</Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -78,37 +80,37 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
-  header: { marginTop: 8, marginBottom: 16 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 24 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { paddingHorizontal: spacing.xl, paddingBottom: spacing['4xl'] },
+  header: { marginTop: spacing.sm, marginBottom: spacing.lg },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing['2xl'] },
   sectionLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 8,
-    marginTop: 20,
+    marginBottom: spacing.sm,
+    marginTop: spacing.xl,
   },
   section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  rowLabel: { fontSize: 15, color: '#111827', fontWeight: '500' },
-  rowLabelDestructive: { color: '#EF4444' },
-  chevron: { fontSize: 18, color: '#9CA3AF' },
+  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary },
+  rowLabelDestructive: { color: colors.status.error },
+  chevron: { fontSize: 18, color: colors.textTertiary },
 });

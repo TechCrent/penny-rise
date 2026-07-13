@@ -14,12 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
 import { useVaultWithdrawal } from '../../api/hooks/useVaultWithdrawal';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
+import { Icon, PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -28,8 +31,8 @@ type Route = RouteProp<RootStackParamList, 'Withdraw'>;
 
 type Phase = 'amount' | 'confirm' | 'pending' | 'completed';
 
-// Plain objects — accessed dynamically, so StyleSheet.create would flag them
-// as unused; object literals in JSX style props would trigger no-inline-styles.
+// Real MoMo network brand colors — kept as-is; they identify a specific
+// third-party provider, not part of the app's design system.
 const PROVIDER_PILL_ACTIVE: Record<ProviderId, { borderColor: string; backgroundColor: string }> = {
   mtn: { borderColor: '#FBB01C', backgroundColor: '#FAFAFA' },
   vodafone: { borderColor: '#E10A0A', backgroundColor: '#FAFAFA' },
@@ -180,13 +183,18 @@ export default function WithdrawScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.balanceCard}>
+            <LinearGradient
+              colors={[colors.heroFrom, colors.heroTo]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.balanceCard}
+            >
               <Text style={styles.balanceLabel}>Available to withdraw</Text>
               <Text style={styles.balanceValue}>
                 GHS {vault ? formatCedis(availablePesewas) : '—'}
               </Text>
               <Text style={styles.balanceSub}>{vault?.name}</Text>
-            </View>
+            </LinearGradient>
 
             <Text style={styles.fieldLabel}>Amount (GHS)</Text>
             <View style={styles.amountRow}>
@@ -200,7 +208,7 @@ export default function WithdrawScreen() {
                 }}
                 keyboardType="decimal-pad"
                 placeholder="0.00"
-                placeholderTextColor="#D1D5DB"
+                placeholderTextColor={colors.neutral[300]}
                 returnKeyType="done"
                 autoFocus
                 accessibilityLabel="Withdrawal amount in Ghana cedis"
@@ -250,12 +258,13 @@ export default function WithdrawScreen() {
               onChangeText={setMomoNumber}
               keyboardType="phone-pad"
               placeholder="024 000 0000"
+              placeholderTextColor={colors.textTertiary}
               returnKeyType="done"
               accessibilityLabel="MoMo destination number"
             />
 
             <View style={styles.warningBox}>
-              <Text style={styles.warningIcon}>⏱</Text>
+              <Icon name="time-outline" size={16} color={colors.status.warningText} />
               <Text style={styles.warningText}>
                 MoMo transfers usually arrive within{' '}
                 <Text style={styles.warningBold}>5–10 minutes</Text>. Occasionally up to 24 hours
@@ -263,18 +272,17 @@ export default function WithdrawScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity
+            <PressableScale
               style={[styles.cta, exceedsBalance && styles.ctaDisabled]}
               disabled={exceedsBalance}
               onPress={() => {
                 if (validateAmount()) setPhase('confirm');
               }}
-              activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Review withdrawal"
             >
               <Text style={styles.ctaText}>Review withdrawal</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -292,7 +300,12 @@ export default function WithdrawScreen() {
         {renderHeader('Confirm withdrawal', () => setPhase('amount'))}
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.summaryCard}>
+          <LinearGradient
+            colors={[colors.heroFrom, colors.heroTo]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.summaryCard}
+          >
             <Text style={styles.summaryHeading}>You&apos;re withdrawing</Text>
             <Text style={styles.summaryAmount}>GHS {formatCedis(amountPesewas)}</Text>
             <View style={styles.summaryDivider} />
@@ -300,10 +313,10 @@ export default function WithdrawScreen() {
             <SummaryRow label="To" value={`${providerLabel} · ${momoNumber}`} />
             <SummaryRow label="After balance" value={`GHS ${formatCedis(afterPesewas)}`} />
             <SummaryRow label="Fee" value="Free" />
-          </View>
+          </LinearGradient>
 
           <View style={styles.settlementNote}>
-            <Text style={styles.settlementIcon}>⏳</Text>
+            <Icon name="hourglass-outline" size={20} color={colors.status.warningText} />
             <View style={styles.settlementBody}>
               <Text style={styles.settlementTitle}>Takes a few minutes</Text>
               <Text style={styles.settlementDesc}>
@@ -319,21 +332,20 @@ export default function WithdrawScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={[styles.cta, isPending && styles.ctaDisabled]}
             onPress={handleConfirm}
             disabled={isPending}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityState={{ busy: isPending }}
             accessibilityLabel={`Confirm withdrawal of GHS ${formatCedis(amountPesewas)}`}
           >
             {isPending ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.neutral[900]} size="small" />
             ) : (
               <Text style={styles.ctaText}>Withdraw GHS {formatCedis(amountPesewas)}</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </SafeAreaView>
     );
@@ -352,7 +364,9 @@ export default function WithdrawScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.pendingHero}>
-            <Text style={styles.pendingIcon}>✅</Text>
+            <View style={styles.successIconBadge}>
+              <Icon name="checkmark-circle" size={40} color={colors.status.success} />
+            </View>
             <Text style={styles.pendingTitle}>Money sent</Text>
             <Text style={styles.pendingAmount}>GHS {formatCedis(amountPesewas)}</Text>
             <Text style={styles.pendingDestination}>
@@ -369,15 +383,14 @@ export default function WithdrawScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={styles.cta}
             onPress={() => navigation.navigate('VaultDetail', { vaultId })}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Back to vault"
           >
             <Text style={styles.ctaText}>Back to vault</Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           <TouchableOpacity
             style={styles.homeLink}
@@ -403,7 +416,9 @@ export default function WithdrawScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.pendingHero}>
-          <Text style={styles.pendingIcon}>🚀</Text>
+          <View style={styles.pendingIconBadge}>
+            <Icon name="rocket-outline" size={36} color={colors.gold.text} />
+          </View>
           <Text style={styles.pendingTitle}>Transfer in progress</Text>
           <Text style={styles.pendingAmount}>GHS {formatCedis(amountPesewas)}</Text>
           <Text style={styles.pendingDestination}>
@@ -415,13 +430,13 @@ export default function WithdrawScreen() {
           <View style={styles.statusRow}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>Sent to Paystack</Text>
-            <Text style={styles.statusCheck}>✓</Text>
+            <Icon name="checkmark" size={16} color={colors.status.success} style={styles.statusIndicator} />
           </View>
           <View style={styles.statusConnector} />
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, styles.statusDotPending]} />
             <Text style={styles.statusText}>Paystack → your network</Text>
-            <ActivityIndicator size="small" color={INDIGO} style={styles.statusIndicator} />
+            <ActivityIndicator size="small" color={colors.gold.base} style={styles.statusIndicator} />
           </View>
           <View style={styles.statusConnector} />
           <View style={styles.statusRow}>
@@ -456,15 +471,14 @@ export default function WithdrawScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
+        <PressableScale
           style={styles.cta}
           onPress={() => navigation.navigate('VaultDetail', { vaultId })}
-          activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Back to vault"
         >
           <Text style={styles.ctaText}>Back to vault</Text>
-        </TouchableOpacity>
+        </PressableScale>
 
         <TouchableOpacity
           style={styles.homeLink}
@@ -496,279 +510,270 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const BACKGROUND = '#F8F9FF';
-const GREEN = '#059669';
-const AMBER = '#D97706';
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 },
-  pendingContent: { paddingTop: 24 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
+  pendingContent: { paddingTop: spacing.xl },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: BACKGROUND,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: DARK },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
 
   // Amount phase
   balanceCard: {
-    backgroundColor: DARK,
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: DARK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-    elevation: 4,
+    borderRadius: radii['2xl'],
+    padding: spacing.xl,
+    marginBottom: spacing['2xl'],
   },
   balanceLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.55)',
+    color: colors.textOnDarkMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 6,
+    marginBottom: spacing.xs,
   },
-  balanceValue: { fontSize: 36, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1.2 },
-  balanceSub: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4 },
+  balanceValue: { fontSize: 36, fontWeight: '800', color: colors.textOnDark, letterSpacing: -1.2 },
+  balanceSub: { fontSize: 13, color: colors.textOnDarkFaint, marginTop: spacing.xs },
 
   fieldLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   fieldLabelDest: {
     fontSize: 12,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginTop: 24,
+    marginTop: spacing['2xl'],
   },
 
-  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  ghsPrefix: { fontSize: 20, fontWeight: '600', color: MUTED },
+  amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
+  ghsPrefix: { fontSize: 20, fontWeight: '600', color: colors.textSecondary },
   amountInput: {
     flex: 1,
     fontSize: 40,
     fontWeight: '800',
-    color: DARK,
+    color: colors.textPrimary,
     letterSpacing: -1.5,
-    paddingVertical: 4,
+    paddingVertical: spacing.xxs,
     borderBottomWidth: 2,
-    borderBottomColor: '#D1D5DB',
+    borderBottomColor: colors.borderStrong,
   },
-  amountInputError: { borderBottomColor: '#EF4444' },
-  afterBalance: { fontSize: 13, color: GREEN, fontWeight: '600', marginBottom: 16 },
+  amountInputError: { borderBottomColor: colors.status.error },
+  afterBalance: { fontSize: 13, color: colors.status.successText, fontWeight: '600', marginBottom: spacing.lg },
 
   exceedsBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
-  exceedsText: { fontSize: 13, color: '#991B1B', fontWeight: '500' },
-  fieldError: { fontSize: 12, color: '#DC2626', marginBottom: 12 },
+  exceedsText: { fontSize: 13, color: colors.status.errorText, fontWeight: '500' },
+  fieldError: { fontSize: 12, color: colors.status.error, marginBottom: spacing.sm },
 
-  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
   providerPill: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: 7,
   },
-  providerText: { fontSize: 12, fontWeight: '600', color: MUTED },
+  providerText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
 
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === 'ios' ? 14 : 11,
     fontSize: 15,
-    color: DARK,
-    marginBottom: 16,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
   },
 
   warningBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: '#FFFBEB',
-    borderRadius: 12,
-    padding: 12,
+    gap: spacing.sm,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#FDE68A',
-    marginBottom: 24,
+    borderColor: colors.status.warningBorder,
+    marginBottom: spacing['2xl'],
   },
-  warningIcon: { fontSize: 16, lineHeight: 20 },
-  warningText: { flex: 1, fontSize: 13, color: '#78350F', lineHeight: 18 },
+  warningText: { flex: 1, fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
   warningBold: { fontWeight: '700' },
 
   // Confirm phase
   summaryCard: {
-    backgroundColor: DARK,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 16,
-    shadowColor: DARK,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 14,
-    elevation: 5,
+    borderRadius: radii['2xl'],
+    padding: spacing['2xl'],
+    marginBottom: spacing.lg,
   },
   summaryHeading: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textOnDarkMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   summaryAmount: {
     fontSize: 44,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: colors.textOnDark,
     letterSpacing: -2,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
-  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginBottom: 16 },
+  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginBottom: spacing.md },
 
   settlementNote: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: '#FFFBEB',
-    borderRadius: 14,
-    padding: 14,
+    gap: spacing.md,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.lg,
+    padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#FDE68A',
-    marginBottom: 20,
+    borderColor: colors.status.warningBorder,
+    marginBottom: spacing.xl,
   },
-  settlementIcon: { fontSize: 20 },
   settlementBody: { flex: 1 },
-  settlementTitle: { fontSize: 13, fontWeight: '700', color: AMBER, marginBottom: 3 },
-  settlementDesc: { fontSize: 13, color: '#78350F', lineHeight: 18 },
+  settlementTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText, marginBottom: 3 },
+  settlementDesc: { fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
 
   serverErrorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
-  serverErrorText: { fontSize: 13, color: '#991B1B' },
+  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   // Pending phase
-  pendingHero: { alignItems: 'center', marginBottom: 28 },
-  pendingIcon: { fontSize: 60, marginBottom: 14 },
-  pendingTitle: { fontSize: 22, fontWeight: '800', color: DARK, marginBottom: 8 },
+  pendingHero: { alignItems: 'center', marginBottom: spacing['2xl'] },
+  pendingIconBadge: {
+    width: 76,
+    height: 76,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  successIconBadge: {
+    width: 76,
+    height: 76,
+    borderRadius: radii.pill,
+    backgroundColor: colors.status.successBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  pendingTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
   pendingAmount: {
     fontSize: 36,
     fontWeight: '800',
-    color: INDIGO,
+    color: colors.gold.text,
     letterSpacing: -1.2,
-    marginBottom: 6,
+    marginBottom: spacing.xs,
   },
-  pendingDestination: { fontSize: 14, color: MUTED, fontWeight: '500' },
+  pendingDestination: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
 
   pendingStatusCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  statusDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: GREEN },
-  statusDotPending: { backgroundColor: INDIGO },
-  statusDotWaiting: { backgroundColor: '#D1D5DB' },
-  statusText: { fontSize: 13, fontWeight: '600', color: DARK, flex: 1 },
-  statusTextMuted: { color: MUTED },
-  statusCheck: { fontSize: 14, color: GREEN, marginLeft: 'auto' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  statusDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.status.success },
+  statusDotPending: { backgroundColor: colors.gold.base },
+  statusDotWaiting: { backgroundColor: colors.neutral[300] },
+  statusText: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  statusTextMuted: { color: colors.textSecondary },
   statusIndicator: { marginLeft: 'auto' },
   statusConnector: {
     width: 2,
     height: 18,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.neutral[200],
     marginLeft: 5,
-    marginVertical: 4,
+    marginVertical: spacing.xs,
   },
 
   refCard: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
+    backgroundColor: colors.neutral[100],
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     alignItems: 'center',
   },
   refLabel: {
     fontSize: 11,
-    color: MUTED,
+    color: colors.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   refValue: {
     fontSize: 13,
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-    color: DARK,
+    color: colors.textPrimary,
     fontWeight: '600',
   },
 
   infoBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
-  infoTitle: { fontSize: 13, fontWeight: '700', color: DARK, marginBottom: 6 },
-  infoBody: { fontSize: 13, color: MUTED, lineHeight: 19 },
-  infoBold: { fontWeight: '700', color: DARK },
+  infoTitle: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  infoBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 19 },
+  infoBold: { fontWeight: '700', color: colors.textPrimary },
 
-  homeLink: { marginTop: 12, alignItems: 'center' },
-  homeLinkText: { fontSize: 14, color: MUTED, textDecorationLine: 'underline' },
+  homeLink: { marginTop: spacing.md, alignItems: 'center' },
+  homeLinkText: { fontSize: 14, color: colors.textSecondary, textDecorationLine: 'underline' },
 
   cta: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  ctaDisabled: { backgroundColor: '#A5B4FC', shadowOpacity: 0, elevation: 0 },
-  ctaText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  ctaDisabled: { backgroundColor: colors.neutral[300] },
+  ctaText: { fontSize: 16, fontWeight: '700', color: colors.neutral[900] },
 });
 
 const sumStyles = StyleSheet.create({
@@ -776,8 +781,8 @@ const sumStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
   },
-  label: { fontSize: 13, color: 'rgba(255,255,255,0.6)', flex: 1 },
-  value: { fontSize: 14, fontWeight: '700', color: '#FFFFFF', flex: 2, textAlign: 'right' },
+  label: { fontSize: 13, color: colors.textOnDarkMuted, flex: 1 },
+  value: { fontSize: 14, fontWeight: '700', color: colors.textOnDark, flex: 2, textAlign: 'right' },
 });

@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as LocalAuthentication from 'expo-local-authentication';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { PinEntryPad } from '../../components/PinEntryPad';
+import { colors, spacing, typography } from '../../theme';
 import {
   isAppLockEnabled,
   setAppLockEnabled,
@@ -222,7 +223,7 @@ export function AppLockSettingsScreen() {
       </Text>
 
       {loading ? (
-        <ActivityIndicator style={styles.loading} />
+        <ActivityIndicator style={styles.loading} color={colors.gold.base} />
       ) : !hardwareAvailable && !pinSet ? (
         <Text style={styles.unavailableText}>
           No biometrics or device passcode is set up on this device. You can still use a 6-digit
@@ -234,7 +235,12 @@ export function AppLockSettingsScreen() {
         <>
           <View style={styles.row}>
             <Text style={styles.rowLabel}>Require unlock on launch</Text>
-            <Switch value={enabled} onValueChange={onToggle} />
+            <Switch
+              value={enabled}
+              onValueChange={onToggle}
+              trackColor={{ true: colors.gold.base, false: colors.neutral[300] }}
+              thumbColor={colors.neutral[0]}
+            />
           </View>
 
           {enabled && method ? (
@@ -269,34 +275,34 @@ export function AppLockSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 24 },
-  header: { marginBottom: 24, marginTop: 8 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 14, color: '#6B7280', marginBottom: 28, lineHeight: 20 },
-  loading: { marginTop: 20 },
+  safe: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.xl },
+  header: { marginBottom: spacing['2xl'], marginTop: spacing.sm },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing['3xl'], lineHeight: 20 },
+  loading: { marginTop: spacing.xl },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  rowLabel: { fontSize: 15, color: '#111827', fontWeight: '500' },
-  methodValue: { fontSize: 15, color: '#6B7280' },
-  linkRow: { paddingVertical: 14 },
-  linkText: { fontSize: 15, color: '#1A1A1A', fontWeight: '500' },
-  linkTextDanger: { fontSize: 15, color: '#EF4444', fontWeight: '500' },
-  unavailableText: { fontSize: 13, color: '#9CA3AF', lineHeight: 19, marginBottom: 12 },
-  errorText: { color: '#EF4444', fontSize: 13, marginTop: 16 },
+  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary },
+  methodValue: { fontSize: 15, color: colors.textSecondary },
+  linkRow: { paddingVertical: spacing.md },
+  linkText: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+  linkTextDanger: { fontSize: 15, color: colors.status.error, fontWeight: '500' },
+  unavailableText: { fontSize: 13, color: colors.textTertiary, lineHeight: 19, marginBottom: spacing.md },
+  errorText: { color: colors.status.error, fontSize: 13, marginTop: spacing.lg },
   optionRow: {
-    paddingVertical: 16,
+    paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   pinContent: { flex: 1, justifyContent: 'center' },
-  cancelButton: { alignItems: 'center', marginTop: 16, padding: 8 },
-  skipText: { color: '#6B7280', fontSize: 14, fontWeight: '500' },
+  cancelButton: { alignItems: 'center', marginTop: spacing.lg, padding: spacing.sm },
+  skipText: { color: colors.textSecondary, fontSize: 14, fontWeight: '500' },
 });

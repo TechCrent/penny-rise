@@ -1,12 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +7,8 @@ import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useCancelEarlyExit } from '../../api/hooks/useEarlyExit';
+import { Icon, PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CancelEarlyExit'>;
 type Route = RouteProp<RootStackParamList, 'CancelEarlyExit'>;
@@ -65,7 +60,9 @@ export default function CancelEarlyExitScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.introCard}>
-          <Text style={styles.introIcon}>↩️</Text>
+          <View style={styles.introIconWrap}>
+            <Icon name="arrow-undo-outline" size={26} color={colors.gold.text} />
+          </View>
           <Text style={styles.introTitle}>Cancel this exit request?</Text>
           <Text style={styles.introBody}>
             {vault?.name ?? 'Your vault'} will return to{' '}
@@ -80,21 +77,20 @@ export default function CancelEarlyExitScreen() {
           </View>
         )}
 
-        <TouchableOpacity
+        <PressableScale
           style={[styles.cta, isPending && styles.ctaDisabled]}
           onPress={handleCancel}
           disabled={isPending}
-          activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityState={{ busy: isPending }}
           accessibilityLabel="Cancel early exit request"
         >
           {isPending ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
+            <ActivityIndicator color={colors.neutral[900]} size="small" />
           ) : (
             <Text style={styles.ctaText}>Cancel early exit</Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
 
         <TouchableOpacity
           style={styles.keepLink}
@@ -112,74 +108,72 @@ export default function CancelEarlyExitScreen() {
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const BACKGROUND = '#F8F9FF';
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
-  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: BACKGROUND,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: DARK },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK, flex: 1, textAlign: 'center' },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary, flex: 1, textAlign: 'center' },
 
   introCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 24,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
-  introIcon: { fontSize: 32, marginBottom: 10 },
+  introIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
   introTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  introBody: { fontSize: 14, color: MUTED, lineHeight: 20, textAlign: 'center' },
-  introBold: { fontWeight: '700', color: DARK },
+  introBody: { fontSize: 14, color: colors.textSecondary, lineHeight: 20, textAlign: 'center' },
+  introBold: { fontWeight: '700', color: colors.textPrimary },
 
   serverErrorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: colors.status.errorBorder,
   },
-  serverErrorText: { fontSize: 13, color: '#991B1B' },
+  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   cta: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  ctaDisabled: { backgroundColor: '#A5B4FC', shadowOpacity: 0, elevation: 0 },
-  ctaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  ctaDisabled: { backgroundColor: colors.neutral[300] },
+  ctaText: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
 
-  keepLink: { alignItems: 'center', marginTop: 16 },
-  keepLinkText: { fontSize: 14, color: MUTED, textDecorationLine: 'underline' },
+  keepLink: { alignItems: 'center', marginTop: spacing.lg },
+  keepLinkText: { fontSize: 14, color: colors.textSecondary, textDecorationLine: 'underline' },
 });

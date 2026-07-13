@@ -11,6 +11,7 @@ import {
   markKycUnderReviewBannerPending,
   clearKycUnderReviewBannerPending,
 } from '../storage/kycStorage';
+import { colors } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AuthenticatedBootstrap'>;
 
@@ -62,11 +63,11 @@ export default function AuthenticatedBootstrapScreen() {
 
   return (
     <View style={styles.loading}>
-      <ActivityIndicator size="large" />
+      <ActivityIndicator size="large" color={colors.gold.base} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
 });

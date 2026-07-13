@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getSubmissionStatus } from '../api/kyc';
@@ -14,6 +15,8 @@ import {
   clearKycUnderReviewBannerPending,
 } from '../storage/kycStorage';
 import { supportMailtoUrl } from '../constants/support';
+import { Icon, PressableScale } from '../components/ui';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycSubmissionPending'>;
 type Route = RouteProp<RootStackParamList, 'KycSubmissionPending'>;
@@ -103,7 +106,7 @@ export default function KycSubmissionPendingScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#1A1A1A" />
+          <ActivityIndicator size="large" color={colors.gold.base} />
           <Text style={styles.loadingText}>Checking submission status…</Text>
         </View>
       </SafeAreaView>
@@ -113,11 +116,13 @@ export default function KycSubmissionPendingScreen() {
   if (screenState.kind === 'approved') {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.centered}>
-          <Text style={styles.successEmoji}>Approved</Text>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.centered}>
+          <View style={[styles.resultIconBadge, styles.successIconBadge]}>
+            <Icon name="checkmark-circle" size={40} color={colors.status.success} />
+          </View>
           <Text style={styles.heading}>Identity approved!</Text>
           <Text style={styles.body}>Your KYC is approved. Taking you to Stash…</Text>
-        </View>
+        </Animated.View>
       </SafeAreaView>
     );
   }
@@ -125,8 +130,10 @@ export default function KycSubmissionPendingScreen() {
   if (screenState.kind === 'rejected') {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.centered}>
-          <Text style={styles.rejectedEmoji}>Unsuccessful</Text>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.centered}>
+          <View style={[styles.resultIconBadge, styles.errorIconBadge]}>
+            <Icon name="close-circle" size={40} color={colors.status.error} />
+          </View>
           <Text style={styles.heading}>Verification unsuccessful</Text>
           {screenState.reason ? (
             <View style={styles.reasonBox}>
@@ -137,10 +144,10 @@ export default function KycSubmissionPendingScreen() {
           <Text style={styles.body}>
             If you believe this is a mistake or need help, please contact our support team.
           </Text>
-          <TouchableOpacity style={styles.supportButton} onPress={openSupportEmail}>
+          <PressableScale style={styles.supportButton} onPress={openSupportEmail}>
             <Text style={styles.supportButtonText}>Contact support</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </PressableScale>
+          <PressableScale
             style={styles.retryButton}
             onPress={async () => {
               await clearKycSubmission();
@@ -148,8 +155,8 @@ export default function KycSubmissionPendingScreen() {
             }}
           >
             <Text style={styles.retryButtonText}>Try again with a new submission</Text>
-          </TouchableOpacity>
-        </View>
+          </PressableScale>
+        </Animated.View>
       </SafeAreaView>
     );
   }
@@ -158,7 +165,7 @@ export default function KycSubmissionPendingScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.centered}>
         <View style={styles.spinner}>
-          <ActivityIndicator size="large" color="#1A1A1A" />
+          <ActivityIndicator size="large" color={colors.gold.base} />
         </View>
         <Text style={styles.heading}>Under review</Text>
         <Text style={styles.stepText}>Step 3 of 3</Text>
@@ -180,60 +187,70 @@ export default function KycSubmissionPendingScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   centered: {
     flex: 1,
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing['3xl'],
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: { marginTop: 16, fontSize: 15, color: '#6B7280' },
-  successEmoji: { fontSize: 20, fontWeight: '700', color: '#059669', marginBottom: 20 },
-  rejectedEmoji: { fontSize: 20, fontWeight: '700', color: '#991B1B', marginBottom: 20 },
-  spinner: { marginBottom: 24 },
+  loadingText: { marginTop: spacing.lg, fontSize: 15, color: colors.textSecondary },
+  resultIconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  successIconBadge: { backgroundColor: colors.status.successBg },
+  errorIconBadge: { backgroundColor: colors.status.errorBg },
+  spinner: { marginBottom: spacing['2xl'] },
   heading: {
+    ...typography.h1,
     fontSize: 26,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  stepText: { fontSize: 13, color: '#9CA3AF', marginBottom: 16 },
+  stepText: { fontSize: 13, color: colors.textTertiary, marginBottom: spacing.lg },
   body: {
     fontSize: 15,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
-  bodySecondary: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 22 },
+  bodySecondary: { fontSize: 14, color: colors.textTertiary, textAlign: 'center', lineHeight: 22 },
   timeframeBox: {
-    marginTop: 32,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    padding: 20,
+    marginTop: spacing['3xl'],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    padding: spacing.xl,
     alignItems: 'center',
     width: '100%',
   },
-  timeframeLabel: { fontSize: 13, color: '#6B7280', marginBottom: 4 },
-  timeframeValue: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  timeframeLabel: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.xxs },
+  timeframeValue: { ...typography.h3, color: colors.textPrimary },
   reasonBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 16,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     width: '100%',
   },
-  reasonLabel: { fontSize: 13, fontWeight: '600', color: '#991B1B', marginBottom: 4 },
-  reasonText: { fontSize: 14, color: '#991B1B', lineHeight: 20 },
+  reasonLabel: { fontSize: 13, fontWeight: '600', color: colors.status.errorText, marginBottom: spacing.xxs },
+  reasonText: { fontSize: 14, color: colors.status.errorText, lineHeight: 20 },
   supportButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    marginTop: 20,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing['3xl'],
+    marginTop: spacing.lg,
   },
-  supportButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
-  retryButton: { marginTop: 16, padding: 12 },
-  retryButtonText: { color: '#6B7280', fontSize: 14, textDecorationLine: 'underline' },
+  supportButtonText: { fontSize: 15, fontWeight: '600', color: colors.neutral[900] },
+  retryButton: { marginTop: spacing.md, padding: spacing.sm },
+  retryButtonText: { color: colors.textSecondary, fontSize: 14, textDecorationLine: 'underline' },
 });

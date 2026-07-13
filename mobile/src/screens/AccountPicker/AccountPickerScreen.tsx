@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { VaultCard } from '../../components/VaultCard';
+import { colors, spacing, typography } from '../../theme';
 import type { VaultListItem } from '../../api/vaults';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AccountPicker'>;
@@ -49,7 +50,7 @@ export function AccountPickerScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.gold.base} />
         </View>
       </SafeAreaView>
     );
@@ -83,18 +84,18 @@ export function AccountPickerScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+  safe: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: '#1A1A2E' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A2E' },
-  helper: { fontSize: 14, color: '#6B7280', paddingHorizontal: 16, marginBottom: 16 },
-  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
+  helper: { fontSize: 14, color: colors.textSecondary, paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing['4xl'] },
 });

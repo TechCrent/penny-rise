@@ -12,12 +12,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated, { FadeIn, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { markOnboardingSeen } from '../../storage/onboardingStorage';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
-
-const INDIGO = '#4F46E5';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Slide {
@@ -91,9 +92,9 @@ export default function OnboardingScreen() {
         onMomentumScrollEnd={onScroll}
         renderItem={({ item }) => (
           <View style={styles.slide} testID="onboarding-slide">
-            <View style={styles.emojiBadge}>
+            <Animated.View entering={FadeIn.duration(400)} style={styles.emojiBadge}>
               <Text style={styles.emoji}>{item.emoji}</Text>
-            </View>
+            </Animated.View>
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.body}>{item.body}</Text>
           </View>
@@ -102,68 +103,72 @@ export default function OnboardingScreen() {
 
       <View style={styles.dotsRow}>
         {SLIDES.map((slide, i) => (
-          <View key={slide.title} style={[styles.dot, i === index && styles.dotActive]} />
+          <Dot key={slide.title} active={i === index} />
         ))}
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity
+        <PressableScale
           style={styles.primaryButton}
           onPress={goNext}
-          activeOpacity={0.85}
           testID="onboarding-next"
+          accessibilityRole="button"
         >
           <Text style={styles.primaryButtonText}>{isLast ? 'Get started' : 'Next'}</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </SafeAreaView>
   );
 }
 
+function Dot({ active }: { active: boolean }) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: withTiming(active ? 20 : 8, { duration: 200 }),
+    backgroundColor: withTiming(active ? colors.gold.base : colors.neutral[200], { duration: 200 }),
+  }));
+  return <Animated.View style={[styles.dot, animatedStyle]} />;
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  skipRow: { alignItems: 'flex-end', paddingHorizontal: 24, paddingTop: 8 },
-  skipText: { color: '#6B7280', fontSize: 15, fontWeight: '600' },
+  safe: { flex: 1, backgroundColor: colors.background },
+  skipRow: { alignItems: 'flex-end', paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
+  skipText: { color: colors.textSecondary, fontSize: 15, fontWeight: '600' },
   slide: {
     width: SCREEN_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing['3xl'],
   },
   emojiBadge: {
     width: 112,
     height: 112,
-    borderRadius: 56,
-    backgroundColor: '#EEF2FF',
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
+    marginBottom: spacing['3xl'],
   },
   emoji: { fontSize: 52 },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
+    ...typography.h2,
+    color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  body: { fontSize: 15, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 24 },
+  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.xl },
   dot: {
-    width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 4,
+    marginHorizontal: spacing.xs,
   },
-  dotActive: { backgroundColor: INDIGO, width: 20 },
-  footer: { paddingHorizontal: 24, paddingBottom: 16 },
+  footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg },
   primaryButton: {
-    backgroundColor: INDIGO,
-    borderRadius: 12,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  primaryButtonText: { ...typography.button, color: colors.neutral[900] },
 });

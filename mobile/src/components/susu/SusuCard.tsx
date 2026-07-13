@@ -1,6 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import type { SusuGroupListResponse } from '../../types/susu';
+import { PressableScale } from '../ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 interface Props {
   group: SusuGroupListResponse;
@@ -28,11 +36,12 @@ export function SusuCard({ group, onPress }: Props) {
   const isFrozen = group.status === 'FROZEN';
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={styles.card}
       onPress={onPress}
-      activeOpacity={0.85}
       testID={`susu-card-${group.group_id}`}
+      accessibilityRole="button"
+      accessibilityLabel={`${group.name} susu group`}
     >
       {/* Header row */}
       <View style={styles.headerRow}>
@@ -89,66 +98,78 @@ export function SusuCard({ group, onPress }: Props) {
       {dueDate && !isPending && <Text style={styles.dueDate}>Due {dueDate}</Text>}
 
       {/* Progress bar */}
-      {!isPending && group.total_rounds && (
-        <View style={styles.progressBg}>
-          <View style={[styles.progressFill, { width: `${progressFraction * 100}%` }]} />
-        </View>
-      )}
-    </TouchableOpacity>
+      {!isPending && group.total_rounds && <ProgressTrack fraction={progressFraction} />}
+    </PressableScale>
+  );
+}
+
+function ProgressTrack({ fraction }: { fraction: number }) {
+  const width = useSharedValue(0);
+
+  useEffect(() => {
+    width.value = withTiming(fraction * 100, {
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [fraction, width]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${width.value}%`,
+  }));
+
+  return (
+    <View style={styles.progressBg}>
+      <Animated.View style={[styles.progressFill, animatedStyle]} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    ...typography.h3,
+    color: colors.textPrimary,
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   youreNextPill: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
+    backgroundColor: colors.gold.light,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: radii.pill,
   },
   youreNextText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#92400E',
+    color: colors.gold.text,
   },
   frozenPill: {
-    backgroundColor: '#DBEAFE',
-    paddingHorizontal: 8,
+    backgroundColor: colors.status.infoBg,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: radii.pill,
   },
   frozenText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: colors.status.infoText,
   },
   frozenNotice: {
     fontSize: 12,
-    color: '#1E40AF',
-    marginTop: 4,
+    color: colors.status.infoText,
+    marginTop: spacing.xs,
     lineHeight: 17,
   },
   metaRow: {
@@ -158,29 +179,29 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontSize: 13,
-    color: '#374151',
+    color: colors.neutral[700],
     fontWeight: '500',
   },
   metaSecondary: {
-    fontSize: 12,
-    color: '#6B7280',
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   dueDate: {
     fontSize: 12,
-    color: '#EF4444',
+    color: colors.status.error,
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   progressBg: {
     height: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.neutral[100],
     borderRadius: 2,
-    marginTop: 10,
+    marginTop: spacing.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: 4,
-    backgroundColor: '#111827',
+    backgroundColor: colors.gold.base,
     borderRadius: 2,
   },
 });

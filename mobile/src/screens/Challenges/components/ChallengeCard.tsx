@@ -1,7 +1,9 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { BadgePreview } from './BadgePreview';
 import { ProgressBar } from '../../../components/ProgressBar';
+import { PressableScale } from '../../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../../theme';
 import { sectionFor } from '../types';
 import type { Challenge } from '../types';
 
@@ -21,7 +23,7 @@ export function ChallengeCard({ challenge, onPress }: Props) {
       : 0;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={() => onPress(challenge)}
       style={styles.card}
       accessibilityRole="button"
@@ -52,26 +54,32 @@ export function ChallengeCard({ challenge, onPress }: Props) {
           </Text>
         )}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    padding: 14,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 10,
-    marginHorizontal: 16,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    marginBottom: spacing.sm,
+    marginHorizontal: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
+    ...shadows.sm,
   },
-  info: { flex: 1, marginLeft: 14 },
-  title: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  meta: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  progressContainer: { marginTop: 8 },
-  progressLabel: { fontSize: 11, color: '#6B7280', marginTop: 4 },
-  completedLabel: { fontSize: 12, color: '#059669', marginTop: 6, fontWeight: '600' },
+  info: { flex: 1, marginLeft: spacing.md },
+  title: { ...typography.bodyMedium, color: colors.textPrimary },
+  meta: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  progressContainer: { marginTop: spacing.sm },
+  progressLabel: { fontSize: 11, color: colors.textSecondary, marginTop: spacing.xs },
+  completedLabel: {
+    fontSize: 12,
+    color: colors.status.success,
+    marginTop: spacing.sm,
+    fontWeight: '600',
+  },
 });

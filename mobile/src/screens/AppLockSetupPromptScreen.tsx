@@ -14,6 +14,8 @@ import {
   type AppLockMethod,
 } from '../auth/appLock';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { colors, radii, spacing, typography } from '../theme';
+import { Icon } from '../components/ui';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AppLockSetupPrompt'>;
 type Route = RouteProp<RootStackParamList, 'AppLockSetupPrompt'>;
@@ -124,7 +126,9 @@ export function AppLockSetupPromptScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.content}>
-        <Text style={styles.emoji}>🔒</Text>
+        <View style={styles.iconBadge}>
+          <Icon name="lock-closed-outline" size={30} color={colors.gold.text} />
+        </View>
         <Text style={styles.heading}>Lock Stash?</Text>
         <Text style={styles.subheading}>
           Add an extra layer of protection to your account. You can change this anytime in
@@ -150,19 +154,28 @@ export function AppLockSetupPromptScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
-  emoji: { fontSize: 48, textAlign: 'center', marginBottom: 16 },
-  heading: { fontSize: 22, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 8 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.xl },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
+  },
+  heading: { ...typography.h2, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
   subheading: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: spacing['3xl'],
     lineHeight: 20,
   },
-  option: { marginBottom: 12 },
-  skipButton: { alignItems: 'center', marginTop: 16, padding: 8 },
-  skipText: { color: '#6B7280', fontSize: 14, fontWeight: '500' },
-  errorText: { color: '#EF4444', fontSize: 13, textAlign: 'center', marginBottom: 16 },
+  option: { marginBottom: spacing.md },
+  skipButton: { alignItems: 'center', marginTop: spacing.lg, padding: spacing.sm },
+  skipText: { color: colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  errorText: { color: colors.status.error, fontSize: 13, textAlign: 'center', marginBottom: spacing.lg },
 });

@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTransactionDetail } from '../../../api/hooks/useTransactionDetail';
+import { colors, spacing, typography } from '../../../theme';
 import type { UnifiedTransactionItem } from '../types';
 
 interface Props {
@@ -67,7 +68,7 @@ export function ReceiptModal({ transaction, onClose }: Props) {
         </View>
 
         {loadingLive ? (
-          <ActivityIndicator style={styles.loader} testID="receipt-loading" />
+          <ActivityIndicator style={styles.loader} color={colors.gold.base} testID="receipt-loading" />
         ) : (
           <ScrollView contentContainerStyle={styles.content}>
             <ReceiptRow
@@ -133,32 +134,32 @@ function ReceiptRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
-  title: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  closeButton: { fontSize: 15, color: '#1A1A1A', fontWeight: '600' },
-  loader: { marginTop: 40 },
-  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32 },
+  title: { ...typography.h3, color: colors.textPrimary },
+  closeButton: { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
+  loader: { marginTop: spacing['4xl'] },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing['2xl'] },
 });
 
 const rowStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
-  label: { fontSize: 13, color: '#6B7280' },
-  value: { fontSize: 14, color: '#111827', flex: 1, textAlign: 'right', marginLeft: 12 },
-  pendingValue: { color: '#D97706', fontWeight: '700' },
+  label: { fontSize: 13, color: colors.textSecondary },
+  value: { fontSize: 14, color: colors.textPrimary, flex: 1, textAlign: 'right', marginLeft: spacing.md },
+  pendingValue: { color: colors.status.warningText, fontWeight: '700' },
 });

@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 import type { DeletionRequestStatus } from './types';
 
 interface Props {
@@ -35,7 +37,7 @@ export function CoolOffView({ request, isCancelling, cancelError, onCancel }: Pr
         </Text>
       )}
 
-      <Pressable
+      <PressableScale
         style={[styles.cancelButton, isCancelling && styles.disabledButton]}
         disabled={isCancelling}
         onPress={onCancel}
@@ -43,28 +45,28 @@ export function CoolOffView({ request, isCancelling, cancelError, onCancel }: Pr
         accessibilityLabel="Cancel deletion request"
       >
         {isCancelling ? (
-          <ActivityIndicator color="#FFFFFF" testID="cancel-spinner" />
+          <ActivityIndicator color={colors.neutral[0]} testID="cancel-spinner" />
         ) : (
           <Text style={styles.cancelLabel}>Cancel Request</Text>
         )}
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 20 },
-  title: { fontSize: 20, fontWeight: '800', color: '#111827', marginBottom: 16 },
-  paragraph: { fontSize: 14, color: '#111827', marginBottom: 14, lineHeight: 21 },
+  container: { flex: 1, backgroundColor: colors.background, padding: spacing.xl },
+  title: { ...typography.h3, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.lg },
+  paragraph: { fontSize: 14, color: colors.textPrimary, marginBottom: spacing.md, lineHeight: 21 },
   date: { fontWeight: '700' },
-  errorText: { fontSize: 14, color: '#DC2626', marginBottom: 10 },
+  errorText: { fontSize: 14, color: colors.status.error, marginBottom: spacing.sm },
   cancelButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: spacing.xl,
   },
   disabledButton: { opacity: 0.6 },
-  cancelLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  cancelLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
 });

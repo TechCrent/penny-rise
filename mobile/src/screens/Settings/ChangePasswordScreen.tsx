@@ -20,6 +20,7 @@ import { FormField } from '../../components/FormField';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { changePassword } from '../../api/profileApi';
 import { extractApiError } from '../../api/client';
+import { colors, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ChangePassword'>;
 
@@ -160,12 +161,12 @@ export function ChangePasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 },
-  header: { marginBottom: 24 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 24 },
-  submitButton: { marginTop: 8 },
-  successText: { color: '#16A34A', fontSize: 13, marginBottom: 12 },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing['4xl'] },
+  header: { marginBottom: spacing['2xl'] },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing['2xl'] },
+  submitButton: { marginTop: spacing.sm },
+  successText: { color: colors.status.successText, fontSize: 13, marginBottom: spacing.md },
 });

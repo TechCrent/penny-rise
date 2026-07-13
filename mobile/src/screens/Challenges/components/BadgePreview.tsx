@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { colors } from '../../../theme';
 
 interface Props {
   badgeName: string;
@@ -37,7 +38,7 @@ export function BadgePreview({ badgeName, size = 64, earned = true }: Props) {
 
 const styles = StyleSheet.create({
   circle: { alignItems: 'center', justifyContent: 'center' },
-  earned: { backgroundColor: '#1A1A1A' },
-  locked: { backgroundColor: '#E5E7EB' },
-  initial: { color: '#FFFFFF', fontWeight: '800' },
+  earned: { backgroundColor: colors.gold.base },
+  locked: { backgroundColor: colors.neutral[200] },
+  initial: { color: colors.neutral[900], fontWeight: '800' },
 });

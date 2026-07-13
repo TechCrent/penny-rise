@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +17,8 @@ import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { transferApi } from '../../api/transfers';
 import type { TransferQuota } from '../../api/transfers';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SendMoney'>;
 type Route = RouteProp<RootStackParamList, 'SendMoney'>;
@@ -95,7 +96,7 @@ export function SendMoneyScreen() {
 
           <View style={styles.balanceRow}>
             {balanceLoading ? (
-              <ActivityIndicator testID="balance-loading" />
+              <ActivityIndicator testID="balance-loading" color={colors.gold.base} />
             ) : (
               <Text
                 style={[styles.balanceText, hasInsufficientBalance && styles.balanceLow]}
@@ -123,6 +124,7 @@ export function SendMoneyScreen() {
           <TextInput
             style={styles.amountInput}
             placeholder="Amount (GHS)"
+            placeholderTextColor={colors.textTertiary}
             keyboardType="decimal-pad"
             value={amountCedis}
             onChangeText={setAmountCedis}
@@ -132,6 +134,7 @@ export function SendMoneyScreen() {
           <TextInput
             style={styles.noteInput}
             placeholder="Note (optional)"
+            placeholderTextColor={colors.textTertiary}
             value={note}
             onChangeText={setNote}
             testID="note-input"
@@ -149,18 +152,18 @@ export function SendMoneyScreen() {
             </Text>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
             onPress={handleSend}
             disabled={!canSubmit}
             testID="submit-btn"
           >
             {submitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.neutral[900]} />
             ) : (
               <Text style={styles.submitBtnText}>Send GHS {amountCedis || '0.00'}</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -168,53 +171,55 @@ export function SendMoneyScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
+  screen: { flex: 1, backgroundColor: colors.background },
   flex1: { flex: 1 },
-  content: { padding: 24 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 24 },
+  content: { padding: spacing.xl },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing['2xl'] },
   recipientLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  recipientName: { fontSize: 18, fontWeight: '600', color: '#111827', marginTop: 4 },
-  recipientEmail: { fontSize: 14, color: '#6B7280', marginTop: 2, marginBottom: 20 },
-  balanceRow: { marginBottom: 12 },
-  balanceText: { fontSize: 14, color: '#374151' },
-  balanceLow: { color: '#EF4444' },
-  quotaRow: { marginBottom: 16 },
-  freeTag: { fontSize: 13, color: '#10B981', fontWeight: '600' },
-  feeText: { fontSize: 13, color: '#F59E0B', fontWeight: '600' },
+  recipientName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginTop: spacing.xs },
+  recipientEmail: { fontSize: 14, color: colors.textSecondary, marginTop: 2, marginBottom: spacing.xl },
+  balanceRow: { marginBottom: spacing.md },
+  balanceText: { fontSize: 14, color: colors.neutral[700] },
+  balanceLow: { color: colors.status.error },
+  quotaRow: { marginBottom: spacing.lg },
+  freeTag: { fontSize: 13, color: colors.status.success, fontWeight: '600' },
+  feeText: { fontSize: 13, color: colors.status.warningText, fontWeight: '600' },
   amountInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 12,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   noteInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     fontSize: 15,
-    marginBottom: 20,
+    color: colors.textPrimary,
+    marginBottom: spacing.xl,
   },
-  insufficientText: { color: '#EF4444', fontSize: 13, marginBottom: 8 },
-  errorText: { color: '#EF4444', fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  insufficientText: { color: colors.status.error, fontSize: 13, marginBottom: spacing.sm },
+  errorText: { color: colors.status.error, fontSize: 13, marginBottom: spacing.md, textAlign: 'center' },
   submitBtn: {
-    backgroundColor: '#4F46E5',
-    borderRadius: 14,
-    paddingVertical: 16,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
   },
   submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  submitBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
 });

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import NetInfo from '@react-native-community/netinfo';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { PressableScale } from '../components/ui';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Welcome'>;
-
-const INDIGO = '#4F46E5';
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -27,18 +28,22 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         <View style={styles.spacer} />
 
-        <View style={styles.logoBadge}>
+        <Animated.View entering={FadeIn.duration(500)} style={styles.logoBadge}>
           <Image
             source={require('../../assets/images/splash-icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-        </View>
+        </Animated.View>
 
-        <Text style={styles.title}>Stash</Text>
-        <Text style={styles.kicker}>SECURE · TARGET</Text>
+        <Animated.View entering={FadeIn.delay(100).duration(500)}>
+          <Text style={styles.title}>Stash</Text>
+          <Text style={styles.kicker}>SECURE · TARGET</Text>
+        </Animated.View>
 
-        <Text style={styles.tagline}>Save alone, save together, and actually get there.</Text>
+        <Animated.Text entering={FadeIn.delay(180).duration(500)} style={styles.tagline}>
+          Save alone, save together, and actually get there.
+        </Animated.Text>
 
         <View style={styles.spacer} />
 
@@ -49,39 +54,37 @@ export default function WelcomeScreen() {
               Stash needs a connection to create an account or sign in. Connect to Wi-Fi or mobile
               data and try again.
             </Text>
-            <TouchableOpacity
+            <PressableScale
               style={styles.offlineRetryButton}
               onPress={recheckConnection}
               disabled={checking}
               testID="welcome-offline-retry"
             >
               {checking ? (
-                <ActivityIndicator color="#991B1B" size="small" />
+                <ActivityIndicator color={colors.status.errorText} size="small" />
               ) : (
                 <Text style={styles.offlineRetryText}>Try again</Text>
               )}
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         ) : (
-          <>
-            <TouchableOpacity
+          <Animated.View entering={FadeIn.delay(260).duration(500)} style={styles.actions}>
+            <PressableScale
               style={styles.primaryButton}
               onPress={() => navigation.navigate('Register')}
-              activeOpacity={0.85}
               accessibilityRole="button"
             >
               <Text style={styles.primaryButtonText}>Create account</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
-            <TouchableOpacity
+            <PressableScale
               style={styles.secondaryButton}
               onPress={() => navigation.navigate('Login')}
-              activeOpacity={0.7}
               accessibilityRole="button"
             >
               <Text style={styles.secondaryButtonText}>I already have one</Text>
-            </TouchableOpacity>
-          </>
+            </PressableScale>
+          </Animated.View>
         )}
 
         <Text style={styles.legal}>
@@ -97,90 +100,101 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, paddingHorizontal: 28, paddingBottom: 16, alignItems: 'center' },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { flex: 1, paddingHorizontal: 28, paddingBottom: spacing.lg, alignItems: 'center' },
   spacer: { flex: 1 },
   logoBadge: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: '#EEF2FF',
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: spacing['2xl'],
   },
-  logo: { width: 72, height: 72, tintColor: INDIGO },
-  title: { fontSize: 34, fontWeight: '800', color: '#111827', marginBottom: 6 },
+  logo: { width: 72, height: 72, tintColor: colors.gold.text },
+  title: {
+    ...typography.display,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
   kicker: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: INDIGO,
+    ...typography.label,
+    color: colors.gold.text,
+    textAlign: 'center',
     letterSpacing: 3,
-    marginBottom: 24,
+    marginBottom: spacing['2xl'],
   },
   tagline: {
     fontSize: 16,
-    color: '#4B5563',
+    color: colors.neutral[600],
     textAlign: 'center',
     lineHeight: 23,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
   },
+  actions: { alignSelf: 'stretch' },
   primaryButton: {
-    backgroundColor: INDIGO,
-    borderRadius: 12,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  primaryButtonText: { ...typography.button, color: colors.neutral[900] },
   secondaryButton: {
     borderWidth: 1.5,
-    borderColor: '#C7D2FE',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
-  secondaryButtonText: { color: INDIGO, fontSize: 16, fontWeight: '700' },
+  secondaryButtonText: { ...typography.button, color: colors.textPrimary },
   offlineBox: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.errorBg,
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
     alignSelf: 'stretch',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
-  offlineTitle: { color: '#991B1B', fontSize: 15, fontWeight: '700', marginBottom: 6 },
+  offlineTitle: {
+    color: colors.status.errorText,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
   offlineBody: {
-    color: '#991B1B',
+    color: colors.status.errorText,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   offlineRetryButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 8,
+    borderColor: colors.status.errorBorder,
+    borderRadius: radii.sm,
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
     minWidth: 100,
     alignItems: 'center',
   },
-  offlineRetryText: { color: '#991B1B', fontSize: 13, fontWeight: '700' },
+  offlineRetryText: { color: colors.status.errorText, fontSize: 13, fontWeight: '700' },
   legal: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textTertiary,
     textAlign: 'center',
     lineHeight: 18,
   },
-  legalLink: { color: '#6B7280', textDecorationLine: 'underline' },
+  legalLink: { color: colors.textSecondary, textDecorationLine: 'underline' },
 });

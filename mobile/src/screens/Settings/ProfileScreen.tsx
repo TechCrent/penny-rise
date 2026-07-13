@@ -19,6 +19,7 @@ import { FormField } from '../../components/FormField';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { extractApiError } from '../../api/client';
 import { useProfile } from './useProfile';
+import { colors, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EditProfile'>;
 
@@ -71,7 +72,7 @@ export function ProfileScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.loading}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.gold.base} />
         </View>
       </SafeAreaView>
     );
@@ -140,13 +141,13 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 },
-  header: { marginBottom: 24 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 24 },
-  submitButton: { marginTop: 8 },
-  successText: { color: '#16A34A', fontSize: 13, marginBottom: 12 },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing['4xl'] },
+  header: { marginBottom: spacing['2xl'] },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing['2xl'] },
+  submitButton: { marginTop: spacing.sm },
+  successText: { color: colors.status.successText, fontSize: 13, marginBottom: spacing.md },
 });

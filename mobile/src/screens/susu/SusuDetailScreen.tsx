@@ -3,22 +3,32 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   StyleSheet,
   Alert,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSusuDetail } from '../../hooks/useSusuDetail';
 import { susuApi } from '../../api/susu';
 import { RotationRing } from '../../components/susu/RotationRing';
 import { ContributionStatusPill } from '../../components/susu/ContributionStatusPill';
 import { ContributeBottomSheet } from '../../components/susu/ContributeBottomSheet';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { AnimatedNumber, Icon, PressableScale } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { ContributionStatus } from '../../types/susu';
 
 type SusuDetailRoute = RouteProp<RootStackParamList, 'SusuDetail'>;
+
+function formatPotCedis(pesewas: number): string {
+  return (pesewas / 100).toLocaleString('en-GH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
@@ -72,7 +82,7 @@ export function SusuDetailScreen() {
   if (loading && !group) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#111827" />
+        <ActivityIndicator size="large" color={colors.gold.base} />
       </View>
     );
   }
@@ -81,9 +91,7 @@ export function SusuDetailScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.errorText}>{error ?? 'Group not found.'}</Text>
-        <TouchableOpacity onPress={() => fetch()} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Retry" onPress={() => fetch()} style={styles.retryBtn} />
       </View>
     );
   }
@@ -115,7 +123,9 @@ export function SusuDetailScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.screen}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold.base} colors={[colors.gold.base]} />
+        }
         testID="susu-detail-screen"
       >
         {/* ── Status banner ─────────────────────────────────────────────── */}
@@ -133,26 +143,39 @@ export function SusuDetailScreen() {
 
         {/* ── Current round hero ────────────────────────────────────────── */}
         {isActive && round && (
-          <View style={styles.roundHero} testID="round-hero">
+          <LinearGradient
+            colors={[colors.heroFrom, colors.heroTo]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.roundHero}
+            testID="round-hero"
+          >
             <Text style={styles.roundLabel}>
               Round {round.round_number} of {round.total_rounds}
             </Text>
             <Text style={styles.recipientName}>{round.recipient_display_name}</Text>
-            <Text style={styles.potAmount}>GHS {round.expected_pot_amount_cedis} pot</Text>
+            <Text style={styles.potAmount}>
+              GHS <AnimatedNumber value={round.expected_pot_amount} formatter={formatPotCedis} /> pot
+            </Text>
             {round.scheduled_collection_at && (
               <Text style={styles.dueDate}>Due {formatDate(round.scheduled_collection_at)}</Text>
             )}
 
             {isDisbursing && (
               <View style={styles.disbursingBadge} testID="disbursing-badge">
+                <Icon
+                  name={round.status === 'DISBURSED' ? 'checkmark-circle' : 'hourglass-outline'}
+                  size={13}
+                  color={colors.status.success}
+                />
                 <Text style={styles.disbursingText}>
                   {round.status === 'DISBURSED'
-                    ? '✓ Pot disbursed'
-                    : '⏳ Disbursing to ' + round.recipient_display_name}
+                    ? 'Pot disbursed'
+                    : 'Disbursing to ' + round.recipient_display_name}
                 </Text>
               </View>
             )}
-          </View>
+          </LinearGradient>
         )}
 
         {/* ── Completed state ────────────────────────────────────────────── */}
@@ -212,14 +235,14 @@ export function SusuDetailScreen() {
         {/* ── Primary CTA ───────────────────────────────────────────────── */}
         <View style={styles.ctaContainer}>
           {canActivate && (
-            <TouchableOpacity
+            <PressableScale
               style={[styles.ctaBtn, styles.ctaBtnActivate, activating && styles.ctaBtnDisabled]}
               onPress={handleActivate}
               disabled={activating}
               testID="activate-btn"
             >
               <Text style={styles.ctaBtnText}>{activating ? 'Activating…' : 'Activate Group'}</Text>
-            </TouchableOpacity>
+            </PressableScale>
           )}
 
           {isPending && !group.is_caller_organiser && (
@@ -231,7 +254,7 @@ export function SusuDetailScreen() {
           )}
 
           {canContribute && (
-            <TouchableOpacity
+            <PressableScale
               style={styles.ctaBtn}
               onPress={() => setSheetVisible(true)}
               testID="contribute-cta"
@@ -241,7 +264,7 @@ export function SusuDetailScreen() {
                 {group.contribution_amount_cedis}
                 {' now'}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           )}
         </View>
 
@@ -275,96 +298,93 @@ function ContributionRow({ contrib }: { contrib: ContributionStatus }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorText: { color: '#EF4444', fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  retryBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: '#111827',
-    borderRadius: 8,
-  },
-  retryText: { color: '#FFFFFF', fontWeight: '700' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  errorText: { color: colors.status.error, fontSize: 14, textAlign: 'center', marginBottom: spacing.md },
+  retryBtn: { paddingHorizontal: spacing.xl },
 
-  pendingBanner: { backgroundColor: '#FEF9C3', padding: 16, marginBottom: 0 },
-  pendingBannerText: { color: '#713F12', fontSize: 13, fontWeight: '500' },
-  joinCode: { color: '#713F12', fontSize: 15, fontWeight: '800', marginTop: 4 },
+  pendingBanner: { backgroundColor: colors.status.warningBg, padding: spacing.lg },
+  pendingBannerText: { color: colors.status.warningText, fontSize: 13, fontWeight: '500' },
+  joinCode: { color: colors.status.warningText, fontSize: 15, fontWeight: '800', marginTop: spacing.xs },
 
-  roundHero: { backgroundColor: '#111827', padding: 20, marginBottom: 0 },
-  completedHero: { backgroundColor: '#065F46' },
-  roundLabel: { color: '#9CA3AF', fontSize: 12, fontWeight: '600', marginBottom: 4 },
-  recipientName: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', marginBottom: 4 },
+  roundHero: { padding: spacing.xl },
+  completedHero: { backgroundColor: colors.status.successText },
+  roundLabel: { color: colors.textOnDarkMuted, fontSize: 12, fontWeight: '600', marginBottom: spacing.xs },
+  recipientName: { color: colors.textOnDark, fontSize: 22, fontWeight: '800', marginBottom: spacing.xs },
   potAmount: { color: '#D1FAE5', fontSize: 16, fontWeight: '600', marginBottom: 2 },
-  dueDate: { color: '#9CA3AF', fontSize: 13, marginTop: 2 },
+  dueDate: { color: colors.textOnDarkMuted, fontSize: 13, marginTop: 2 },
   disbursingBadge: {
-    backgroundColor: '#1F2937',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     alignSelf: 'flex-start',
-    marginTop: 12,
+    marginTop: spacing.md,
   },
   disbursingText: { color: '#D1FAE5', fontSize: 13, fontWeight: '600' },
 
-  section: { backgroundColor: '#FFFFFF', marginTop: 8, padding: 16 },
+  section: { backgroundColor: colors.surface, marginTop: spacing.sm, padding: spacing.lg },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#374151',
+    color: colors.neutral[700],
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
 
-  pendingRingNote: { textAlign: 'center', color: '#9CA3AF', fontSize: 12, marginTop: 12 },
+  pendingRingNote: { textAlign: 'center', color: colors.textTertiary, fontSize: 12, marginTop: spacing.md },
 
   contribRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  contribName: { fontSize: 14, color: '#111827', flex: 1, marginRight: 8 },
+  contribName: { fontSize: 14, color: colors.textPrimary, flex: 1, marginRight: spacing.sm },
 
   memberRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  memberLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  memberLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   positionBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.neutral[100],
     alignItems: 'center',
     justifyContent: 'center',
   },
-  positionText: { fontSize: 12, fontWeight: '700', color: '#374151' },
-  memberName: { fontSize: 14, color: '#111827', fontWeight: '500' },
-  organiserLabel: { color: '#6B7280', fontWeight: '400' },
+  positionText: { fontSize: 12, fontWeight: '700', color: colors.neutral[700] },
+  memberName: { fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
+  organiserLabel: { color: colors.textSecondary, fontWeight: '400' },
 
-  ctaContainer: { padding: 16 },
+  ctaContainer: { padding: spacing.lg },
   ctaBtn: {
-    backgroundColor: '#111827',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: colors.gold.base,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
-  ctaBtnActivate: { backgroundColor: '#059669' },
+  ctaBtnActivate: { backgroundColor: colors.status.success },
   ctaBtnDisabled: { opacity: 0.5 },
-  ctaBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  ctaBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
   pendingMemberNote: {
-    padding: 16,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
+    padding: spacing.lg,
+    backgroundColor: colors.neutral[100],
+    borderRadius: radii.md,
     alignItems: 'center',
   },
-  pendingMemberNoteText: { color: '#6B7280', fontSize: 14, textAlign: 'center' },
+  pendingMemberNoteText: { color: colors.textSecondary, fontSize: 14, textAlign: 'center' },
   spacer: { height: 40 },
 });

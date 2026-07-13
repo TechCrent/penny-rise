@@ -1,6 +1,8 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { TransactionBadge } from '../../../components/wallet/TransactionBadge';
+import { PressableScale } from '../../../components/ui';
+import { colors, radii, spacing } from '../../../theme';
 import type { TransactionType } from '../../../types/wallet';
 import type { UnifiedTransactionItem } from '../types';
 
@@ -41,11 +43,11 @@ export function TransactionListItem({ item, onPress }: Props) {
   const isPending = item.status === 'PENDING';
   const isFailed = item.status === 'FAILED';
   const isCredit = item.direction === 'IN';
-  const amountColor = isCredit ? '#065F46' : '#111827';
+  const amountColor = isCredit ? colors.status.successText : colors.textPrimary;
   const amountPrefix = isCredit ? '+' : '−';
 
   return (
-    <Pressable
+    <PressableScale
       onPress={() => onPress(item)}
       style={styles.row}
       accessibilityRole="button"
@@ -82,7 +84,7 @@ export function TransactionListItem({ item, onPress }: Props) {
       <Text style={[styles.amount, { color: amountColor }]}>
         {amountPrefix}GHS {item.amountCedis}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -91,28 +93,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  left: { flex: 1, flexDirection: 'column', gap: 6, marginRight: 12 },
+  left: { flex: 1, flexDirection: 'column', gap: spacing.sm, marginRight: spacing.md },
   textGroup: { gap: 2 },
-  accountName: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  narrative: { fontSize: 12, color: '#6B7280' },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  accountName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  narrative: { fontSize: 12, color: colors.textSecondary },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
   pendingBadge: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 4,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.sm,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
-  pendingLabel: { fontSize: 10, fontWeight: '700', color: '#92400E' },
+  pendingLabel: { fontSize: 10, fontWeight: '700', color: colors.status.warningText },
   failedBadge: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 4,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
-  failedLabel: { fontSize: 10, fontWeight: '700', color: '#991B1B' },
-  timestamp: { fontSize: 11, color: '#9CA3AF' },
+  failedLabel: { fontSize: 10, fontWeight: '700', color: colors.status.errorText },
+  timestamp: { fontSize: 11, color: colors.textTertiary },
   amount: { fontSize: 15, fontWeight: '700' },
 });

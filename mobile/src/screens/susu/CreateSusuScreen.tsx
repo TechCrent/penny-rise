@@ -15,6 +15,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { susuApi } from '../../api/susu';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 import {
   validateCreateSusuForm,
   cedisToPesewas,
@@ -145,6 +147,7 @@ export function CreateSusuScreen() {
             value={form.name}
             onChangeText={v => update('name', v)}
             placeholder="e.g. Akua's Savings Circle"
+            placeholderTextColor={colors.textTertiary}
             maxLength={100}
             testID="name-input"
           />
@@ -162,6 +165,7 @@ export function CreateSusuScreen() {
             value={form.contributionCedis}
             onChangeText={v => update('contributionCedis', v.replace(/[^0-9.]/g, ''))}
             placeholder="e.g. 200.00"
+            placeholderTextColor={colors.textTertiary}
             keyboardType="decimal-pad"
             testID="contribution-input"
           />
@@ -231,18 +235,18 @@ export function CreateSusuScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
+        <PressableScale
           style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
           onPress={handleSubmit}
           disabled={submitting}
           testID="submit-btn"
         >
           {submitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.neutral[900]} />
           ) : (
             <Text style={styles.submitBtnText}>{'Next: invite members →'}</Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -250,56 +254,56 @@ export function CreateSusuScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 20, paddingBottom: 40 },
-  stepRow: { marginBottom: 24 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
+  stepRow: { marginBottom: spacing['2xl'] },
   stepLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  progressBg: { height: 4, backgroundColor: '#E5E7EB', borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: '#111827', borderRadius: 2, width: '33%' },
-  field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  labelSub: { fontWeight: '400', color: '#9CA3AF' },
+  progressBg: { height: 4, backgroundColor: colors.neutral[200], borderRadius: 2 },
+  progressFill: { height: 4, backgroundColor: colors.gold.base, borderRadius: 2, width: '33%' },
+  field: { marginBottom: spacing.xl },
+  label: { fontSize: 14, fontWeight: '600', color: colors.neutral[700], marginBottom: spacing.sm },
+  labelSub: { fontWeight: '400', color: colors.textTertiary },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     fontSize: 16,
-    color: '#111827',
+    color: colors.textPrimary,
   },
-  inputError: { borderColor: '#EF4444' },
-  errorText: { color: '#EF4444', fontSize: 12, marginTop: 4 },
-  hint: { color: '#9CA3AF', fontSize: 12, marginTop: 4 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  inputError: { borderColor: colors.status.error },
+  errorText: { color: colors.status.error, fontSize: 12, marginTop: spacing.xs },
+  hint: { color: colors.textTertiary, fontSize: 12, marginTop: spacing.xs },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  pillSmall: { paddingHorizontal: 12, paddingVertical: 8 },
-  pillActive: { backgroundColor: '#111827', borderColor: '#111827' },
-  pillText: { fontSize: 14, fontWeight: '500', color: '#374151' },
-  pillTextActive: { color: '#FFFFFF' },
-  helperBox: { backgroundColor: '#EFF6FF', borderRadius: 10, padding: 14, marginBottom: 24 },
-  helperText: { color: '#1E40AF', fontSize: 13 },
+  pillSmall: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  pillActive: { backgroundColor: colors.gold.base, borderColor: colors.gold.base },
+  pillText: { fontSize: 14, fontWeight: '500', color: colors.neutral[700] },
+  pillTextActive: { color: colors.neutral[900] },
+  helperBox: { backgroundColor: colors.status.infoBg, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing['2xl'] },
+  helperText: { color: colors.status.infoText, fontSize: 13 },
   submitBtn: {
-    backgroundColor: '#111827',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: colors.gold.base,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
   submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  submitBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
 });

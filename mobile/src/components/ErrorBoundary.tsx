@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon, PressableScale } from './ui';
+import { colors, radii, spacing, typography } from '../theme';
 
 interface Props {
   children: React.ReactNode;
@@ -34,15 +36,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <SafeAreaView style={styles.safe}>
           <View style={styles.content}>
-            <Text style={styles.emoji}>⚠️</Text>
+            <View style={styles.iconBadge}>
+              <Icon name="warning-outline" size={28} color={colors.status.error} />
+            </View>
             <Text style={styles.heading}>Something went wrong</Text>
             <Text style={styles.body}>
               Stash ran into an unexpected error. Try again, and if it keeps happening, restart the
               app.
             </Text>
-            <TouchableOpacity style={styles.button} onPress={this.reset} activeOpacity={0.85}>
+            <PressableScale style={styles.button} onPress={this.reset}>
               <Text style={styles.buttonText}>Try again</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </SafeAreaView>
       );
@@ -53,22 +57,30 @@ export class ErrorBoundary extends React.Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  emoji: { fontSize: 48, marginBottom: 20 },
-  heading: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.pill,
+    backgroundColor: colors.status.errorBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  heading: { ...typography.h2, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.sm },
   body: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 28,
+    marginBottom: spacing['2xl'],
   },
   button: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 10,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.md,
   },
-  buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  buttonText: { color: colors.neutral[900], fontSize: 15, fontWeight: '700' },
 });

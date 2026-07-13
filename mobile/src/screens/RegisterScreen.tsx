@@ -18,8 +18,10 @@ import { type RootStackParamList } from '../navigation/RootNavigator';
 import { registerSchema, type RegisterFormValues } from './RegisterScreen.schema';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { Icon, PressableScale } from '../components/ui';
 import { signup } from '../api/auth';
 import { extractApiError } from '../api/client';
+import { colors, spacing, typography } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -225,15 +227,16 @@ export default function RegisterScreen() {
             name="termsAccepted"
             render={({ field: { onChange, value } }) => (
               <View>
-                <TouchableOpacity
+                <PressableScale
                   style={styles.termsRow}
                   onPress={() => onChange(!value)}
-                  activeOpacity={0.7}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: value }}
                 >
                   <View style={[styles.checkbox, value ? styles.checkboxChecked : null]}>
-                    {value ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                    {value ? (
+                      <Icon name="checkmark" size={13} color={colors.neutral[900]} />
+                    ) : null}
                   </View>
                   <Text style={styles.termsText}>
                     I agree to the{' '}
@@ -241,7 +244,7 @@ export default function RegisterScreen() {
                       Terms of Service and Privacy Policy
                     </Text>
                   </Text>
-                </TouchableOpacity>
+                </PressableScale>
                 {errors.termsAccepted ? (
                   <Text style={styles.termsError}>{errors.termsAccepted.message}</Text>
                 ) : null}
@@ -269,36 +272,35 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
-  backRow: { marginBottom: 20 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  heading: { fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 16, color: '#6B7280', marginBottom: 32 },
-  eyeButton: { paddingHorizontal: 12 },
-  eyeText: { color: '#6B7280', fontSize: 14 },
-  referralToggle: { marginBottom: 16 },
-  referralToggleText: { color: '#1A1A1A', fontSize: 14, textDecorationLine: 'underline' },
-  termsRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 4, marginBottom: 4 },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
+  backRow: { marginBottom: spacing.xl },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  eyeButton: { paddingHorizontal: spacing.md },
+  eyeText: { color: colors.textSecondary, fontSize: 14 },
+  referralToggle: { marginBottom: spacing.lg },
+  referralToggleText: { color: colors.textPrimary, fontSize: 14, textDecorationLine: 'underline' },
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs, marginBottom: spacing.xs },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    marginRight: 10,
+    borderColor: colors.borderStrong,
+    marginRight: spacing.sm,
     marginTop: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
-  checkboxMark: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  termsText: { flex: 1, fontSize: 13, color: '#374151', lineHeight: 19 },
-  termsLink: { color: '#1A1A1A', fontWeight: '600', textDecorationLine: 'underline' },
-  termsError: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 30 },
-  submitButton: { marginTop: 12 },
-  loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  loginText: { color: '#6B7280', fontSize: 14 },
-  loginLink: { color: '#1A1A1A', fontSize: 14, fontWeight: '600' },
+  checkboxChecked: { backgroundColor: colors.gold.base, borderColor: colors.gold.base },
+  termsText: { flex: 1, fontSize: 13, color: colors.neutral[700], lineHeight: 19 },
+  termsLink: { color: colors.textPrimary, fontWeight: '600', textDecorationLine: 'underline' },
+  termsError: { color: colors.status.error, fontSize: 12, marginTop: spacing.xs, marginLeft: 30 },
+  submitButton: { marginTop: spacing.md },
+  loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
+  loginText: { color: colors.textSecondary, fontSize: 14 },
+  loginLink: { color: colors.textPrimary, fontSize: 14, fontWeight: '600' },
 });

@@ -1,5 +1,7 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { PressableScale } from '../../../components/ui';
+import { colors, radii, spacing, typography } from '../../../theme';
 import type { Challenge } from '../types';
 
 interface Props {
@@ -44,7 +46,7 @@ export function JoinConfirmationSheet({
             </Text>
           )}
 
-          <Pressable
+          <PressableScale
             onPress={onConfirm}
             disabled={isSubmitting}
             style={[styles.confirmButton, isSubmitting && styles.disabledButton]}
@@ -52,15 +54,15 @@ export function JoinConfirmationSheet({
             accessibilityLabel="Confirm join challenge"
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" testID="join-submitting-spinner" />
+              <ActivityIndicator color={colors.neutral[900]} testID="join-submitting-spinner" />
             ) : (
               <Text style={styles.confirmLabel}>Confirm</Text>
             )}
-          </Pressable>
+          </PressableScale>
 
-          <Pressable onPress={onCancel} disabled={isSubmitting} style={styles.cancelButton}>
+          <PressableScale onPress={onCancel} disabled={isSubmitting} style={styles.cancelButton}>
             <Text style={styles.cancelLabel}>Cancel</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </Modal>
@@ -70,33 +72,33 @@ export function JoinConfirmationSheet({
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    padding: spacing.xl,
   },
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.neutral[200],
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  detailLabel: { fontSize: 14, color: '#6B7280' },
-  detailValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  errorText: { fontSize: 13, color: '#DC2626', marginTop: 10 },
+  title: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.lg },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs },
+  detailLabel: { fontSize: 14, color: colors.textSecondary },
+  detailValue: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  errorText: { fontSize: 13, color: colors.status.error, marginTop: spacing.sm },
   confirmButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: spacing.xl,
   },
   disabledButton: { opacity: 0.6 },
-  confirmLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  cancelButton: { paddingVertical: 10, alignItems: 'center', marginTop: 4 },
-  cancelLabel: { fontSize: 14, color: '#6B7280' },
+  confirmLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
+  cancelButton: { paddingVertical: spacing.sm, alignItems: 'center', marginTop: spacing.xxs },
+  cancelLabel: { fontSize: 14, color: colors.textSecondary },
 });

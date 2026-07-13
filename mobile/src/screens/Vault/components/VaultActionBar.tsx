@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { VaultListItem } from '../../../api/hooks/useVaults';
+import { PressableScale } from '../../../components/ui';
+import { colors, radii, shadows, spacing } from '../../../theme';
 
 interface Props {
   vault: VaultListItem;
@@ -40,31 +43,29 @@ export function VaultActionBar({
     return (
       <View style={styles.container}>
         <View style={styles.coolOffBanner}>
-          <Text style={styles.coolOffIcon}>⏳</Text>
+          <Ionicons name="hourglass-outline" size={18} color={colors.status.warningText} />
           <View style={styles.coolOffBody}>
             <Text style={styles.coolOffTitle}>Early exit in progress</Text>
             <Text style={styles.coolOffSub}>72-hr cool-off in progress</Text>
           </View>
         </View>
         <View style={styles.singleRow}>
-          <TouchableOpacity
+          <PressableScale
             style={[styles.button, styles.depositButton]}
             onPress={onDeposit}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Deposit"
           >
             <Text style={styles.buttonText}>Deposit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </PressableScale>
+          <PressableScale
             style={[styles.button, styles.destructiveButton]}
             onPress={onCancelEarlyExit}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Cancel early exit"
           >
             <Text style={styles.destructiveText}>Cancel exit</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </View>
     );
@@ -75,28 +76,27 @@ export function VaultActionBar({
       <View style={styles.container}>
         {unlocked && (
           <View style={styles.unlockedBanner}>
-            <Text style={styles.unlockedText}>🔓 Vault unlocked — withdraw freely, no penalty</Text>
+            <Ionicons name="lock-open-outline" size={14} color={colors.status.successText} />
+            <Text style={styles.unlockedText}>Vault unlocked — withdraw freely, no penalty</Text>
           </View>
         )}
         <View style={styles.singleRow}>
-          <TouchableOpacity
+          <PressableScale
             style={[styles.button, styles.depositButton]}
             onPress={onDeposit}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Deposit"
           >
             <Text style={styles.buttonText}>Deposit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </PressableScale>
+          <PressableScale
             style={[styles.button, styles.outlineButton]}
             onPress={onWithdraw}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Withdraw"
           >
             <Text style={styles.outlineText}>Withdraw</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </View>
     );
@@ -105,108 +105,99 @@ export function VaultActionBar({
   return (
     <View style={styles.container}>
       <View style={styles.penaltyNotice}>
-        <Text style={styles.penaltyIcon}>⚠️</Text>
+        <Ionicons name="warning-outline" size={13} color={colors.status.warningText} />
         <Text style={styles.penaltyText}>
           Early exit incurs a <Text style={styles.penaltyBold}>5% penalty</Text>
         </Text>
       </View>
       <View style={styles.singleRow}>
-        <TouchableOpacity
+        <PressableScale
           style={[styles.button, styles.depositButton]}
           onPress={onDeposit}
-          activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Deposit"
         >
           <Text style={styles.buttonText}>Deposit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </PressableScale>
+        <PressableScale
           style={[styles.button, styles.outlineButton]}
           onPress={onEarlyExit}
-          activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Request early exit"
         >
           <Text style={styles.outlineText}>Early exit</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   );
 }
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const AMBER = '#D97706';
-
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#EDEDF0',
+    borderTopColor: colors.border,
   },
-  singleRow: { flexDirection: 'row', gap: 12 },
+  singleRow: { flexDirection: 'row', gap: spacing.md },
   button: {
     flex: 1,
-    borderRadius: 13,
-    paddingVertical: 14,
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   depositButton: {
-    backgroundColor: INDIGO,
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: colors.gold.base,
+    ...shadows.sm,
   },
   outlineButton: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
   },
   destructiveButton: {
     borderWidth: 1.5,
     borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.status.errorBg,
   },
-  buttonText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  outlineText: { fontSize: 15, fontWeight: '700', color: DARK },
-  destructiveText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
+  buttonText: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
+  outlineText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  destructiveText: { fontSize: 15, fontWeight: '700', color: colors.status.error },
 
   coolOffBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#FEF3C7',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
+    gap: spacing.sm,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
-  coolOffIcon: { fontSize: 20 },
   coolOffBody: { flex: 1 },
-  coolOffTitle: { fontSize: 13, fontWeight: '700', color: '#92400E' },
+  coolOffTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText },
   coolOffSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
 
   unlockedBanner: {
-    backgroundColor: '#ECFDF5',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
   },
-  unlockedText: { fontSize: 13, fontWeight: '600', color: '#065F46' },
+  unlockedText: { fontSize: 13, fontWeight: '600', color: colors.status.successText },
 
   penaltyNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
     justifyContent: 'center',
   },
-  penaltyIcon: { fontSize: 13 },
-  penaltyText: { fontSize: 12, color: AMBER },
+  penaltyText: { fontSize: 12, color: colors.status.warningText },
   penaltyBold: { fontWeight: '700' },
 });

@@ -10,6 +10,7 @@ import { TransactionListItem } from './components/TransactionListItem';
 import { TransactionEmptyState } from './components/TransactionEmptyState';
 import { ReceiptModal } from './components/ReceiptModal';
 import { useTransactionHistory } from './useTransactionHistory';
+import { colors, spacing, typography } from '../../theme';
 import type { FilterTab, UnifiedTransactionItem } from './types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'TransactionHistory'>;
@@ -64,7 +65,7 @@ export function TransactionHistoryScreen() {
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator testID="history-loading" />
+          <ActivityIndicator testID="history-loading" color={colors.gold.base} />
         </View>
       ) : (
         <FlatList
@@ -86,10 +87,17 @@ export function TransactionHistoryScreen() {
           }
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colors.gold.base}
+              colors={[colors.gold.base]}
+            />
+          }
           ListFooterComponent={
             isFetchingNextPage ? (
-              <ActivityIndicator style={styles.footerSpinner} testID="load-more-spinner" />
+              <ActivityIndicator style={styles.footerSpinner} color={colors.gold.base} testID="load-more-spinner" />
             ) : null
           }
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -106,23 +114,23 @@ export function TransactionHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: '#F9FAFB',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: '#1A1A2E' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A2E' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  message: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
-  footerSpinner: { paddingVertical: 16 },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#E5E7EB', marginLeft: 16 },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
+  message: { fontSize: 14, color: colors.textSecondary, textAlign: 'center' },
+  footerSpinner: { paddingVertical: spacing.lg },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginLeft: spacing.lg },
   emptyContent: { flexGrow: 1 },
 });

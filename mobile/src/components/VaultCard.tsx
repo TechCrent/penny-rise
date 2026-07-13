@@ -1,6 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import type { VaultListItem } from '../api/vaults';
+import { PressableScale } from './ui';
+import { colors, radii, spacing, typography } from '../theme';
 
 interface VaultCardProps {
   vault: VaultListItem;
@@ -17,10 +25,9 @@ export function VaultCard({ vault, onPress }: VaultCardProps) {
   const progress = buildProgress(vault);
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={styles.card}
       onPress={onPress}
-      activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={`${vault.name} vault, ${vault.balance_cedis ?? 'balance unavailable'} GHS`}
     >
@@ -65,12 +72,29 @@ export function VaultCard({ vault, onPress }: VaultCardProps) {
 
       {isLocked && unlockLabel ? <Text style={styles.unlockLabel}>{unlockLabel}</Text> : null}
 
-      {progress !== null ? (
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${Math.min(progress, 100)}%` }]} />
-        </View>
-      ) : null}
-    </TouchableOpacity>
+      {progress !== null ? <ProgressTrack progress={progress} /> : null}
+    </PressableScale>
+  );
+}
+
+function ProgressTrack({ progress }: { progress: number }) {
+  const width = useSharedValue(0);
+
+  useEffect(() => {
+    width.value = withTiming(Math.min(progress, 100), {
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [progress, width]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${width.value}%`,
+  }));
+
+  return (
+    <View style={styles.progressTrack}>
+      <Animated.View style={[styles.progressFill, animatedStyle]} />
+    </View>
   );
 }
 
@@ -107,119 +131,116 @@ function buildProgress(vault: VaultListItem): number | null {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   vaultName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
+    ...typography.bodyMedium,
+    color: colors.textPrimary,
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   typeBadge: {
     borderRadius: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
   badgeLocked: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: colors.neutral[900],
   },
   badgeStandard: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.neutral[100],
   },
   badgeText: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
-    color: '#374151',
+    color: colors.neutral[700],
   },
   badgeTextLocked: {
-    color: '#FFFFFF',
+    color: colors.neutral[0],
   },
   balanceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 6,
+    marginBottom: spacing.xs,
     flexWrap: 'wrap',
-    gap: 4,
+    gap: spacing.xs,
   },
   balanceCurrency: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   balanceAmount: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
+    ...typography.numericLarge,
+    color: colors.textPrimary,
   },
   balanceUnavailable: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#D1D5DB',
+    ...typography.numericLarge,
+    color: colors.neutral[300],
   },
   earlyExitPill: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.status.warningBg,
     borderRadius: 6,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    marginLeft: 6,
+    marginLeft: spacing.xs,
     alignSelf: 'center',
   },
   earlyExitText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#92400E',
+    color: colors.status.warningText,
     letterSpacing: 0.4,
   },
   frozenPill: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: colors.status.infoBg,
     borderRadius: 6,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    marginLeft: 6,
+    marginLeft: spacing.xs,
     alignSelf: 'center',
   },
   frozenText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: colors.status.infoText,
     letterSpacing: 0.4,
   },
   frozenNotice: {
     fontSize: 12,
-    color: '#1E40AF',
-    marginTop: 4,
-    marginBottom: 8,
+    color: colors.status.infoText,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
     lineHeight: 17,
   },
   unlockLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-    marginBottom: 8,
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   progressTrack: {
     height: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.neutral[100],
     borderRadius: 2,
-    marginTop: 8,
+    marginTop: spacing.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: colors.gold.base,
     borderRadius: 2,
   },
 });

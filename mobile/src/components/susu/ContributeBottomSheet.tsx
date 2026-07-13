@@ -8,8 +8,11 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { susuApi } from '../../api/susu';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
+import { PressableScale } from '../ui';
+import { colors, radii, spacing, typography } from '../../theme';
 import type { SusuGroupDetailResponse } from '../../types/susu';
 
 const SHEET_HEIGHT = 400;
@@ -90,7 +93,9 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
         <Animated.View style={[styles.sheet, sheetStyle]} testID="contribute-sheet">
           {succeeded ? (
             <View testID="success-state" style={styles.successContainer}>
-              <Text style={styles.successIcon}>{'✓'}</Text>
+              <View style={styles.successIconBadge}>
+                <Ionicons name="checkmark-circle" size={40} color={colors.status.success} />
+              </View>
               <Text style={styles.successTitle}>Payment sent!</Text>
               <Text style={styles.successSub}>
                 {'GHS '}
@@ -109,7 +114,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
                   testID="close-btn"
                   hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
                 >
-                  <Text style={styles.closeX}>{'✕'}</Text>
+                  <Ionicons name="close" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -123,7 +128,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
 
               <View style={styles.balanceRow} testID="wallet-balance-row">
                 {balanceLoading ? (
-                  <ActivityIndicator size="small" color="#6B7280" testID="balance-loading" />
+                  <ActivityIndicator size="small" color={colors.textSecondary} testID="balance-loading" />
                 ) : (
                   <Text
                     style={[styles.balanceText, isInsufficientBalance && styles.balanceLow]}
@@ -142,7 +147,7 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
                 </Text>
               )}
 
-              <TouchableOpacity
+              <PressableScale
                 style={[
                   styles.confirmBtn,
                   (confirming ||
@@ -155,14 +160,14 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
                 testID="confirm-btn"
               >
                 {confirming ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.neutral[900]} />
                 ) : (
                   <Text style={styles.confirmBtnText}>
                     {'Pay GHS '}
                     {group.contribution_amount_cedis}
                   </Text>
                 )}
-              </TouchableOpacity>
+              </PressableScale>
             </>
           )}
         </Animated.View>
@@ -178,59 +183,66 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii['2xl'],
+    borderTopRightRadius: radii['2xl'],
+    padding: spacing.xl,
     minHeight: SHEET_HEIGHT,
   },
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.neutral[200],
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing['2xl'],
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  closeX: { fontSize: 18, color: '#6B7280' },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
   amountRow: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.neutral[50],
+    borderRadius: radii.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  amountLabel: { fontSize: 14, color: '#6B7280' },
-  amountValue: { fontSize: 20, fontWeight: '800', color: '#111827' },
-  balanceRow: { marginBottom: 16, minHeight: 20 },
-  balanceText: { fontSize: 13, color: '#6B7280' },
-  balanceLow: { color: '#EF4444' },
-  errorText: { color: '#EF4444', fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  amountLabel: { fontSize: 14, color: colors.textSecondary },
+  amountValue: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  balanceRow: { marginBottom: spacing.lg, minHeight: 20 },
+  balanceText: { fontSize: 13, color: colors.textSecondary },
+  balanceLow: { color: colors.status.error },
+  errorText: { color: colors.status.error, fontSize: 13, marginBottom: spacing.md, textAlign: 'center' },
   confirmBtn: {
-    backgroundColor: '#111827',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: colors.gold.base,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.md,
     alignItems: 'center',
     marginTop: 'auto',
   },
   confirmBtnDisabled: { opacity: 0.4 },
-  confirmBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  confirmBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
   successContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: spacing['4xl'],
   },
-  successIcon: { fontSize: 48, color: '#059669', marginBottom: 12 },
-  successTitle: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  successSub: { fontSize: 15, color: '#6B7280', textAlign: 'center' },
+  successIconBadge: {
+    width: 76,
+    height: 76,
+    borderRadius: radii.pill,
+    backgroundColor: colors.status.successBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  successTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
+  successSub: { fontSize: 15, color: colors.textSecondary, textAlign: 'center' },
 });

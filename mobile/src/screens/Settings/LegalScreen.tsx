@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Legal'>;
 
@@ -53,32 +54,32 @@ export function LegalScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
   },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  title: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  title: { ...typography.h3, color: colors.textPrimary },
   headerSpacer: { width: 44 },
-  content: { paddingHorizontal: 24, paddingBottom: 48 },
+  content: { paddingHorizontal: spacing.xl, paddingBottom: spacing['4xl'] },
   placeholderBanner: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 24,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing['2xl'],
   },
-  placeholderText: { color: '#92400E', fontSize: 13, lineHeight: 19 },
+  placeholderText: { color: colors.status.warningText, fontSize: 13, lineHeight: 19 },
   sectionHeading: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-    marginTop: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
-  body: { fontSize: 14, color: '#374151', lineHeight: 21, marginBottom: 20 },
+  body: { fontSize: 14, color: colors.neutral[700], lineHeight: 21, marginBottom: spacing.xl },
 });

@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,6 +25,8 @@ import {
   type EarlyExitResponse,
 } from '../../api/hooks/useEarlyExit';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,8 +34,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'EarlyExit'>;
 type Route = RouteProp<RootStackParamList, 'EarlyExit'>;
 type Phase = 'reason' | 'preview' | 'confirm' | 'done';
 
-// Plain objects — accessed dynamically, so StyleSheet.create would flag them
-// as unused; object literals in JSX style props would trigger no-inline-styles.
+// Real MoMo network brand colors — kept as-is; they identify a specific
+// third-party provider, not part of the app's design system.
 const PROVIDER_PILL_ACTIVE: Record<ProviderId, { borderColor: string; backgroundColor: string }> = {
   mtn: { borderColor: '#FBB01C', backgroundColor: '#FAFAFA' },
   vodafone: { borderColor: '#E10A0A', backgroundColor: '#FAFAFA' },
@@ -49,31 +53,31 @@ const REASON_OPTIONS: Array<{
   id: EarlyExitReason;
   label: string;
   description: string;
-  icon: string;
+  icon: ComponentProps<typeof Ionicons>['name'];
 }> = [
   {
     id: 'SCHOOL_FEES_EMERGENCY',
     label: 'School fees',
     description: 'Tuition or school-related payment due',
-    icon: '📚',
+    icon: 'school-outline',
   },
   {
     id: 'MEDICAL',
     label: 'Medical emergency',
     description: 'Healthcare costs or an urgent medical need',
-    icon: '🏥',
+    icon: 'medkit-outline',
   },
   {
     id: 'FAMILY',
     label: 'Family need',
     description: 'An unexpected family obligation or expense',
-    icon: '👨‍👩‍👧',
+    icon: 'people-outline',
   },
   {
     id: 'OTHER',
     label: 'Something else',
     description: 'Another reason not listed above',
-    icon: '✳️',
+    icon: 'ellipsis-horizontal-circle-outline',
   },
 ];
 
@@ -185,7 +189,7 @@ export default function EarlyExitScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Explainer — honest, not shaming */}
           <View style={styles.explainerCard}>
-            <Text style={styles.explainerIcon}>🔓</Text>
+            <Ionicons name="lock-open-outline" size={30} color={colors.gold.text} />
             <Text style={styles.explainerTitle}>Breaking this lock early</Text>
             <Text style={styles.explainerBody}>
               Life happens. You can exit this vault before your conditions are met. A{' '}
@@ -222,7 +226,11 @@ export default function EarlyExitScreen() {
               accessibilityState={{ selected: reason === opt.id }}
               accessibilityLabel={`${opt.label}. ${opt.description}`}
             >
-              <Text style={styles.reasonIcon}>{opt.icon}</Text>
+              <Ionicons
+                name={opt.icon}
+                size={22}
+                color={reason === opt.id ? colors.gold.text : colors.textSecondary}
+              />
               <View style={styles.reasonBody}>
                 <Text style={[styles.reasonLabel, reason === opt.id && styles.reasonLabelSelected]}>
                   {opt.label}
@@ -259,22 +267,22 @@ export default function EarlyExitScreen() {
             value={momoNumber}
             onChangeText={setMomoNumber}
             placeholder="0241234567"
+            placeholderTextColor={colors.textTertiary}
             keyboardType="phone-pad"
             returnKeyType="done"
             accessibilityLabel="Your MoMo number for the early-exit payout"
           />
           {momoError && <Text style={styles.fieldError}>{momoError}</Text>}
 
-          <TouchableOpacity
+          <PressableScale
             style={[styles.cta, !canProceedFromReason && styles.ctaDisabled]}
             disabled={!canProceedFromReason}
             onPress={() => setPhase('preview')}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="See what you'll receive"
           >
             <Text style={styles.ctaText}>See what you&apos;ll receive</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </SafeAreaView>
     );
@@ -325,10 +333,10 @@ export default function EarlyExitScreen() {
 
           {/* Cool-off explanation */}
           <View style={styles.coolOffCard}>
-            <Text style={styles.coolOffTitle}>
-              ⏳{'  '}
-              <Text>72-hour cool-off</Text>
-            </Text>
+            <View style={styles.coolOffTitleRow}>
+              <Ionicons name="hourglass-outline" size={16} color={colors.status.warningText} />
+              <Text style={styles.coolOffTitle}>72-hour cool-off</Text>
+            </View>
             <Text style={styles.coolOffBody}>
               Your money won&apos;t be released immediately. You can cancel at any time before{' '}
               <Text style={styles.coolOffBold}>
@@ -340,21 +348,21 @@ export default function EarlyExitScreen() {
 
           {/* Deposit note */}
           <View style={styles.depositNote}>
+            <Ionicons name="bulb-outline" size={15} color={colors.gold.text} style={styles.depositNoteIcon} />
             <Text style={styles.depositNoteText}>
-              💡 Any deposits you make{' '}
+              Any deposits you make{' '}
               <Text style={styles.depositNoteBold}>during the 72-hour window</Text> will be included
               in your release — the 5% fee only applies to your balance right now.
             </Text>
           </View>
 
-          <TouchableOpacity
+          <PressableScale
             style={styles.cta}
             onPress={() => setPhase('confirm')}
-            activeOpacity={0.85}
             accessibilityRole="button"
           >
             <Text style={styles.ctaText}>Continue to confirmation</Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           <TouchableOpacity
             style={styles.cancelLink}
@@ -383,7 +391,7 @@ export default function EarlyExitScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Deliberate confirmation copy */}
           <View style={styles.confirmIntro}>
-            <Text style={styles.confirmIntroIcon}>⚠️</Text>
+            <Ionicons name="warning-outline" size={26} color={colors.status.error} />
             <Text style={styles.confirmIntroTitle}>You&apos;re starting the exit process</Text>
             <Text style={styles.confirmIntroBody}>
               Once confirmed, the 72-hour cool-off begins. Your vault will show as{' '}
@@ -408,21 +416,20 @@ export default function EarlyExitScreen() {
           )}
 
           {/* Deliberate action button — not "Confirm" */}
-          <TouchableOpacity
+          <PressableScale
             style={[styles.ctaDestructive, requesting && styles.ctaDisabled]}
             onPress={handleConfirm}
             disabled={requesting}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityState={{ busy: requesting }}
             accessibilityLabel="I understand, start the 72-hour cool-off"
           >
             {requesting ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.neutral[0]} size="small" />
             ) : (
               <Text style={styles.ctaText}>I understand — start the 72-hour cool-off</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
 
           <TouchableOpacity
             style={styles.cancelLink}
@@ -447,7 +454,9 @@ export default function EarlyExitScreen() {
           contentContainerStyle={[styles.content, styles.doneContent]}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.doneIcon}>⏳</Text>
+          <View style={styles.doneIconBadge}>
+            <Ionicons name="hourglass-outline" size={36} color={colors.gold.text} />
+          </View>
           <Text style={styles.doneTitle}>Your exit request is in</Text>
           <Text style={styles.doneCountdown}>
             {formatCountdown(exitResult.scheduled_release_at)}
@@ -488,14 +497,14 @@ export default function EarlyExitScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity
+          <PressableScale
             style={[styles.cta, styles.fullWidth]}
             onPress={() => navigation.navigate('VaultDetail', { vaultId })}
             accessibilityRole="button"
             accessibilityLabel="Back to vault"
           >
             <Text style={styles.ctaText}>Back to vault</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </SafeAreaView>
     );
@@ -556,7 +565,7 @@ export function EarlyExitStatusPanel({
     <View style={panelStyles.container}>
       {/* Header row */}
       <View style={panelStyles.headerRow}>
-        <Text style={panelStyles.headerIcon}>⏳</Text>
+        <Ionicons name="hourglass-outline" size={20} color={colors.status.warningText} />
         <View style={panelStyles.headerBody}>
           <Text style={panelStyles.headerTitle}>Early exit in progress</Text>
           <Text style={panelStyles.headerCountdown}>{formatCountdown(scheduledReleaseAt)}</Text>
@@ -592,7 +601,7 @@ export function EarlyExitStatusPanel({
         accessibilityLabel="Cancel early exit request"
       >
         {isPending || cancelling ? (
-          <ActivityIndicator size="small" color="#DC2626" />
+          <ActivityIndicator size="small" color={colors.status.error} />
         ) : (
           <Text style={panelStyles.cancelBtnText}>Cancel early exit</Text>
         )}
@@ -662,275 +671,269 @@ function FinalRow({
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const BACKGROUND = '#F8F9FF';
-const GREEN = '#059669';
-const AMBER = '#D97706';
-const RED = '#DC2626';
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
-  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 },
-  doneContent: { alignItems: 'center', paddingTop: 32 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
+  doneContent: { alignItems: 'center', paddingTop: spacing['2xl'] },
   fullWidth: { width: '100%' },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: BACKGROUND,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: DARK },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK, flex: 1, textAlign: 'center' },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary, flex: 1, textAlign: 'center' },
 
   // Reason phase
   explainerCard: {
-    backgroundColor: '#F0F4FF',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
+    backgroundColor: colors.gold.light,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
     alignItems: 'center',
   },
-  explainerIcon: { fontSize: 32, marginBottom: 10 },
   explainerTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 6,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  explainerBody: { fontSize: 13, color: MUTED, lineHeight: 19, textAlign: 'center' },
-  explainerBold: { fontWeight: '700', color: DARK },
+  explainerBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, textAlign: 'center' },
+  explainerBold: { fontWeight: '700', color: colors.textPrimary },
 
   vaultContextRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
-  vaultContextName: { fontSize: 14, fontWeight: '700', color: DARK },
-  vaultContextBalance: { fontSize: 14, fontWeight: '600', color: INDIGO },
+  vaultContextName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  vaultContextBalance: { fontSize: 14, fontWeight: '600', color: colors.gold.text },
 
   sectionHeading: {
     fontSize: 14,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 4,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  sectionSub: { fontSize: 12, color: MUTED, marginBottom: 16, lineHeight: 17 },
+  sectionSub: { fontSize: 12, color: colors.textSecondary, marginBottom: spacing.lg, lineHeight: 17 },
 
   reasonCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
     borderWidth: 2,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
-  reasonCardSelected: { borderColor: INDIGO, backgroundColor: '#F5F3FF' },
-  reasonIcon: { fontSize: 24 },
+  reasonCardSelected: { borderColor: colors.gold.base, backgroundColor: colors.gold.light },
   reasonBody: { flex: 1 },
-  reasonLabel: { fontSize: 14, fontWeight: '700', color: DARK, marginBottom: 2 },
-  reasonLabelSelected: { color: INDIGO },
-  reasonDesc: { fontSize: 12, color: MUTED },
+  reasonLabel: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  reasonLabelSelected: { color: colors.gold.text },
+  reasonDesc: { fontSize: 12, color: colors.textSecondary },
   radioOuter: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: INDIGO,
+    borderColor: colors.gold.base,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioInner: { width: 11, height: 11, borderRadius: 6, backgroundColor: INDIGO },
+  radioInner: { width: 11, height: 11, borderRadius: 6, backgroundColor: colors.gold.base },
 
   fieldLabelMoMo: {
     fontSize: 12,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
-  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   providerPill: {
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: 7,
   },
-  providerText: { fontSize: 12, fontWeight: '600', color: MUTED },
+  providerText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     fontSize: 15,
-    color: DARK,
-    marginBottom: 16,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
   },
-  fieldError: { fontSize: 12, color: '#DC2626', marginTop: -12, marginBottom: 16 },
+  fieldError: { fontSize: 12, color: colors.status.error, marginTop: -spacing.md, marginBottom: spacing.lg },
 
   // Preview phase
-  releaseHero: { alignItems: 'center', paddingVertical: 28 },
+  releaseHero: { alignItems: 'center', paddingVertical: spacing['2xl'] },
   releaseLabel: {
     fontSize: 13,
-    color: MUTED,
+    color: colors.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
-  releaseAmountRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 8 },
-  releaseCurrency: { fontSize: 20, fontWeight: '700', color: GREEN },
-  releaseAmount: { fontSize: 44, fontWeight: '800', color: GREEN, letterSpacing: -1.5 },
-  releaseWhen: { fontSize: 13, color: MUTED },
+  releaseAmountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.sm },
+  releaseCurrency: { fontSize: 20, fontWeight: '700', color: colors.status.successText },
+  releaseAmount: { fontSize: 44, fontWeight: '800', color: colors.status.successText, letterSpacing: -1.5 },
+  releaseWhen: { fontSize: 13, color: colors.textSecondary },
 
   breakdownCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
-  breakdownDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
+  breakdownDivider: { height: 1, backgroundColor: colors.neutral[100], marginVertical: spacing.xs },
 
   coolOffCard: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  coolOffTitle: { fontSize: 14, fontWeight: '700', color: AMBER, marginBottom: 6 },
+  coolOffTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
+  coolOffTitle: { fontSize: 14, fontWeight: '700', color: colors.status.warningText },
   coolOffBody: { fontSize: 13, color: '#78350F', lineHeight: 19 },
   coolOffBold: { fontWeight: '700' },
 
   depositNote: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.gold.light,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
   },
-  depositNoteText: { fontSize: 13, color: '#3730A3', lineHeight: 18 },
+  depositNoteIcon: { marginTop: 1 },
+  depositNoteText: { flex: 1, fontSize: 13, color: colors.gold.text, lineHeight: 18 },
   depositNoteBold: { fontWeight: '700' },
 
-  cancelLink: { alignItems: 'center', marginTop: 16 },
-  cancelLinkText: { fontSize: 14, color: MUTED, textDecorationLine: 'underline' },
+  cancelLink: { alignItems: 'center', marginTop: spacing.md },
+  cancelLinkText: { fontSize: 14, color: colors.textSecondary, textDecorationLine: 'underline' },
 
   // Confirm phase
   confirmIntro: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 20,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#FCA5A5',
   },
-  confirmIntroIcon: { fontSize: 28, marginBottom: 8 },
   confirmIntroTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: DARK,
-    marginBottom: 6,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  confirmIntroBody: { fontSize: 13, color: MUTED, lineHeight: 19, textAlign: 'center' },
-  confirmIntroBold: { fontWeight: '700', color: DARK },
+  confirmIntroBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, textAlign: 'center' },
+  confirmIntroBold: { fontWeight: '700', color: colors.textPrimary },
 
   finalSummary: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   serverErrorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: '#FCA5A5',
   },
-  serverErrorText: { fontSize: 13, color: '#991B1B' },
+  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   // Done phase
-  doneIcon: { fontSize: 64, marginBottom: 16 },
-  doneTitle: { fontSize: 20, fontWeight: '700', color: DARK, marginBottom: 4 },
+  doneIconBadge: {
+    width: 84,
+    height: 84,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  doneTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
   doneCountdown: {
     fontSize: 28,
     fontWeight: '800',
-    color: INDIGO,
+    color: colors.gold.text,
     letterSpacing: -0.8,
-    marginBottom: 24,
+    marginBottom: spacing['2xl'],
   },
-  doneRelease: { fontSize: 13, color: MUTED, textAlign: 'center', marginVertical: 16 },
-  doneReleaseBold: { fontWeight: '700', color: DARK },
+  doneRelease: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginVertical: spacing.lg },
+  doneReleaseBold: { fontWeight: '700', color: colors.textPrimary },
   doneNote: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     width: '100%',
   },
-  doneNoteText: { fontSize: 13, color: '#065F46', lineHeight: 18 },
+  doneNoteText: { fontSize: 13, color: colors.status.successText, lineHeight: 18 },
   doneNoteBold: { fontWeight: '700' },
 
   // Shared CTA
   cta: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
   },
   ctaDestructive: {
-    backgroundColor: RED,
-    borderRadius: 14,
+    backgroundColor: colors.status.error,
+    borderRadius: radii.md,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: RED,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  ctaDisabled: { backgroundColor: '#A5B4FC', shadowOpacity: 0, elevation: 0 },
+  ctaDisabled: { backgroundColor: colors.neutral[300] },
   ctaText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.neutral[900],
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -940,15 +943,15 @@ const bdStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  label: { fontSize: 13, color: MUTED },
-  labelBold: { fontWeight: '700', color: DARK },
-  value: { fontSize: 13, fontWeight: '600', color: DARK },
+  label: { fontSize: 13, color: colors.textSecondary },
+  labelBold: { fontWeight: '700', color: colors.textPrimary },
+  value: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   valueBold: { fontSize: 15, fontWeight: '800' },
-  negative: { color: RED },
-  positive: { color: GREEN },
+  negative: { color: colors.status.error },
+  positive: { color: colors.status.successText },
 });
 
 const finalStyles = StyleSheet.create({
@@ -956,39 +959,38 @@ const finalStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  label: { fontSize: 13, color: MUTED },
-  value: { fontSize: 14, fontWeight: '600', color: DARK },
-  negative: { color: RED },
-  bold: { fontSize: 15, fontWeight: '800', color: GREEN },
+  label: { fontSize: 13, color: colors.textSecondary },
+  value: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  negative: { color: colors.status.error },
+  bold: { fontSize: 15, fontWeight: '800', color: colors.status.successText },
 });
 
 const panelStyles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 16,
-    padding: 18,
-    margin: 16,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    margin: spacing.lg,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 16 },
-  headerIcon: { fontSize: 24 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.lg },
   headerBody: { flex: 1 },
-  headerTitle: { fontSize: 15, fontWeight: '700', color: '#92400E', marginBottom: 2 },
-  headerCountdown: { fontSize: 22, fontWeight: '800', color: AMBER, letterSpacing: -0.5 },
+  headerTitle: { fontSize: 15, fontWeight: '700', color: colors.status.warningText, marginBottom: 2 },
+  headerCountdown: { fontSize: 22, fontWeight: '800', color: colors.status.warningText, letterSpacing: -0.5 },
 
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.6)',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   amountItem: { flex: 1, alignItems: 'center' },
   amountDivider: { width: 1, height: 36, backgroundColor: '#FDE68A' },
@@ -998,25 +1000,25 @@ const panelStyles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   amountValue: { fontSize: 16, fontWeight: '800', color: '#78350F' },
-  amountPositive: { color: GREEN },
+  amountPositive: { color: colors.status.successText },
 
-  releaseDate: { fontSize: 12, color: '#B45309', marginBottom: 14, textAlign: 'center' },
+  releaseDate: { fontSize: 12, color: '#B45309', marginBottom: spacing.md, textAlign: 'center' },
 
   cancelBtn: {
     borderWidth: 1.5,
-    borderColor: RED,
-    borderRadius: 12,
+    borderColor: colors.status.error,
+    borderRadius: radii.md,
     paddingVertical: 13,
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    marginBottom: 8,
+    backgroundColor: colors.status.errorBg,
+    marginBottom: spacing.sm,
   },
   cancelBtnDisabled: { opacity: 0.5 },
-  cancelBtnText: { fontSize: 14, fontWeight: '700', color: RED },
+  cancelBtnText: { fontSize: 14, fontWeight: '700', color: colors.status.error },
 
   cancelNote: { fontSize: 12, color: '#B45309', textAlign: 'center' },
-  cancelError: { fontSize: 12, color: RED, marginBottom: 8, textAlign: 'center' },
+  cancelError: { fontSize: 12, color: colors.status.error, marginBottom: spacing.sm, textAlign: 'center' },
 });

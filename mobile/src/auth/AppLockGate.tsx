@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { Ionicons } from '@expo/vector-icons';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { PinEntryPad } from '../components/PinEntryPad';
 import { isAppLockEnabled, getAppLockMethod, verifyPin, type AppLockMethod } from './appLock';
 import { useAuth } from './AuthContext';
+import { colors, radii, spacing, typography } from '../theme';
 
 type UnlockMode = 'system' | 'pin';
 
@@ -95,7 +97,9 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.content}>
-          <Text style={styles.emoji}>🔒</Text>
+          <View style={styles.iconBadge}>
+            <Ionicons name="lock-closed" size={28} color={colors.gold.text} />
+          </View>
           <Text style={styles.heading}>Stash is locked</Text>
 
           {unlockMode === 'pin' ? (
@@ -142,12 +146,20 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  emoji: { fontSize: 56, marginBottom: 24 },
-  heading: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  body: { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 32 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing['2xl'],
+  },
+  heading: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
+  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing['2xl'] },
   button: { alignSelf: 'stretch' },
-  switchButton: { marginTop: 24, padding: 8 },
-  switchText: { color: '#1A1A1A', fontSize: 14, fontWeight: '500' },
+  switchButton: { marginTop: spacing['2xl'], padding: spacing.sm },
+  switchText: { color: colors.textPrimary, fontSize: 14, fontWeight: '500' },
 });

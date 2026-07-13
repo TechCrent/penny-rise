@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { PressableScale } from '../../../components/ui';
+import { colors, radii, spacing, typography } from '../../../theme';
 
 type VaultType = 'STANDARD' | 'LOCKED';
 
@@ -13,13 +16,13 @@ interface VaultTypeCardProps {
 
 const TYPE_META = {
   STANDARD: {
-    icon: '🏦',
+    icon: 'wallet-outline' as const,
     title: 'Standard vault',
     desc: 'Save freely. Deposit and withdraw anytime with no restrictions.',
     note: null,
   },
   LOCKED: {
-    icon: '🔒',
+    icon: 'lock-closed-outline' as const,
     title: 'Locked vault',
     desc: 'Commit to a goal. Lock your savings until a date or amount target is reached.',
     note: 'Early exit incurs a 5% penalty on the balance at the time of exit.',
@@ -36,18 +39,21 @@ export function VaultTypeCard({
   const meta = TYPE_META[type];
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={[styles.card, selected && styles.cardSelected, disabled && styles.cardDisabled]}
       onPress={onSelect}
       disabled={disabled}
-      activeOpacity={0.82}
       accessibilityRole="radio"
       accessibilityState={{ selected, disabled }}
       accessibilityLabel={`${meta.title}. ${meta.desc}`}
     >
       <View style={styles.topRow}>
-        <Text style={styles.icon}>{meta.icon}</Text>
-        <View style={styles.radioOuter}>{selected && <View style={styles.radioInner} />}</View>
+        <View style={styles.iconWrap}>
+          <Ionicons name={meta.icon} size={20} color={colors.gold.text} />
+        </View>
+        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+          {selected && <View style={styles.radioInner} />}
+        </View>
       </View>
 
       <Text style={[styles.title, disabled && styles.textDisabled]}>{meta.title}</Text>
@@ -55,7 +61,7 @@ export function VaultTypeCard({
 
       {type === 'LOCKED' && meta.note && (
         <View style={styles.penaltyRow}>
-          <Text style={styles.penaltyIcon}>⚠️</Text>
+          <Ionicons name="warning-outline" size={13} color={colors.status.warningText} />
           <Text style={styles.penaltyText}>{meta.note}</Text>
         </View>
       )}
@@ -69,93 +75,94 @@ export function VaultTypeCard({
           </Text>
         </View>
       )}
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const AMBER = '#D97706';
-
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 2,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
   cardSelected: {
-    borderColor: INDIGO,
-    backgroundColor: '#F5F3FF',
+    borderColor: colors.gold.base,
+    backgroundColor: colors.gold.light,
   },
   cardDisabled: {
     opacity: 0.55,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.neutral[50],
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
-  icon: { fontSize: 28 },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[0],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   radioOuter: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: INDIGO,
+    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  radioOuterSelected: { borderColor: colors.gold.base },
   radioInner: {
     width: 11,
     height: 11,
     borderRadius: 6,
-    backgroundColor: INDIGO,
+    backgroundColor: colors.gold.base,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: DARK,
-    marginBottom: 4,
+    ...typography.bodyMedium,
+    color: colors.textPrimary,
+    marginBottom: spacing.xxs,
   },
   desc: {
     fontSize: 13,
-    color: MUTED,
+    color: colors.textSecondary,
     lineHeight: 19,
   },
   textDisabled: {
-    color: '#9CA3AF',
+    color: colors.textTertiary,
   },
   penaltyRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 6,
-    marginTop: 10,
-    backgroundColor: '#FEF3C7',
-    borderRadius: 8,
-    padding: 10,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
   },
-  penaltyIcon: { fontSize: 13, lineHeight: 18 },
   penaltyText: {
     flex: 1,
     fontSize: 12,
-    color: AMBER,
+    color: colors.status.warningText,
     fontWeight: '600',
     lineHeight: 17,
   },
   limitBanner: {
-    marginTop: 10,
-    backgroundColor: '#FEF2F2',
-    borderRadius: 8,
-    padding: 8,
+    marginTop: spacing.sm,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
   },
   limitText: {
     fontSize: 12,
-    color: '#991B1B',
+    color: colors.status.errorText,
     fontWeight: '600',
   },
 });

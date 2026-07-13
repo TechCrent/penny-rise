@@ -1,14 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { colors, radii } from '../../theme';
 
 type Status = 'PAID' | 'PENDING' | 'LATE' | 'MISSED' | 'WAIVED';
 
 const CONFIG: Record<Status, { label: string; bg: string; text: string }> = {
-  PAID: { label: 'Paid', bg: '#D1FAE5', text: '#065F46' },
-  PENDING: { label: 'Pending', bg: '#FEF3C7', text: '#92400E' },
-  LATE: { label: 'Late', bg: '#FEE2E2', text: '#991B1B' },
-  MISSED: { label: 'Missed', bg: '#F3F4F6', text: '#374151' },
-  WAIVED: { label: 'Waived', bg: '#EDE9FE', text: '#5B21B6' },
+  PAID: { label: 'Paid', bg: colors.status.successBg, text: colors.status.successText },
+  PENDING: { label: 'Pending', bg: colors.status.warningBg, text: colors.status.warningText },
+  LATE: { label: 'Late', bg: colors.status.errorBg, text: colors.status.errorText },
+  MISSED: { label: 'Missed', bg: colors.neutral[100], text: colors.neutral[700] },
+  WAIVED: { label: 'Waived', bg: colors.status.infoBg, text: colors.status.infoText },
 };
 
 export function ContributionStatusPill({ status }: { status: Status }) {
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: radii.pill,
   },
   text: {
     fontSize: 11,

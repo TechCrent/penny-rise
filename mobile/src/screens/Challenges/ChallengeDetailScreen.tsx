@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { useChallengeDetail, useJoinChallenge } from './useChallenges';
 import { BadgePreview } from './components/BadgePreview';
 import { JoinConfirmationSheet } from './components/JoinConfirmationSheet';
 import { ProgressBar } from '../../components/ProgressBar';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 type Route = RouteProp<RootStackParamList, 'ChallengeDetail'>;
@@ -24,7 +26,7 @@ export function ChallengeDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator testID="challenge-detail-loading" />
+        <ActivityIndicator testID="challenge-detail-loading" color={colors.gold.base} />
       </View>
     );
   }
@@ -35,9 +37,9 @@ export function ChallengeDetailScreen() {
         <Text style={styles.message} testID="challenge-detail-error">
           Couldn&apos;t load this challenge.
         </Text>
-        <Pressable style={styles.retryButton} onPress={() => refetch()} testID="challenge-detail-retry">
+        <PressableScale style={styles.retryButton} onPress={() => refetch()} testID="challenge-detail-retry">
           <Text style={styles.retryButtonLabel}>Retry</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     );
   }
@@ -104,14 +106,14 @@ export function ChallengeDetailScreen() {
       )}
 
       {isUnenrolled && (
-        <Pressable
+        <PressableScale
           style={styles.enrolButton}
           onPress={() => setShowConfirmSheet(true)}
           accessibilityRole="button"
           accessibilityLabel="Join this challenge"
         >
           <Text style={styles.enrolButtonLabel}>Join Challenge</Text>
-        </Pressable>
+        </PressableScale>
       )}
 
       <JoinConfirmationSheet
@@ -130,39 +132,39 @@ export function ChallengeDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
-  container: { padding: 20 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  message: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 16 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { padding: spacing.xl },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  message: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md },
   retryButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
   },
-  retryButtonLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  badgeSection: { alignItems: 'center', marginBottom: 20 },
-  badgeEarnedLabel: { fontSize: 15, fontWeight: '700', color: '#059669', marginTop: 8 },
-  title: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8 },
-  description: { fontSize: 14, color: '#6B7280', marginBottom: 20, lineHeight: 20 },
+  retryButtonLabel: { color: colors.neutral[900], fontSize: 14, fontWeight: '700' },
+  badgeSection: { alignItems: 'center', marginBottom: spacing.xl },
+  badgeEarnedLabel: { fontSize: 15, fontWeight: '700', color: colors.status.successText, marginTop: spacing.sm },
+  title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
+  description: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.xl, lineHeight: 20 },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
-  detailLabel: { fontSize: 14, color: '#6B7280' },
-  detailValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  detailValueSmall: { fontSize: 12, color: '#6B7280', marginTop: 6 },
-  progressSection: { marginTop: 20 },
-  progressText: { fontSize: 12, color: '#6B7280', marginTop: 6 },
+  detailLabel: { fontSize: 14, color: colors.textSecondary },
+  detailValue: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  detailValueSmall: { fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs },
+  progressSection: { marginTop: spacing.xl },
+  progressText: { fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs },
   enrolButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    marginTop: 28,
+    marginTop: spacing['2xl'],
   },
-  enrolButtonLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  enrolButtonLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
 });

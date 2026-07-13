@@ -1,31 +1,25 @@
 import React, { useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Pressable, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { useWalletBalance } from '../../hooks/useWalletBalance';
 import { useWalletStatement } from '../../hooks/useWalletStatement';
 import { ActivityRow } from '../../components/wallet/ActivityRow';
 import { WalletSkeleton } from '../../components/wallet/WalletSkeleton';
 import { QuickActionButton } from '../../components/wallet/QuickActionButton';
+import { EmptyState as UiEmptyState } from '../../components/ui';
+import { colors, spacing } from '../../theme';
 import type { WalletActivity } from '../../types/wallet';
 
 function EmptyState() {
   return (
-    <View style={styles.emptyState} testID="empty-state">
-      <Text style={styles.emptyIcon}>📭</Text>
-      <Text style={styles.emptyTitle}>No activity yet</Text>
-      <Text style={styles.emptySubtitle}>
-        Deposit to your wallet or receive a transfer to get started.
-      </Text>
+    <View style={styles.emptyStateWrap} testID="empty-state">
+      <UiEmptyState
+        icon="mail-open-outline"
+        title="No activity yet"
+        message="Deposit to your wallet or receive a transfer to get started."
+      />
     </View>
   );
 }
@@ -90,7 +84,13 @@ export function WalletScreen() {
 
   const ListHeader = (
     <>
-      <View style={styles.balanceCard} testID="balance-card">
+      <LinearGradient
+        colors={[colors.heroFrom, colors.heroTo]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.balanceCard}
+        testID="balance-card"
+      >
         <Text style={styles.balanceLabel}>Available balance</Text>
         {balanceError ? (
           <View testID="balance-error">
@@ -109,17 +109,17 @@ export function WalletScreen() {
             </Text>
           </>
         )}
-      </View>
+      </LinearGradient>
 
       <View style={styles.quickActions}>
         <QuickActionButton
-          icon="↗️"
+          icon="paper-plane-outline"
           label="Send"
           onPress={() => navigation.navigate('RecipientPicker')}
           testID="send-btn"
         />
         <QuickActionButton
-          icon="⬆"
+          icon="arrow-up-circle-outline"
           label="Withdraw"
           onPress={() => navigation.navigate('WalletWithdrawComingSoon')}
           testID="withdraw-btn"
@@ -151,12 +151,17 @@ export function WalletScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.loadingMore} testID="loading-more">
-              <ActivityIndicator size="small" color="#6B7280" />
+              <ActivityIndicator size="small" color={colors.gold.base} />
             </View>
           ) : null
         }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#111827" />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.gold.base}
+            colors={[colors.gold.base]}
+          />
         }
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.3}
@@ -168,71 +173,67 @@ export function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
-  listContent: { flexGrow: 1, paddingBottom: 32 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  listContent: { flexGrow: 1, paddingBottom: spacing['2xl'] },
 
   balanceCard: {
-    backgroundColor: '#111827',
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 28,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing['4xl'],
+    paddingBottom: spacing['2xl'],
   },
   balanceLabel: {
     fontSize: 13,
-    color: '#9CA3AF',
-    marginBottom: 6,
+    color: colors.textOnDarkMuted,
+    marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  balanceAmount: { fontSize: 44, fontWeight: '900', color: '#FFFFFF', marginBottom: 4 },
-  balanceAccountId: { fontSize: 12, color: '#4B5563' },
-  balanceUnavailable: { fontSize: 24, fontWeight: '700', color: '#6B7280', marginBottom: 4 },
-  balanceRetryLink: { color: '#60A5FA', fontSize: 13 },
+  balanceAmount: { fontSize: 44, fontWeight: '900', color: colors.textOnDark, marginBottom: spacing.xs },
+  balanceAccountId: { fontSize: 12, color: colors.textOnDarkFaint },
+  balanceUnavailable: { fontSize: 24, fontWeight: '700', color: colors.textOnDarkMuted, marginBottom: spacing.xs },
+  balanceRetryLink: { color: colors.gold.base, fontSize: 13 },
 
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
 
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#F9FAFB',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#374151',
+    color: colors.neutral[700],
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  sectionLink: { fontSize: 13, fontWeight: '600', color: '#1A1A1A' },
+  sectionLink: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
 
   errorBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    marginHorizontal: 16,
-    marginBottom: 8,
+    backgroundColor: colors.status.errorBg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
     borderRadius: 8,
-    padding: 12,
+    padding: spacing.md,
   },
-  errorText: { color: '#991B1B', fontSize: 13, flex: 1 },
-  retryLink: { color: '#1D4ED8', fontSize: 13, fontWeight: '600' },
+  errorText: { color: colors.status.errorText, fontSize: 13, flex: 1 },
+  retryLink: { color: colors.status.infoText, fontSize: 13, fontWeight: '600' },
 
-  loadingMore: { padding: 16, alignItems: 'center' },
+  loadingMore: { padding: spacing.lg, alignItems: 'center' },
 
-  emptyState: { alignItems: 'center', padding: 48 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
+  emptyStateWrap: { padding: spacing.lg },
 });

@@ -14,6 +14,7 @@ import { useNotificationsList } from '../../features/notifications/useNotificati
 import { navigateForNotification } from '../../features/notifications/deepLinkRouter';
 import { NotificationListItem } from './components/NotificationListItem';
 import { NotificationEmptyState } from './components/NotificationEmptyState';
+import { colors, spacing } from '../../theme';
 import type { NotificationItem } from '../../features/notifications/types';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
@@ -53,7 +54,7 @@ export function NotificationInboxScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator testID="inbox-loading" />
+        <ActivityIndicator testID="inbox-loading" color={colors.gold.base} />
       </View>
     );
   }
@@ -82,10 +83,12 @@ export function NotificationInboxScreen() {
         ListEmptyComponent={<NotificationEmptyState />}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.gold.base} colors={[colors.gold.base]} />
+        }
         ListFooterComponent={
           isFetchingNextPage ? (
-            <ActivityIndicator style={styles.footerSpinner} testID="load-more-spinner" />
+            <ActivityIndicator style={styles.footerSpinner} color={colors.gold.base} testID="load-more-spinner" />
           ) : null
         }
         testID="notification-list"
@@ -95,16 +98,16 @@ export function NotificationInboxScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
-  headerText: { color: '#6B7280' },
-  markAllText: { color: '#1A1A1A', fontWeight: '600' },
-  footerSpinner: { paddingVertical: 16 },
+  headerText: { color: colors.textSecondary },
+  markAllText: { color: colors.textPrimary, fontWeight: '600' },
+  footerSpinner: { paddingVertical: spacing.lg },
 });

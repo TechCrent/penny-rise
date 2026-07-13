@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 import type { DeletionBlocker } from './types';
 
 interface Props {
@@ -41,7 +44,7 @@ export function PreSubmissionView({
       </Text>
 
       {isLoadingBlockers ? (
-        <ActivityIndicator style={styles.blockersLoading} testID="blockers-loading" />
+        <ActivityIndicator style={styles.blockersLoading} color={colors.gold.base} testID="blockers-loading" />
       ) : blockers.length > 0 ? (
         <View style={styles.blockersBox} testID="blockers-list">
           <Text style={styles.blockersTitle}>Some things are still open on your account</Text>
@@ -57,7 +60,7 @@ export function PreSubmissionView({
         </View>
       ) : null}
 
-      <Pressable
+      <PressableScale
         style={styles.checkboxRow}
         onPress={() => setAcknowledged(v => !v)}
         accessibilityRole="checkbox"
@@ -68,12 +71,12 @@ export function PreSubmissionView({
           style={[styles.checkbox, acknowledged && styles.checkboxChecked]}
           testID="ack-checkbox"
         >
-          {acknowledged && <Text style={styles.checkmark}>✓</Text>}
+          {acknowledged && <Ionicons name="checkmark" size={14} color={colors.neutral[0]} />}
         </View>
         <Text style={styles.checkboxLabel}>
           I understand this will begin a 30-day account deletion process.
         </Text>
-      </Pressable>
+      </PressableScale>
 
       {submitError != null && (
         <Text style={styles.errorText} testID="submit-error">
@@ -81,7 +84,7 @@ export function PreSubmissionView({
         </Text>
       )}
 
-      <Pressable
+      <PressableScale
         style={[styles.confirmButton, (!acknowledged || isSubmitting) && styles.disabledButton]}
         disabled={!acknowledged || isSubmitting}
         onPress={onSubmit}
@@ -89,52 +92,51 @@ export function PreSubmissionView({
         accessibilityLabel="Confirm delete account"
       >
         {isSubmitting ? (
-          <ActivityIndicator color="#FFFFFF" testID="submit-spinner" />
+          <ActivityIndicator color={colors.neutral[0]} testID="submit-spinner" />
         ) : (
           <Text style={styles.confirmLabel}>Delete My Account</Text>
         )}
-      </Pressable>
+      </PressableScale>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
-  container: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 16 },
-  paragraph: { fontSize: 14, color: '#111827', marginBottom: 14, lineHeight: 21 },
-  blockersLoading: { marginVertical: 16 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
+  title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.lg },
+  paragraph: { fontSize: 14, color: colors.textPrimary, marginBottom: spacing.md, lineHeight: 21 },
+  blockersLoading: { marginVertical: spacing.lg },
   blockersBox: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 8,
-    padding: 14,
-    marginVertical: 14,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginVertical: spacing.md,
   },
-  blockersTitle: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  blockersSubtitle: { fontSize: 12, color: '#6B7280', marginBottom: 8 },
-  blockerItem: { fontSize: 14, color: '#111827', marginBottom: 4 },
-  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 20 },
+  blockersTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  blockersSubtitle: { fontSize: 12, color: colors.textSecondary, marginBottom: spacing.sm },
+  blockerItem: { fontSize: 14, color: colors.textPrimary, marginBottom: spacing.xs },
+  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: spacing.xl },
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 4,
+    borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: spacing.sm,
     marginTop: 2,
   },
-  checkboxChecked: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A' },
-  checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  checkboxLabel: { fontSize: 14, color: '#111827', flex: 1 },
-  errorText: { fontSize: 14, color: '#DC2626', marginBottom: 10 },
+  checkboxChecked: { backgroundColor: colors.status.error, borderColor: colors.status.error },
+  checkboxLabel: { fontSize: 14, color: colors.textPrimary, flex: 1 },
+  errorText: { fontSize: 14, color: colors.status.error, marginBottom: spacing.sm },
   confirmButton: {
-    backgroundColor: '#DC2626',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: colors.status.error,
+    borderRadius: radii.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   disabledButton: { opacity: 0.4 },
-  confirmLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  confirmLabel: { fontSize: 15, fontWeight: '700', color: colors.neutral[0] },
 });

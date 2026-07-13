@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDeletionRequest } from './useDeletionRequest';
 import { PreSubmissionView } from './PreSubmissionView';
 import { CoolOffView } from './CoolOffView';
+import { colors } from '../../theme';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'DeleteAccount'>;
@@ -42,7 +43,7 @@ export function DeleteAccountScreen() {
   if (screenState === 'LOADING') {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator testID="delete-account-loading" />
+        <ActivityIndicator color={colors.gold.base} testID="delete-account-loading" />
       </View>
     );
   }
@@ -70,5 +71,5 @@ export function DeleteAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
 });

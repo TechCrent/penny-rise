@@ -1,16 +1,20 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { MainTabParamList } from '../../navigation/MainTabNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
 import { useChallenges } from '../Challenges/useChallenges';
 import { sectionFor } from '../Challenges/types';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Explore'>,
@@ -30,28 +34,27 @@ function DestinationCard({
   summary,
   onPress,
 }: {
-  icon: string;
+  icon: ComponentProps<typeof Ionicons>['name'];
   title: string;
   summary: string;
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <PressableScale
       style={styles.card}
       onPress={onPress}
-      activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${summary}`}
     >
       <View style={styles.cardIcon}>
-        <Text style={styles.cardIconText}>{icon}</Text>
+        <Ionicons name={icon} size={20} color={colors.gold.text} />
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle}>{title}</Text>
         <Text style={styles.cardSummary}>{summary}</Text>
       </View>
       <Text style={styles.chevron}>›</Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -82,13 +85,13 @@ export function ExploreScreen() {
         <Text style={styles.subheading}>Jump straight into any part of your account.</Text>
 
         <DestinationCard
-          icon="🏦"
+          icon="wallet-outline"
           title="Vaults"
           summary={`${vaultCount} vault${vaultCount !== 1 ? 's' : ''} · GHS ${formatCedis(vaultSavedPesewas)} saved`}
           onPress={() => navigation.navigate('VaultList')}
         />
         <DestinationCard
-          icon="👛"
+          icon="card-outline"
           title="Wallet"
           summary={
             walletBalance
@@ -98,7 +101,7 @@ export function ExploreScreen() {
           onPress={() => navigation.navigate('Wallet')}
         />
         <DestinationCard
-          icon="🏆"
+          icon="trophy-outline"
           title="Challenges"
           summary={`${activeCount} active · ${availableCount} to join`}
           onPress={() => navigation.navigate('ChallengesList')}
@@ -109,32 +112,32 @@ export function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  heading: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 4 },
-  subheading: { fontSize: 14, color: '#6B7280', marginBottom: 24 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing['4xl'] },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.xs },
+  subheading: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing['2xl'] },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   cardIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: spacing.md,
   },
-  cardIconText: { fontSize: 20 },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  cardSummary: { fontSize: 13, color: '#6B7280' },
-  chevron: { fontSize: 20, color: '#9CA3AF' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+  cardSummary: { fontSize: 13, color: colors.textSecondary },
+  chevron: { fontSize: 20, color: colors.textTertiary },
 });

@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
@@ -23,6 +24,7 @@ import { login } from '../api/auth';
 import { extractApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { isKycUnderReviewBannerPending } from '../storage/kycStorage';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 type Route = RouteProp<RootStackParamList, 'Login'>;
@@ -126,9 +128,9 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           {successBanner ? (
-            <View style={styles.successBanner}>
+            <Animated.View entering={FadeInUp.duration(300)} style={styles.successBanner}>
               <Text style={styles.successBannerText}>{successBanner}</Text>
-            </View>
+            </Animated.View>
           ) : null}
 
           {showUnderReviewBanner ? (
@@ -143,13 +145,13 @@ export default function LoginScreen() {
           <Text style={styles.subheading}>Sign in to your Stash account.</Text>
 
           {globalError ? (
-            <View style={styles.globalError}>
+            <Animated.View entering={FadeInUp.duration(300)} style={styles.globalError}>
               <Text style={styles.globalErrorText}>{globalError}</Text>
-            </View>
+            </Animated.View>
           ) : null}
 
           {isLocked ? (
-            <View style={styles.lockoutBox}>
+            <Animated.View entering={FadeInUp.duration(300)} style={styles.lockoutBox}>
               <Text style={styles.lockoutTitle}>Account temporarily locked</Text>
               <Text style={styles.lockoutBody}>
                 Too many failed attempts. Try again in{' '}
@@ -157,7 +159,7 @@ export default function LoginScreen() {
                   {lockoutMinutes}:{lockoutSeconds.toString().padStart(2, '0')}
                 </Text>
               </Text>
-            </View>
+            </Animated.View>
           ) : null}
 
           <Controller
@@ -237,43 +239,53 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
-  backRow: { marginBottom: 20 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  heading: { fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 16, color: '#6B7280', marginBottom: 32 },
-  successBanner: { backgroundColor: '#D1FAE5', borderRadius: 8, padding: 14, marginBottom: 20 },
-  successBannerText: { color: '#065F46', fontSize: 14, fontWeight: '500' },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
+  backRow: { marginBottom: spacing.xl },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  successBanner: {
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  successBannerText: { color: colors.status.successText, fontSize: 14, fontWeight: '500' },
   reviewBanner: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 20,
+    backgroundColor: colors.status.infoBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: '#BFDBFE',
   },
-  reviewBannerText: { color: '#1E40AF', fontSize: 14, fontWeight: '500' },
-  globalError: { backgroundColor: '#FEF2F2', borderRadius: 8, padding: 14, marginBottom: 20 },
-  globalErrorText: { color: '#991B1B', fontSize: 14 },
+  reviewBannerText: { color: colors.status.infoText, fontSize: 14, fontWeight: '500' },
+  globalError: {
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  globalErrorText: { color: colors.status.errorText, fontSize: 14 },
   lockoutBox: {
-    backgroundColor: '#FFF7ED',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: '#FED7AA',
   },
-  lockoutTitle: { fontSize: 15, fontWeight: '600', color: '#92400E', marginBottom: 6 },
-  lockoutBody: { fontSize: 14, color: '#92400E' },
+  lockoutTitle: { fontSize: 15, fontWeight: '600', color: colors.status.warningText, marginBottom: spacing.sm },
+  lockoutBody: { fontSize: 14, color: colors.status.warningText },
   lockoutTimer: { fontWeight: '700', fontVariant: ['tabular-nums'] },
-  eyeButton: { paddingHorizontal: 12 },
-  eyeText: { color: '#6B7280', fontSize: 14 },
-  forgotRow: { alignSelf: 'flex-end', marginBottom: 24, marginTop: -8 },
-  forgotText: { color: '#1A1A1A', fontSize: 14, textDecorationLine: 'underline' },
-  submitButton: { marginTop: 4 },
-  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  registerText: { color: '#6B7280', fontSize: 14 },
-  registerLink: { color: '#1A1A1A', fontSize: 14, fontWeight: '600' },
+  eyeButton: { paddingHorizontal: spacing.md },
+  eyeText: { color: colors.textSecondary, fontSize: 14 },
+  forgotRow: { alignSelf: 'flex-end', marginBottom: spacing.xl, marginTop: -spacing.xs },
+  forgotText: { color: colors.textPrimary, fontSize: 14, textDecorationLine: 'underline' },
+  submitButton: { marginTop: spacing.xxs },
+  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
+  registerText: { color: colors.textSecondary, fontSize: 14 },
+  registerLink: { color: colors.textPrimary, fontSize: 14, fontWeight: '600' },
 });

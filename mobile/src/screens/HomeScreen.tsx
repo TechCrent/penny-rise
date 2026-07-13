@@ -15,6 +15,10 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { MainTabParamList } from '../navigation/MainTabNavigator';
 import { useAuth } from '../auth/AuthContext';
@@ -31,6 +35,8 @@ import { ChallengeCard } from './Challenges/components/ChallengeCard';
 import { VaultCard } from '../components/VaultCard';
 import { SusuCard } from '../components/susu/SusuCard';
 import { HomeSkeleton } from '../components/HomeSkeleton';
+import { AnimatedNumber, EmptyState, PressableScale, ProgressRing, fadeInUp } from '../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../theme';
 import type { VaultListItem } from '../api/vaults';
 import type { UnifiedTransactionItem } from './TransactionHistory/types';
 
@@ -137,22 +143,37 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isFetching && !vaultsLoading} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={isFetching && !vaultsLoading}
+            onRefresh={onRefresh}
+            tintColor={colors.gold.base}
+            colors={[colors.gold.base]}
+          />
         }
       >
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{greeting()}</Text>
-            <Text style={styles.subhead}>Here&apos;s how your money is doing</Text>
+          <View style={styles.headerLeft}>
+            <PressableScale
+              style={styles.avatar}
+              onPress={() => navigation.navigate('Profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile"
+            >
+              <Ionicons name="person" size={18} color={colors.gold.text} />
+            </PressableScale>
+            <View>
+              <Text style={styles.greeting}>{greeting()}</Text>
+              <Text style={styles.subhead}>Here&apos;s how your money is doing</Text>
+            </View>
           </View>
           <View style={styles.headerButtons}>
-            <TouchableOpacity
+            <PressableScale
               style={styles.bellButton}
               onPress={() => navigation.navigate('Notifications')}
               accessibilityRole="button"
               accessibilityLabel="Notifications"
             >
-              <Text style={styles.bellIcon}>🔔</Text>
+              <Ionicons name="notifications-outline" size={19} color={colors.textPrimary} />
               {unreadNotificationsCount > 0 && (
                 <View style={styles.bellBadge}>
                   <Text style={styles.bellBadgeText}>
@@ -160,7 +181,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </View>
 
@@ -181,8 +202,18 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <View style={styles.heroCard}>
-          <Text style={styles.heroLabel}>{heroLabel}</Text>
+        <LinearGradient
+          colors={[colors.heroFrom, colors.heroTo]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroTopRow}>
+            <Text style={styles.heroLabel}>{heroLabel}</Text>
+            <View style={styles.heroIconBadge}>
+              <Ionicons name="sparkles" size={13} color={colors.gold.base} />
+            </View>
+          </View>
           {heroValue === null ? (
             <Text style={styles.heroBalanceUnavailable}>
               {vaultsError ? 'Could not load balances' : '—'}
@@ -190,7 +221,11 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.heroBalanceRow}>
               <Text style={styles.heroCurrency}>GHS </Text>
-              <Text style={styles.heroBalance}>{formatCedis(heroValue)}</Text>
+              <AnimatedNumber
+                value={heroValue}
+                formatter={formatCedis}
+                style={styles.heroBalance}
+              />
             </View>
           )}
           {homeState === 'TOTAL' && (
@@ -199,7 +234,7 @@ export default function HomeScreen() {
               {(vaultsData?.total_count ?? 0) !== 1 ? 's' : ''} + wallet
             </Text>
           )}
-        </View>
+        </LinearGradient>
 
         {homeState === 'TOTAL' && (
           <TotalStateBody
@@ -236,6 +271,17 @@ export default function HomeScreen() {
 // Total state body
 // ─────────────────────────────────────────────────────────────────────────────
 
+const QUICK_ACTIONS: {
+  key: string;
+  label: string;
+  icon: ComponentProps<typeof Ionicons>['name'];
+  emphasis?: boolean;
+}[] = [
+  { key: 'deposit', label: 'Deposit', icon: 'arrow-down', emphasis: true },
+  { key: 'send', label: 'Send', icon: 'arrow-forward' },
+  { key: 'withdraw', label: 'Withdraw', icon: 'arrow-up' },
+];
+
 function TotalStateBody({
   navigation,
   hasVaults,
@@ -249,47 +295,44 @@ function TotalStateBody({
   susuCount: number;
   activeChallenges: Challenge[];
 }) {
+  const onAction = (key: string) => {
+    if (key === 'deposit') {
+      hasVaults
+        ? navigation.navigate('AccountPicker', { mode: 'DEPOSIT' })
+        : navigation.navigate('CreateVault');
+    } else if (key === 'send') {
+      navigation.navigate('RecipientPicker');
+    } else {
+      hasVaults
+        ? navigation.navigate('AccountPicker', { mode: 'WITHDRAW' })
+        : navigation.navigate('CreateVault');
+    }
+  };
+
   return (
     <>
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          style={styles.actionTile}
-          onPress={() =>
-            hasVaults
-              ? navigation.navigate('AccountPicker', { mode: 'DEPOSIT' })
-              : navigation.navigate('CreateVault')
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Deposit"
-        >
-          <Text style={styles.actionIcon}>↓</Text>
-          <Text style={styles.actionLabel}>Deposit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionTile}
-          onPress={() => navigation.navigate('RecipientPicker')}
-          accessibilityRole="button"
-          accessibilityLabel="Send"
-        >
-          <Text style={styles.actionIcon}>→</Text>
-          <Text style={styles.actionLabel}>Send</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionTile}
-          onPress={() =>
-            hasVaults
-              ? navigation.navigate('AccountPicker', { mode: 'WITHDRAW' })
-              : navigation.navigate('CreateVault')
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Withdraw"
-        >
-          <Text style={styles.actionIcon}>↑</Text>
-          <Text style={styles.actionLabel}>Withdraw</Text>
-        </TouchableOpacity>
-      </View>
+      <Animated.View entering={fadeInUp(60)} style={styles.actionRow}>
+        {QUICK_ACTIONS.map(action => (
+          <PressableScale
+            key={action.key}
+            style={styles.actionTile}
+            onPress={() => onAction(action.key)}
+            accessibilityRole="button"
+            accessibilityLabel={action.label}
+          >
+            <View style={[styles.actionIconWrap, action.emphasis && styles.actionIconWrapGold]}>
+              <Ionicons
+                name={action.icon}
+                size={18}
+                color={action.emphasis ? colors.neutral[900] : colors.textPrimary}
+              />
+            </View>
+            <Text style={styles.actionLabel}>{action.label}</Text>
+          </PressableScale>
+        ))}
+      </Animated.View>
 
-      <View style={styles.summaryRow} testID="portfolio-summary">
+      <Animated.View entering={fadeInUp(120)} style={styles.summaryRow} testID="portfolio-summary">
         <View style={styles.summaryTile}>
           <Text style={styles.summaryValue}>{vaultCount}</Text>
           <Text style={styles.summaryLabel}>vault{vaultCount !== 1 ? 's' : ''}</Text>
@@ -298,7 +341,11 @@ function TotalStateBody({
           <Text style={styles.summaryValue}>{susuCount}</Text>
           <Text style={styles.summaryLabel}>susu group{susuCount !== 1 ? 's' : ''}</Text>
         </View>
-      </View>
+      </Animated.View>
+
+      <Animated.View entering={fadeInUp(160)}>
+        <PortfolioInsight vaultCount={vaultCount} susuCount={susuCount} />
+      </Animated.View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Challenges</Text>
@@ -317,15 +364,88 @@ function TotalStateBody({
           ))}
         </View>
       ) : (
-        <Text style={styles.emptySectionText}>No active challenges yet.</Text>
+        <EmptyState
+          icon="trophy-outline"
+          title="No active challenges yet"
+          message="Join one from the Challenges tab to build a savings habit."
+        />
       )}
     </>
+  );
+}
+
+/**
+ * A short, data-derived line — not a fabricated "insight." Only reflects
+ * real portfolio shape (vault/susu counts) already fetched for this screen.
+ */
+function PortfolioInsight({ vaultCount, susuCount }: { vaultCount: number; susuCount: number }) {
+  if (vaultCount === 0 && susuCount === 0) {
+    return (
+      <View style={styles.insightCard}>
+        <View style={styles.insightIconWrap}>
+          <Ionicons name="flash-outline" size={16} color={colors.gold.text} />
+        </View>
+        <Text style={styles.insightText}>
+          Start your first vault to begin building your savings.
+        </Text>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.insightCard}>
+      <View style={styles.insightIconWrap}>
+        <Ionicons name="flash-outline" size={16} color={colors.gold.text} />
+      </View>
+      <Text style={styles.insightText}>
+        You&apos;re actively saving across {vaultCount} vault{vaultCount !== 1 ? 's' : ''}
+        {susuCount > 0 ? ` and ${susuCount} susu group${susuCount !== 1 ? 's' : ''}` : ''}. Keep it up.
+      </Text>
+    </View>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Savings state body
 // ─────────────────────────────────────────────────────────────────────────────
+
+function goalProgress(vault: VaultListItem): number | null {
+  if (!vault.unlock_amount || vault.balance_pesewas === null) return null;
+  return vault.balance_pesewas / vault.unlock_amount;
+}
+
+function GoalRings({ vaults }: { vaults: VaultListItem[] }) {
+  const withGoals = vaults.filter(v => v.unlock_amount !== null && v.balance_pesewas !== null);
+  if (withGoals.length === 0) return null;
+
+  return (
+    <Animated.View entering={fadeInUp(40)}>
+      <Text style={styles.goalRingCaption}>Goal progress</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.goalRingScroll}
+        contentContainerStyle={styles.goalRingContent}
+      >
+        {withGoals.map(vault => {
+          const progress = goalProgress(vault) ?? 0;
+          const percent = Math.round(Math.min(1, progress) * 100);
+          return (
+            <View
+              key={vault.id}
+              style={styles.goalRingItem}
+              accessible
+              accessibilityLabel={`${vault.name}, ${percent}% of goal`}
+            >
+              <ProgressRing progress={progress} size={56} strokeWidth={5}>
+                <Text style={styles.goalRingPercent}>{percent}%</Text>
+              </ProgressRing>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </Animated.View>
+  );
+}
 
 function SavingsStateBody({
   navigation,
@@ -345,6 +465,8 @@ function SavingsStateBody({
 
   return (
     <>
+      <GoalRings vaults={vaults} />
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Your vaults</Text>
         {vaults.length > 0 && (
@@ -356,15 +478,20 @@ function SavingsStateBody({
       {vaultsLoading ? (
         <ActivityIndicator style={styles.inlineSpinner} />
       ) : preview.length > 0 ? (
-        preview.map(vault => (
-          <VaultCard
-            key={vault.id}
-            vault={vault}
-            onPress={() => navigation.navigate('VaultDetail', { vaultId: vault.id })}
-          />
+        preview.map((vault, i) => (
+          <Animated.View key={vault.id} entering={fadeInUp(60 * i)}>
+            <VaultCard
+              vault={vault}
+              onPress={() => navigation.navigate('VaultDetail', { vaultId: vault.id })}
+            />
+          </Animated.View>
         ))
       ) : (
-        <Text style={styles.emptySectionText}>No vaults yet.</Text>
+        <EmptyState
+          icon="lock-closed-outline"
+          title="No vaults yet"
+          message="Create a vault to start setting money aside."
+        />
       )}
 
       <View style={styles.sectionHeader}>
@@ -419,15 +546,20 @@ function WalletStateBody({
       {susuLoading ? (
         <ActivityIndicator style={styles.inlineSpinner} />
       ) : preview.length > 0 ? (
-        preview.map(group => (
-          <SusuCard
-            key={group.group_id}
-            group={group}
-            onPress={() => navigation.navigate('SusuDetail', { groupId: group.group_id })}
-          />
+        preview.map((group, i) => (
+          <Animated.View key={group.group_id} entering={fadeInUp(60 * i)}>
+            <SusuCard
+              group={group}
+              onPress={() => navigation.navigate('SusuDetail', { groupId: group.group_id })}
+            />
+          </Animated.View>
         ))
       ) : (
-        <Text style={styles.emptySectionText}>No susu groups yet.</Text>
+        <EmptyState
+          icon="people-outline"
+          title="No susu groups yet"
+          message="Join or create a susu group to save with others."
+        />
       )}
 
       <View style={styles.sectionHeader}>
@@ -486,25 +618,37 @@ function IdlePayoutNudge({ onPress }: { onPress: () => void }) {
   if (!payout) return null;
 
   return (
-    <TouchableOpacity
-      style={styles.nudgeCard}
-      onPress={onPress}
-      activeOpacity={0.85}
-      testID="idle-payout-nudge"
-      accessibilityRole="button"
-      accessibilityLabel={`GHS ${payout.amountCedis} is sitting in your wallet. Move it into a vault to keep it safe.`}
-    >
-      <Text style={styles.nudgeText}>
-        <Text style={styles.nudgeAmount}>GHS {payout.amountCedis} is sitting in your wallet</Text> ·{' '}
-        {payout.accountName} · move it into a vault to keep it safe.
-      </Text>
-    </TouchableOpacity>
+    <Animated.View entering={fadeInUp(0)}>
+      <PressableScale
+        style={styles.nudgeCard}
+        onPress={onPress}
+        testID="idle-payout-nudge"
+        accessibilityRole="button"
+        accessibilityLabel={`GHS ${payout.amountCedis} is sitting in your wallet. Move it into a vault to keep it safe.`}
+      >
+        <View style={styles.nudgeIconWrap}>
+          <Ionicons name="sparkles" size={15} color={colors.gold.text} />
+        </View>
+        <Text style={styles.nudgeText}>
+          <Text style={styles.nudgeAmount}>GHS {payout.amountCedis} is sitting in your wallet</Text> ·{' '}
+          {payout.accountName} · move it into a vault to keep it safe.
+        </Text>
+      </PressableScale>
+    </Animated.View>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity preview (shared by Savings/Wallet states)
 // ─────────────────────────────────────────────────────────────────────────────
+
+const TX_ICON: Record<string, ComponentProps<typeof Ionicons>['name']> = {
+  DEPOSIT: 'arrow-down-circle-outline',
+  WITHDRAWAL: 'arrow-up-circle-outline',
+  TRANSFER: 'swap-horizontal-outline',
+  SUSU_CONTRIBUTION: 'people-circle-outline',
+  SUSU_DISBURSEMENT: 'gift-outline',
+};
 
 function ActivityPreview({
   items,
@@ -517,75 +661,98 @@ function ActivityPreview({
     return <ActivityIndicator style={styles.inlineSpinner} />;
   }
   if (!items || items.length === 0) {
-    return <Text style={styles.emptySectionText}>No recent activity.</Text>;
+    return (
+      <EmptyState icon="receipt-outline" title="No recent activity" testID="activity-empty-state" />
+    );
   }
   return (
-    <View style={styles.activityCard}>
+    <Animated.View entering={fadeInUp(0)} style={styles.activityCard}>
       {items.map((item, index) => (
         <View
           key={item.transactionReference}
           style={[styles.activityRow, index === items.length - 1 && styles.activityRowLast]}
         >
+          <View style={styles.activityIconWrap}>
+            <Ionicons
+              name={TX_ICON[item.transactionType] ?? 'ellipse-outline'}
+              size={18}
+              color={colors.neutral[600]}
+            />
+          </View>
           <View style={styles.activityInfo}>
             <Text style={styles.activityTitle} numberOfLines={1}>
               {item.accountName}
             </Text>
-            <Text style={styles.activitySub}>{item.transactionType}</Text>
+            <Text style={styles.activitySub}>
+              {item.transactionType}
+              {item.status !== 'COMPLETED' ? ` · ${item.status.toLowerCase()}` : ''}
+            </Text>
           </View>
           <Text style={[styles.activityAmount, item.direction === 'IN' && styles.activityAmountIn]}>
             {item.direction === 'IN' ? '+' : '-'}GHS {item.amountCedis}
           </Text>
         </View>
       ))}
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 16 : 12,
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'android' ? spacing.lg : spacing.md,
     paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   greeting: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
+    ...typography.h2,
+    color: colors.textPrimary,
   },
   subhead: {
-    fontSize: 14,
-    color: '#6B7280',
+    ...typography.caption,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   headerButtons: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm,
   },
   bellButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    width: 42,
+    height: 42,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  bellIcon: {
-    fontSize: 18,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   bellBadge: {
     position: 'absolute',
@@ -594,62 +761,68 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.status.error,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
     borderWidth: 2,
-    borderColor: '#F9FAFB',
+    borderColor: colors.background,
   },
   bellBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.neutral[0],
   },
 
   segmentRow: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
+    backgroundColor: colors.neutral[100],
+    borderRadius: radii.md,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   segment: {
     flex: 1,
     paddingVertical: 9,
-    borderRadius: 9,
+    borderRadius: radii.sm,
     alignItems: 'center',
   },
   segmentActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    backgroundColor: colors.surface,
+    ...shadows.sm,
   },
   segmentText: {
-    fontSize: 13,
+    ...typography.caption,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   segmentTextActive: {
-    color: '#111827',
+    color: colors.textPrimary,
   },
 
   heroCard: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 18,
-    padding: 24,
-    marginBottom: 24,
+    borderRadius: radii['2xl'],
+    padding: spacing['2xl'],
+    marginBottom: spacing['2xl'],
+    ...shadows.lg,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
   heroLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: '500',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    marginBottom: 8,
+    ...typography.label,
+    color: colors.textOnDarkMuted,
+  },
+  heroIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(245,183,0,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroBalanceRow: {
     flexDirection: 'row',
@@ -657,117 +830,172 @@ const styles = StyleSheet.create({
   },
   heroCurrency: {
     fontSize: 18,
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textOnDarkMuted,
     fontWeight: '500',
   },
   heroBalance: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    ...typography.numericHero,
+    color: colors.textOnDark,
   },
   heroBalanceUnavailable: {
     fontSize: 28,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.35)',
+    color: colors.textOnDarkFaint,
   },
   heroSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 8,
+    ...typography.caption,
+    color: colors.textOnDarkFaint,
+    marginTop: spacing.sm,
   },
 
   actionRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
+    gap: spacing.md,
+    marginBottom: spacing['3xl'],
   },
   actionTile: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  actionIcon: {
-    fontSize: 20,
-    marginBottom: 6,
-    color: '#1A1A1A',
-    fontWeight: '700',
+  actionIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  actionIconWrapGold: {
+    backgroundColor: colors.gold.base,
   },
   actionLabel: {
-    fontSize: 12,
+    ...typography.caption,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.textPrimary,
   },
 
   summaryRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   summaryTile: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   summaryValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
+    ...typography.numericLarge,
+    color: colors.textPrimary,
   },
   summaryLabel: {
-    fontSize: 12,
-    color: '#6B7280',
+    ...typography.caption,
+    color: colors.textSecondary,
     marginTop: 2,
+  },
+
+  insightCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.gold.light,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginBottom: spacing['3xl'],
+  },
+  insightIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[0],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  insightText: {
+    ...typography.caption,
+    color: colors.gold.text,
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  goalRingCaption: {
+    ...typography.label,
+    color: colors.textTertiary,
+    marginBottom: spacing.sm,
+  },
+  goalRingScroll: {
+    marginBottom: spacing.lg,
+    marginHorizontal: -spacing.lg,
+  },
+  goalRingContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
+  },
+  goalRingItem: {
+    alignItems: 'center',
+    width: 76,
+  },
+  goalRingPercent: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
 
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
-    marginTop: 4,
+    marginBottom: spacing.md,
+    marginTop: spacing.xxs,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111827',
+    ...typography.h3,
+    color: colors.textPrimary,
   },
   seeAll: {
-    fontSize: 14,
+    ...typography.caption,
     fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  emptySectionText: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    marginBottom: 20,
+    color: colors.textPrimary,
   },
   inlineSpinner: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   negateInset: {
-    marginHorizontal: -16,
-    marginBottom: 8,
+    marginHorizontal: -spacing.lg,
+    marginBottom: spacing.sm,
   },
 
   nudgeCard: {
-    backgroundColor: '#ECFDF5',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  nudgeIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   nudgeText: {
+    flex: 1,
     fontSize: 13,
-    color: '#065F46',
+    color: colors.status.successText,
     lineHeight: 19,
   },
   nudgeAmount: {
@@ -775,26 +1003,34 @@ const styles = StyleSheet.create({
   },
 
   activityCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   activityRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
   activityRowLast: { borderBottomWidth: 0 },
-  activityInfo: { flex: 1, marginRight: 8 },
-  activityTitle: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  activitySub: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
-  activityAmount: { fontSize: 14, fontWeight: '700', color: '#DC2626' },
-  activityAmountIn: { color: '#059669' },
+  activityIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  activityInfo: { flex: 1, marginRight: spacing.sm },
+  activityTitle: { ...typography.bodyMedium, color: colors.textPrimary },
+  activitySub: { ...typography.caption, color: colors.textTertiary, marginTop: 2 },
+  activityAmount: { ...typography.numericMedium, color: colors.status.error },
+  activityAmountIn: { color: colors.status.success },
 });

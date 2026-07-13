@@ -14,11 +14,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { forgotPassword } from '../api/auth';
+import { colors, radii, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ForgotPassword'>;
 
@@ -55,8 +58,10 @@ export default function ForgotPasswordScreen() {
   if (submitted) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.confirmedContainer}>
-          <Text style={styles.emoji}>📬</Text>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.confirmedContainer}>
+          <View style={styles.iconBadge}>
+            <Ionicons name="mail-outline" size={32} color={colors.gold.text} />
+          </View>
           <Text style={styles.heading}>Check your inbox</Text>
           <Text style={styles.body}>
             If an account exists for that email address, we&apos;ve sent a password reset link. The
@@ -65,7 +70,7 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.backButton}>
             <Text style={styles.backButtonText}>Back to sign in</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </SafeAreaView>
     );
   }
@@ -116,17 +121,25 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
-  confirmedContainer: { flex: 1, paddingHorizontal: 24, paddingTop: 80, alignItems: 'center' },
-  emoji: { fontSize: 56, marginBottom: 24 },
-  heading: { fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 16, color: '#6B7280', marginBottom: 32 },
-  body: { fontSize: 16, color: '#6B7280', textAlign: 'center', lineHeight: 24 },
-  backRow: { marginBottom: 32 },
-  backText: { color: '#1A1A1A', fontSize: 15 },
-  submitButton: { marginTop: 8 },
-  backButton: { marginTop: 32, padding: 12 },
-  backButtonText: { color: '#1A1A1A', fontSize: 15, textDecorationLine: 'underline' },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
+  confirmedContainer: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: 80, alignItems: 'center' },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing['2xl'],
+  },
+  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  body: { fontSize: 16, color: colors.textSecondary, textAlign: 'center', lineHeight: 24 },
+  backRow: { marginBottom: spacing['3xl'] },
+  backText: { color: colors.textPrimary, fontSize: 15 },
+  submitButton: { marginTop: spacing.sm },
+  backButton: { marginTop: spacing['3xl'], padding: spacing.md },
+  backButtonText: { color: colors.textPrimary, fontSize: 15, textDecorationLine: 'underline' },
 });

@@ -3,7 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SusuModernComingSoon'>;
 
@@ -30,47 +33,56 @@ export function SusuModernComingSoonScreen() {
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.icon}>🛠️</Text>
+        <View style={styles.iconBadge}>
+          <Ionicons name="construct-outline" size={30} color={colors.gold.text} />
+        </View>
         <Text style={styles.title}>Modern susu is coming soon</Text>
         <Text style={styles.description}>
           A fixed-term susu where you save toward your own goal, on your own schedule — no
           rotation, no waiting for your turn. We&apos;re still building this.
         </Text>
 
-        <TouchableOpacity
+        <PressableScale
           style={styles.cta}
           onPress={() => navigation.goBack()}
-          activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Create a Traditional susu instead"
         >
           <Text style={styles.ctaText}>Create a Traditional susu instead</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { paddingHorizontal: 16, paddingVertical: 12 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: '#1A1A2E' },
-  body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  icon: { fontSize: 56, marginBottom: 16 },
-  title: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8, textAlign: 'center' },
+  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
+  body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm, textAlign: 'center' },
   description: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 21,
-    marginBottom: 28,
+    marginBottom: spacing['2xl'],
   },
   cta: {
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.md,
   },
-  ctaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  ctaText: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
 });

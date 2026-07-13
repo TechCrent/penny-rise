@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
+import { colors, radii, spacing } from '../../theme';
 
 function Bone({
   width,
@@ -21,16 +22,16 @@ function Bone({
     ).start();
   }, [opacity]);
 
-  return <Animated.View style={[styles.bone, { width, height }, style]} />;
+  return <Animated.View style={[styles.bone, { width, height, opacity }, style]} />;
 }
 
 export function WalletSkeleton() {
   return (
     <View testID="wallet-skeleton">
       <View style={styles.balanceSection}>
-        <Bone width={80} height={12} />
-        <Bone width={160} height={40} style={styles.mt8} />
-        <Bone width={120} height={12} style={styles.mt8} />
+        <Bone width={80} height={12} style={styles.boneOnDark} />
+        <Bone width={160} height={40} style={[styles.mt8, styles.boneOnDark]} />
+        <Bone width={120} height={12} style={[styles.mt8, styles.boneOnDark]} />
       </View>
 
       <View style={styles.quickActions}>
@@ -58,31 +59,32 @@ export function WalletSkeleton() {
 
 const styles = StyleSheet.create({
   bone: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
+    backgroundColor: colors.neutral[200],
+    borderRadius: radii.sm,
   },
-  mt8: { marginTop: 8 },
-  actionBone: { borderRadius: 12 },
-  badgeBone: { borderRadius: 10 },
-  midSection: { flex: 1, marginLeft: 12, gap: 6 },
-  rightSection: { alignItems: 'flex-end', gap: 4 },
+  boneOnDark: { backgroundColor: 'rgba(255,255,255,0.15)' },
+  mt8: { marginTop: spacing.sm },
+  actionBone: { borderRadius: radii.md },
+  badgeBone: { borderRadius: radii.sm },
+  midSection: { flex: 1, marginLeft: spacing.md, gap: spacing.xs },
+  rightSection: { alignItems: 'flex-end', gap: spacing.xxs },
   balanceSection: {
-    backgroundColor: '#111827',
-    padding: 24,
-    paddingTop: 40,
+    backgroundColor: colors.neutral[900],
+    padding: spacing.xl,
+    paddingTop: spacing['4xl'],
   },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    gap: 12,
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    gap: spacing.md,
   },
   skeletonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
 });

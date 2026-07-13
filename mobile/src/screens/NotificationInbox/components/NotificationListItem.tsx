@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { colors, radii, spacing } from '../../../theme';
 import type { NotificationItem } from '../../../features/notifications/types';
 
 interface Props {
@@ -15,7 +16,7 @@ export function NotificationListItem({ notification, onPress }: Props) {
       onPress={() => onPress(notification)}
       accessibilityRole="button"
       accessibilityLabel={`${notification.title}${isUnread ? ', unread' : ''}`}
-      style={styles.row}
+      style={[styles.row, isUnread && styles.rowUnread]}
       testID={`notification-row-${notification.id}`}
     >
       {isUnread && <View style={styles.unreadDot} testID="unread-indicator" />}
@@ -32,20 +33,21 @@ export function NotificationListItem({ notification, onPress }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     alignItems: 'flex-start',
   },
+  rowUnread: { backgroundColor: colors.gold.light },
   unreadDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1A1A1A',
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.base,
     marginTop: 6,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   textContainer: { flex: 1 },
-  title: { fontSize: 15, color: '#111827' },
+  title: { fontSize: 15, color: colors.textPrimary },
   titleUnread: { fontWeight: '700' },
-  body: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  body: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
 });

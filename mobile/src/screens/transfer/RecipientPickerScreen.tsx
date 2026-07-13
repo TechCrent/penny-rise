@@ -1,19 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { transferApi } from '../../api/transfers';
 import type { RecipientResult } from '../../api/transfers';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RecipientPicker'>;
 
@@ -70,12 +64,13 @@ export function RecipientPickerScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name or email"
+          placeholderTextColor={colors.textTertiary}
           value={query}
           onChangeText={setQuery}
           autoFocus
           testID="search-input"
         />
-        {loading && <ActivityIndicator style={styles.searchSpinner} />}
+        {loading && <ActivityIndicator style={styles.searchSpinner} color={colors.gold.base} />}
       </View>
       {error !== null && (
         <Text style={styles.errorText} testID="search-error">
@@ -87,14 +82,14 @@ export function RecipientPickerScreen() {
         keyExtractor={r => r.id}
         testID="results-list"
         renderItem={({ item: r }) => (
-          <TouchableOpacity
+          <PressableScale
             style={styles.resultRow}
             onPress={() => handleSelect(r)}
             testID={`recipient-${r.id}`}
           >
             <Text style={styles.resultName}>{r.displayName}</Text>
             <Text style={styles.resultEmail}>{r.email}</Text>
-          </TouchableOpacity>
+          </PressableScale>
         )}
         ListEmptyComponent={
           debouncedQuery.trim().length >= 2 && !loading ? (
@@ -109,27 +104,27 @@ export function RecipientPickerScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F9FAFB' },
+  screen: { flex: 1, backgroundColor: colors.background },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    margin: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 14,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
   },
-  searchInput: { flex: 1, height: 48, fontSize: 16, color: '#111827' },
-  searchSpinner: { marginLeft: 8 },
+  searchInput: { flex: 1, height: 48, fontSize: 16, color: colors.textPrimary },
+  searchSpinner: { marginLeft: spacing.sm },
   resultRow: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
-  resultName: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  resultEmail: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  emptyText: { textAlign: 'center', color: '#6B7280', marginTop: 40 },
-  errorText: { color: '#EF4444', textAlign: 'center', marginBottom: 8 },
+  resultName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+  resultEmail: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  emptyText: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing['4xl'] },
+  errorText: { color: colors.status.error, textAlign: 'center', marginBottom: spacing.sm },
 });

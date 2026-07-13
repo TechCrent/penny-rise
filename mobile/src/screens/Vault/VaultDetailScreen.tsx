@@ -12,12 +12,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useStatement, type StatementEntry } from '../../api/hooks/useStatement';
 import type { VaultListItem } from '../../api/hooks/useVaults';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultActionBar } from './components/VaultActionBar';
 import { TransactionReceiptModal } from './components/TransactionReceiptModal';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'VaultDetail'>;
 type RouteProps = RouteProp<RootStackParamList, 'VaultDetail'>;
@@ -96,10 +100,9 @@ function buildUnlockLabel(vault: VaultListItem): UnlockInfo | null {
 function StatementRow({ entry, onPress }: { entry: StatementEntry; onPress: () => void }) {
   const isCredit = entry.direction === 'CREDIT';
   return (
-    <TouchableOpacity
+    <PressableScale
       style={txStyles.row}
       onPress={onPress}
-      activeOpacity={0.82}
       accessibilityRole="button"
       accessibilityLabel={`${isCredit ? 'CREDIT' : 'DEBIT'} GHS ${entry.amount_cedis}, ${entry.transaction_type}`}
     >
@@ -118,7 +121,7 @@ function StatementRow({ entry, onPress }: { entry: StatementEntry; onPress: () =
       <Text style={[txStyles.amount, isCredit ? txStyles.amountCredit : txStyles.amountDebit]}>
         {isCredit ? '+' : '−'} {entry.amount_cedis}
       </Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -178,7 +181,7 @@ export default function VaultDetailScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color={INDIGO} />
+          <ActivityIndicator size="large" color={colors.gold.base} />
         </View>
       </SafeAreaView>
     );
@@ -191,9 +194,9 @@ export default function VaultDetailScreen() {
           <Text style={styles.errorText}>
             {vaultError instanceof Error ? vaultError.message : 'Could not load this vault.'}
           </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => refetchVault()}>
+          <PressableScale style={styles.retryBtn} onPress={() => refetchVault()}>
             <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </SafeAreaView>
     );
@@ -227,8 +230,8 @@ export default function VaultDetailScreen() {
           <RefreshControl
             refreshing={vaultFetching && !vaultLoading}
             onRefresh={onRefresh}
-            tintColor={INDIGO}
-            colors={[INDIGO]}
+            tintColor={colors.gold.base}
+            colors={[colors.gold.base]}
           />
         }
         ListHeaderComponent={
@@ -239,11 +242,17 @@ export default function VaultDetailScreen() {
                 onPress={() => setShowSuccess(false)}
                 activeOpacity={0.9}
               >
-                <Text style={styles.successText}>✓ {successMessage}</Text>
+                <Ionicons name="checkmark-circle" size={15} color={colors.status.successText} />
+                <Text style={styles.successText}>{successMessage}</Text>
               </TouchableOpacity>
             )}
 
-            <View style={styles.heroCard}>
+            <LinearGradient
+              colors={[colors.heroFrom, colors.heroTo]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroCard}
+            >
               <View style={styles.heroTop}>
                 <Text style={styles.heroLabel}>Current balance</Text>
                 <View
@@ -279,7 +288,7 @@ export default function VaultDetailScreen() {
                   )}
                 </View>
               )}
-            </View>
+            </LinearGradient>
 
             <View style={styles.metaCard}>
               <MetaRow label="Vault type" value={isLocked ? 'Locked vault' : 'Standard vault'} />
@@ -299,11 +308,13 @@ export default function VaultDetailScreen() {
         ListEmptyComponent={
           statementLoading ? (
             <View style={styles.statementLoading}>
-              <ActivityIndicator size="small" color={INDIGO} />
+              <ActivityIndicator size="small" color={colors.gold.base} />
             </View>
           ) : (
             <View style={styles.emptyStatement}>
-              <Text style={styles.emptyIcon}>📋</Text>
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="receipt-outline" size={22} color={colors.neutral[400]} />
+              </View>
               <Text style={styles.emptyText}>No transactions yet</Text>
               <Text style={styles.emptySubtext}>
                 Your transaction history will appear here after your first deposit.
@@ -318,7 +329,7 @@ export default function VaultDetailScreen() {
         ListFooterComponent={
           isFetchingNextPage ? (
             <View style={styles.loadMore}>
-              <ActivityIndicator size="small" color={INDIGO} />
+              <ActivityIndicator size="small" color={colors.gold.base} />
             </View>
           ) : null
         }
@@ -340,162 +351,160 @@ export default function VaultDetailScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const BACKGROUND = '#F8F9FF';
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
-  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  errorText: { color: '#EF4444', fontSize: 14, textAlign: 'center', marginBottom: 16 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  errorText: { color: colors.status.error, fontSize: 14, textAlign: 'center', marginBottom: spacing.md },
   retryBtn: {
-    backgroundColor: INDIGO,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
+    backgroundColor: colors.gold.base,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radii.sm,
   },
-  retryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  listContent: { paddingBottom: 24 },
+  retryText: { color: colors.neutral[900], fontSize: 14, fontWeight: '700' },
+  listContent: { paddingBottom: spacing.xl },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: BACKGROUND,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  backIcon: { fontSize: 22, color: DARK },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK, flex: 1, textAlign: 'center' },
+  backIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary, flex: 1, textAlign: 'center' },
 
   successBanner: {
-    backgroundColor: '#ECFDF5',
-    borderRadius: 10,
-    margin: 16,
-    padding: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#6EE7B7',
+    gap: spacing.sm,
+    backgroundColor: colors.status.successBg,
+    borderRadius: radii.sm,
+    margin: spacing.lg,
+    padding: spacing.md,
+    justifyContent: 'center',
   },
-  successText: { fontSize: 13, fontWeight: '600', color: '#065F46' },
+  successText: { fontSize: 13, fontWeight: '600', color: colors.status.successText },
 
   heroCard: {
-    backgroundColor: DARK,
-    margin: 16,
-    borderRadius: 20,
-    padding: 22,
-    shadowColor: DARK,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.16,
-    shadowRadius: 14,
-    elevation: 5,
+    margin: spacing.lg,
+    borderRadius: radii['2xl'],
+    padding: spacing.xl,
   },
   heroTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   heroLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textOnDarkMuted,
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  typeBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  typeBadge: { borderRadius: 6, paddingHorizontal: spacing.sm, paddingVertical: 3 },
   badgeLocked: { backgroundColor: 'rgba(255,255,255,0.15)' },
-  badgeStandard: { backgroundColor: 'rgba(79,70,229,0.4)' },
-  badgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
+  badgeStandard: { backgroundColor: 'rgba(245,183,0,0.25)' },
+  badgeText: { fontSize: 10, fontWeight: '700', color: colors.textOnDark, letterSpacing: 0.5 },
   heroBalanceRow: { flexDirection: 'row', alignItems: 'baseline' },
-  heroCurrency: { fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
-  heroBalance: { fontSize: 40, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1.5 },
-  heroBalanceUnavailable: { fontSize: 32, fontWeight: '700', color: 'rgba(255,255,255,0.3)' },
+  heroCurrency: { fontSize: 16, color: colors.textOnDarkMuted, fontWeight: '500' },
+  heroBalance: { fontSize: 40, fontWeight: '800', color: colors.textOnDark, letterSpacing: -1.5 },
+  heroBalanceUnavailable: { fontSize: 32, fontWeight: '700', color: colors.textOnDarkFaint },
 
   unlockSection: {
-    marginTop: 16,
+    marginTop: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.1)',
-    paddingTop: 14,
+    paddingTop: spacing.md,
   },
-  unlockLabel: { fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 8 },
+  unlockLabel: { fontSize: 12, color: colors.textOnDarkMuted, marginBottom: spacing.sm },
   progressTrack: {
     height: 4,
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 2,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#818CF8', borderRadius: 2 },
-  progressPct: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, textAlign: 'right' },
+  progressFill: { height: '100%', backgroundColor: colors.gold.base, borderRadius: 2 },
+  progressPct: { fontSize: 11, color: colors.textOnDarkFaint, marginTop: spacing.xs, textAlign: 'right' },
 
   metaCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    marginHorizontal: 16,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: MUTED,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginHorizontal: 16,
-    marginBottom: 8,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
   },
 
-  statementLoading: { paddingVertical: 32, alignItems: 'center' },
-  loadMore: { paddingVertical: 16, alignItems: 'center' },
-  emptyStatement: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 32 },
-  emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: DARK, marginBottom: 6 },
-  emptySubtext: { fontSize: 13, color: MUTED, textAlign: 'center', lineHeight: 19 },
+  statementLoading: { paddingVertical: spacing['2xl'], alignItems: 'center' },
+  loadMore: { paddingVertical: spacing.lg, alignItems: 'center' },
+  emptyStatement: { alignItems: 'center', paddingVertical: spacing['4xl'], paddingHorizontal: spacing['3xl'] },
+  emptyIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyText: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  emptySubtext: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 19 },
 });
 
 const metaStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  border: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  border: { borderBottomWidth: 1, borderBottomColor: colors.neutral[100] },
   label: {
     fontSize: 12,
-    color: MUTED,
+    color: colors.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  value: { fontSize: 13, fontWeight: '600', color: DARK },
+  value: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
 });
 
 const txStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 13,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
   dirDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  dotCredit: { backgroundColor: '#059669' },
-  dotDebit: { backgroundColor: '#DC2626' },
+  dotCredit: { backgroundColor: colors.status.success },
+  dotDebit: { backgroundColor: colors.status.error },
   rowBody: { flex: 1 },
-  txType: { fontSize: 13, fontWeight: '600', color: DARK, textTransform: 'capitalize' },
-  narrative: { fontSize: 12, color: MUTED, marginTop: 2 },
-  timestamp: { fontSize: 11, color: '#9CA3AF', marginTop: 3 },
+  txType: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, textTransform: 'capitalize' },
+  narrative: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  timestamp: { fontSize: 11, color: colors.textTertiary, marginTop: 3 },
   amount: { fontSize: 14, fontWeight: '700' },
-  amountCredit: { color: '#059669' },
-  amountDebit: { color: '#DC2626' },
+  amountCredit: { color: colors.status.successText },
+  amountDebit: { color: colors.status.error },
 });

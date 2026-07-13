@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { PressableScale } from './ui';
+import { colors, radii, spacing } from '../theme';
 
 const PIN_LENGTH = 6;
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
@@ -51,16 +53,15 @@ export function PinEntryPad({ onComplete, error, resetSignal }: PinEntryPadProps
 
       <View style={styles.keypad}>
         {KEYS.map((key, i) => (
-          <TouchableOpacity
+          <PressableScale
             key={i}
             style={[styles.key, key === '' ? styles.keyHidden : null]}
             onPress={() => onKeyPress(key)}
             disabled={key === ''}
             testID={key === 'del' ? 'pin-key-delete' : key ? `pin-key-${key}` : undefined}
-            activeOpacity={0.6}
           >
             <Text style={styles.keyText}>{key === 'del' ? '⌫' : key}</Text>
-          </TouchableOpacity>
+          </PressableScale>
         ))}
       </View>
     </View>
@@ -71,22 +72,22 @@ const styles = StyleSheet.create({
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   dot: {
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: radii.pill,
     borderWidth: 1.5,
-    borderColor: '#1A1A1A',
-    marginHorizontal: 8,
+    borderColor: colors.gold.base,
+    marginHorizontal: spacing.sm,
   },
-  dotFilled: { backgroundColor: '#1A1A1A' },
+  dotFilled: { backgroundColor: colors.gold.base },
   error: {
-    color: '#EF4444',
+    color: colors.status.error,
     fontSize: 13,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   keypad: {
     flexDirection: 'row',
@@ -102,5 +103,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   keyHidden: { opacity: 0 },
-  keyText: { fontSize: 24, fontWeight: '500', color: '#111827' },
+  keyText: { fontSize: 24, fontWeight: '500', color: colors.textPrimary },
 });

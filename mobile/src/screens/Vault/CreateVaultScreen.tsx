@@ -14,11 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 import { useCreateVault } from '../../api/hooks/useCreateVault';
 import { useVaults } from '../../api/hooks/useVaults';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultTypeCard } from './components/VaultTypeCard';
+import { PressableScale } from '../../components/ui';
+import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CreateVault'>;
 
@@ -184,7 +187,7 @@ export default function CreateVaultScreen() {
         </Text>
 
         <View style={styles.warningBox}>
-          <Text style={styles.warningIcon}>⚠️</Text>
+          <Ionicons name="warning-outline" size={18} color={colors.status.warningText} />
           <View style={styles.warningBody}>
             <Text style={styles.warningTitle}>Early exit penalty</Text>
             <Text style={styles.warningDesc}>
@@ -201,6 +204,7 @@ export default function CreateVaultScreen() {
         <TextInput
           style={[styles.input, fieldErrors.unlockDate ? styles.inputError : null]}
           placeholder="dd/mm/yyyy"
+          placeholderTextColor={colors.textTertiary}
           value={unlockDate}
           onChangeText={t => {
             setUnlockDate(t);
@@ -218,6 +222,7 @@ export default function CreateVaultScreen() {
         <TextInput
           style={[styles.input, fieldErrors.unlockAmount ? styles.inputError : null]}
           placeholder="e.g. 5000.00"
+          placeholderTextColor={colors.textTertiary}
           value={unlockAmount}
           onChangeText={t => {
             setUnlockAmount(t);
@@ -305,6 +310,7 @@ export default function CreateVaultScreen() {
               <TextInput
                 style={[styles.input, fieldErrors.name ? styles.inputError : null]}
                 placeholder="e.g. Emergency fund, School fees"
+                placeholderTextColor={colors.textTertiary}
                 value={name}
                 onChangeText={t => {
                   setName(t);
@@ -372,14 +378,13 @@ export default function CreateVaultScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          <PressableScale
             style={[
               styles.ctaButton,
               (isPending || (step === 1 && selectedLimited)) && styles.ctaDisabled,
             ]}
             onPress={step === 1 ? handleNext : handleSubmit}
             disabled={isPending || (step === 1 && selectedLimited)}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityState={{
               disabled: isPending || (step === 1 && selectedLimited),
@@ -394,152 +399,140 @@ export default function CreateVaultScreen() {
             }
           >
             {isPending ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.neutral[900]} size="small" />
             ) : (
               <Text style={styles.ctaText}>
                 {step === 1 ? (vaultType === 'LOCKED' ? 'Next' : 'Create vault') : 'Create vault'}
               </Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-const BACKGROUND = '#F8F9FF';
-const AMBER = '#D97706';
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BACKGROUND },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 60 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing['6xl'] },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: BACKGROUND,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
   },
   backButton: { width: 40, height: 40, justifyContent: 'center' },
-  backIcon: { fontSize: 22, color: DARK },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK, letterSpacing: -0.2 },
+  backIcon: { fontSize: 22, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
 
   stepIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 4,
+    marginBottom: spacing.xl,
+    marginTop: spacing.xxs,
   },
-  stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#D1D5DB' },
-  stepDotActive: { backgroundColor: INDIGO, width: 12, height: 12, borderRadius: 6 },
-  stepDotDone: { backgroundColor: '#10B981' },
-  stepLine: { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 8 },
+  stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.neutral[300] },
+  stepDotActive: { backgroundColor: colors.gold.base, width: 12, height: 12, borderRadius: 6 },
+  stepDotDone: { backgroundColor: colors.status.success },
+  stepLine: { flex: 1, height: 2, backgroundColor: colors.border, marginHorizontal: spacing.sm },
 
-  stepTitle: { fontSize: 20, fontWeight: '700', color: DARK, marginBottom: 4, letterSpacing: -0.3 },
-  stepSubtitle: { fontSize: 14, color: MUTED, lineHeight: 20, marginBottom: 20 },
+  stepTitle: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.xs },
+  stepSubtitle: { fontSize: 14, color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.xl },
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: DARK,
-    marginBottom: 6,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  optional: { fontWeight: '400', color: MUTED, textTransform: 'none' },
-  fieldLabelMt16: { marginTop: 16 },
-  fieldLabelVaultType: { marginTop: 24, marginBottom: 12 },
-  charCount: { fontSize: 12, color: '#9CA3AF', textAlign: 'right', marginTop: 4 },
+  optional: { fontWeight: '400', color: colors.textSecondary, textTransform: 'none' },
+  fieldLabelMt16: { marginTop: spacing.lg },
+  fieldLabelVaultType: { marginTop: spacing['2xl'], marginBottom: spacing.md },
+  charCount: { fontSize: 12, color: colors.textTertiary, textAlign: 'right', marginTop: spacing.xs },
 
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === 'ios' ? 14 : 11,
     fontSize: 15,
-    color: DARK,
+    color: colors.textPrimary,
   },
-  inputError: { borderColor: '#EF4444' },
+  inputError: { borderColor: colors.status.error },
 
-  errorText: { fontSize: 12, color: '#DC2626', marginTop: 4 },
-  errorBanner: { backgroundColor: '#FEF2F2', borderRadius: 10, padding: 12, marginTop: 12 },
-  errorBannerText: { fontSize: 13, color: '#991B1B', fontWeight: '500' },
+  errorText: { fontSize: 12, color: colors.status.error, marginTop: spacing.xs },
+  errorBanner: { backgroundColor: colors.status.errorBg, borderRadius: radii.md, padding: spacing.md, marginTop: spacing.md },
+  errorBannerText: { fontSize: 13, color: colors.status.errorText, fontWeight: '500' },
 
   warningBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: '#FFFBEB',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
+    gap: spacing.sm,
+    backgroundColor: colors.status.warningBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: '#FDE68A',
   },
-  warningIcon: { fontSize: 18, lineHeight: 22 },
   warningBody: { flex: 1 },
-  warningTitle: { fontSize: 13, fontWeight: '700', color: AMBER, marginBottom: 3 },
+  warningTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText, marginBottom: 3 },
   warningDesc: { fontSize: 13, color: '#78350F', lineHeight: 18 },
   warningBold: { fontWeight: '700' },
 
-  logicRow: { marginTop: 20, marginBottom: 4 },
+  logicRow: { marginTop: spacing.xl, marginBottom: spacing.xs },
   logicLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: DARK,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  logicToggle: { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 10, padding: 3 },
-  logicOption: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center' },
-  logicOptionActive: { backgroundColor: INDIGO },
-  logicOptionText: { fontSize: 13, fontWeight: '600', color: MUTED },
-  logicOptionTextActive: { color: '#FFFFFF' },
+  logicToggle: { flexDirection: 'row', backgroundColor: colors.neutral[100], borderRadius: radii.md, padding: 3 },
+  logicOption: { flex: 1, paddingVertical: 9, borderRadius: radii.sm, alignItems: 'center' },
+  logicOptionActive: { backgroundColor: colors.gold.base },
+  logicOptionText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  logicOptionTextActive: { color: colors.neutral[900] },
 
   serverErrorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 16,
+    backgroundColor: colors.status.errorBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginTop: spacing.lg,
     borderWidth: 1,
     borderColor: '#FCA5A5',
   },
-  serverErrorText: { fontSize: 13, color: '#991B1B', lineHeight: 19 },
-  upgradeLink: { marginTop: 10, alignItems: 'center', paddingVertical: 6 },
-  upgradeLinkText: { fontSize: 14, fontWeight: '700', color: '#4F46E5' },
+  serverErrorText: { fontSize: 13, color: colors.status.errorText, lineHeight: 19 },
+  upgradeLink: { marginTop: spacing.sm, alignItems: 'center', paddingVertical: spacing.xs },
+  upgradeLinkText: { fontSize: 14, fontWeight: '700', color: colors.gold.text },
 
   upgradeBanner: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 8,
-    marginBottom: 8,
+    backgroundColor: colors.status.infoBg,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  upgradeText: { fontSize: 13, color: '#1E40AF', lineHeight: 19 },
+  upgradeText: { fontSize: 13, color: colors.status.infoText, lineHeight: 19 },
 
   ctaButton: {
-    backgroundColor: INDIGO,
-    borderRadius: 14,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.md,
     paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 24,
-    shadowColor: INDIGO,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
+    marginTop: spacing.xl,
   },
-  ctaDisabled: { backgroundColor: '#A5B4FC', shadowOpacity: 0, elevation: 0 },
-  ctaText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  ctaDisabled: { backgroundColor: colors.neutral[300] },
+  ctaText: { fontSize: 16, fontWeight: '700', color: colors.neutral[900] },
 });

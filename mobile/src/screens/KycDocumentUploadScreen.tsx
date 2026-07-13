@@ -19,6 +19,7 @@ import { useAuth } from '../auth/AuthContext';
 import { decodeUserIdFromJwt } from '../auth/jwt';
 import { uploadDocumentToSignedUrl, confirmDocumentUpload } from '../api/kyc';
 import { saveKycSubmission, loadKycSubmission, clearKycSubmission } from '../storage/kycStorage';
+import { colors, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycDocumentUpload'>;
 type Route = RouteProp<RootStackParamList, 'KycDocumentUpload'>;
@@ -240,12 +241,12 @@ export default function KycDocumentUploadScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { paddingHorizontal: 24, paddingTop: 48, paddingBottom: 40 },
-  stepIndicator: { marginBottom: 24 },
-  stepText: { fontSize: 13, color: '#9CA3AF', fontWeight: '500' },
-  heading: { fontSize: 26, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  subheading: { fontSize: 15, color: '#6B7280', marginBottom: 28 },
-  submitButton: { marginTop: 8 },
-  hint: { textAlign: 'center', color: '#9CA3AF', fontSize: 13, marginTop: 12 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
+  stepIndicator: { marginBottom: spacing.xl },
+  stepText: { fontSize: 13, color: colors.textTertiary, fontWeight: '500' },
+  heading: { ...typography.h1, fontSize: 26, color: colors.textPrimary, marginBottom: spacing.sm },
+  subheading: { fontSize: 15, color: colors.textSecondary, marginBottom: spacing['2xl'] },
+  submitButton: { marginTop: spacing.sm },
+  hint: { textAlign: 'center', color: colors.textTertiary, fontSize: 13, marginTop: spacing.md },
 });

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTransactionDetail } from '../../../api/hooks/useTransactionDetail';
+import { colors, radii, spacing, typography } from '../../../theme';
 
 interface Props {
   reference: string | null;
@@ -38,21 +39,21 @@ const TYPE_LABELS: Record<string, string> = {
 // Plain objects (not StyleSheet.create) — keys are accessed dynamically so the
 // no-unused-styles rule would flag them inside StyleSheet.create.
 const STATUS_PILL_BG: Record<string, { backgroundColor: string }> = {
-  COMPLETED: { backgroundColor: '#05966922' },
-  PENDING: { backgroundColor: '#D9770622' },
-  FAILED: { backgroundColor: '#DC262622' },
-  DEFAULT: { backgroundColor: '#6B728022' },
+  COMPLETED: { backgroundColor: colors.status.successBg },
+  PENDING: { backgroundColor: colors.status.warningBg },
+  FAILED: { backgroundColor: colors.status.errorBg },
+  DEFAULT: { backgroundColor: colors.neutral[100] },
 };
 
 const STATUS_TEXT_COLOR: Record<string, { color: string }> = {
-  COMPLETED: { color: '#059669' },
-  PENDING: { color: '#D97706' },
-  FAILED: { color: '#DC2626' },
-  DEFAULT: { color: '#6B7280' },
+  COMPLETED: { color: colors.status.successText },
+  PENDING: { color: colors.status.warningText },
+  FAILED: { color: colors.status.errorText },
+  DEFAULT: { color: colors.textSecondary },
 };
 
-const ENTRY_CREDIT = { dot: { backgroundColor: '#059669' }, amount: { color: '#059669' } };
-const ENTRY_DEBIT = { dot: { backgroundColor: '#DC2626' }, amount: { color: '#DC2626' } };
+const ENTRY_CREDIT = { dot: { backgroundColor: colors.status.success }, amount: { color: colors.status.successText } };
+const ENTRY_DEBIT = { dot: { backgroundColor: colors.status.error }, amount: { color: colors.status.error } };
 
 export function TransactionReceiptModal({ reference, onClose }: Props) {
   const { data, isLoading, error } = useTransactionDetail(reference);
@@ -79,7 +80,7 @@ export function TransactionReceiptModal({ reference, onClose }: Props) {
 
         {isLoading ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={INDIGO} />
+            <ActivityIndicator size="large" color={colors.gold.base} />
           </View>
         ) : error ? (
           <View style={styles.centered}>
@@ -167,70 +168,66 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
   );
 }
 
-const INDIGO = '#4F46E5';
-const DARK = '#1A1A2E';
-const MUTED = '#6B7280';
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F9FF' },
+  safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDF0',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
   closeButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  closeIcon: { fontSize: 18, color: MUTED },
+  closeIcon: { fontSize: 18, color: colors.textSecondary },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  errorText: { fontSize: 14, color: '#DC2626' },
-  receiptContent: { padding: 16, paddingBottom: 40 },
+  errorText: { fontSize: 14, color: colors.status.error },
+  receiptContent: { padding: spacing.lg, paddingBottom: spacing['4xl'] },
 
-  amountHero: { alignItems: 'center', paddingVertical: 28 },
+  amountHero: { alignItems: 'center', paddingVertical: spacing['3xl'] },
   heroLabel: {
     fontSize: 13,
-    color: MUTED,
+    color: colors.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
-  heroAmount: { fontSize: 36, fontWeight: '800', color: DARK, letterSpacing: -1, marginBottom: 12 },
-  statusPill: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
+  heroAmount: { fontSize: 36, fontWeight: '800', color: colors.textPrimary, letterSpacing: -1, marginBottom: spacing.md },
+  statusPill: { borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: 4 },
   statusText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
 
   detailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
     padding: 4,
-    marginBottom: 12,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
   entriesCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#EDEDF0',
+    borderColor: colors.border,
   },
   entriesTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: MUTED,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
-  entryBorder: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm, gap: spacing.sm },
+  entryBorder: { borderBottomWidth: 1, borderBottomColor: colors.neutral[100] },
   directionDot: { width: 8, height: 8, borderRadius: 4 },
   entryInfo: { flex: 1 },
-  entryAccountType: { fontSize: 13, fontWeight: '600', color: DARK },
-  entryNarrative: { fontSize: 12, color: MUTED, marginTop: 2 },
+  entryAccountType: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  entryNarrative: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   entryAmount: { fontSize: 14, fontWeight: '700' },
 });
 
@@ -239,25 +236,25 @@ const detailStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.neutral[100],
   },
   label: {
     fontSize: 12,
-    color: MUTED,
+    color: colors.textSecondary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   value: {
     fontSize: 13,
-    color: DARK,
+    color: colors.textPrimary,
     fontWeight: '500',
     flex: 1,
     textAlign: 'right',
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   mono: {
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',

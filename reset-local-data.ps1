@@ -72,7 +72,8 @@ $paymentsSeedSql = @'
 INSERT INTO ledger.ledger_accounts (id, account_type, owner_type, owner_id, external_reference, status, description, created_at) VALUES
     ('00000000-0000-0000-0000-000000000001', 'PAYSTACK_SETTLEMENT', 'SYSTEM', NULL, 'paystack-settlement-master', 'ACTIVE', 'Represents funds received by Paystack on behalf of Stash. DEBIT leg for all charge.success deposits.', NOW()),
     ('00000000-0000-0000-0000-000000000002', 'FEE_REVENUE', 'SYSTEM', NULL, NULL, 'ACTIVE', 'Platform fee revenue - early-exit penalties and transaction fees.', NOW()),
-    ('00000000-0000-0000-0000-000000000003', 'PENALTY_REVENUE', 'SYSTEM', NULL, NULL, 'ACTIVE', 'Platform penalty revenue - susu late-payment fees (50% share).', NOW())
+    ('00000000-0000-0000-0000-000000000003', 'PENALTY_REVENUE', 'SYSTEM', NULL, NULL, 'ACTIVE', 'Platform penalty revenue - susu late-payment fees (50% share).', NOW()),
+    ('00000000-0000-0000-0000-000000000004', 'MOOLRE_SETTLEMENT', 'SYSTEM', NULL, 'moolre-settlement-master', 'ACTIVE', 'Represents funds received by Moolre on behalf of Stash. DEBIT leg for all Moolre payment-success deposits.', NOW())
 ON CONFLICT (id) DO NOTHING;
 '@
 

@@ -11,6 +11,9 @@ import com.stash.platform.notification.repository.NotificationRepository;
 import com.stash.platform.notification.repository.ProcessedWorkerEventRepository;
 import com.stash.platform.notification.template.NotificationTemplateRegistry;
 import com.stash.platform.notification.template.RenderedNotification;
+import com.stash.platform.notification.util.GhanaPhoneFormatter;
+import com.stash.platform.user.domain.User;
+import com.stash.platform.user.repository.UserRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -33,6 +36,9 @@ import java.util.UUID;
  *
  * userEmailFor() is an explicit gap — flagged in this issue's notes. It needs
  * UserService (v0.5-005) wired before email dispatch works end-to-end.
+ *
+ * SMS failures are soft: logged and recorded on the SMS channel row, but never
+ * rethrown — a deposit notification must not fail because SMS delivery failed.
  */
 @Service
 public class NotificationDispatchService {
@@ -48,6 +54,8 @@ public class NotificationDispatchService {
     private final NotificationPreferencesService preferencesService;
     private final ExpoPushClient                 expoPushClient;
     private final EmailSender                    emailSender;
+    private final SmsSender                      smsSender;
+    private final UserRepository                 userRepository;
     private final Clock                          clock;
     private final Counter                        dispatchFailureCounter;
     private final Counter                        dispatchAttemptCounter;
@@ -59,6 +67,8 @@ public class NotificationDispatchService {
                                         NotificationPreferencesService preferencesService,
                                         ExpoPushClient expoPushClient,
                                         EmailSender emailSender,
+                                        SmsSender smsSender,
+                                        UserRepository userRepository,
                                         Clock clock,
                                         MeterRegistry meterRegistry) {
         this.processedEventRepository = processedEventRepository;
@@ -68,6 +78,8 @@ public class NotificationDispatchService {
         this.preferencesService       = preferencesService;
         this.expoPushClient           = expoPushClient;
         this.emailSender              = emailSender;
+        this.smsSender                = smsSender;
+        this.userRepository           = userRepository;
         this.clock                    = clock;
         // Prometheus's Counter naming convention appends _total, so this renders
         // as notification_dispatch_failure_rate_total on /actuator/prometheus.
@@ -111,6 +123,11 @@ public class NotificationDispatchService {
         // Email: only for the AC's high-priority event types.
         if (template.requiresEmail()) {
             dispatchEmail(rendered);
+        }
+
+        // SMS: opt-in per template; soft-fail so deposits aren't blocked by SMS outages.
+        if (template.requiresSms()) {
+            dispatchSms(rendered);
         }
 
         markProcessed(envelope);
@@ -169,6 +186,36 @@ public class NotificationDispatchService {
         }
     }
 
+    /**
+     * Soft-fail SMS path: missing phone skips cleanly; provider errors are logged
+     * and recorded on the SMS row but never rethrown to the caller.
+     */
+    void dispatchSms(RenderedNotification rendered) {
+        String rawPhone = userPhoneFor(rendered.userId());
+        if (rawPhone == null || rawPhone.isBlank()) {
+            log.debug("SMS dispatch skipped — no phone for userId={}", rendered.userId());
+            return;
+        }
+
+        var recipientOpt = GhanaPhoneFormatter.toMoolreRecipient(rawPhone);
+        if (recipientOpt.isEmpty()) {
+            log.debug("SMS dispatch skipped — unrecognised phone format for userId={}", rendered.userId());
+            return;
+        }
+
+        dispatchAttemptCounter.increment();
+        NotificationEntity row = persistPending(rendered, "SMS");
+        try {
+            String body = rendered.title() + ". " + rendered.body();
+            smsSender.send(new SmsMessage(recipientOpt.get(), body, row.getId().toString()));
+            notificationRepository.markDelivered(row.getId());
+        } catch (Exception e) {
+            log.warn("SMS dispatch failed for user={}: {}", rendered.userId(), e.getMessage());
+            finalizeFailed(row, 1);
+            // Soft-fail: do not rethrow — deposit / event processing continues.
+        }
+    }
+
     private void finalizeFailed(NotificationEntity row, int attempts) {
         notificationRepository.markFailed(row.getId(), attempts);
         dispatchFailureCounter.increment();
@@ -202,5 +249,12 @@ public class NotificationDispatchService {
     private String userEmailFor(UUID userId) {
         throw new UnsupportedOperationException(
                 "TODO: wire to UserService to look up email for userId=" + userId);
+    }
+
+    /** Looks up the user's profile phone (E.164). Returns null if missing. */
+    private String userPhoneFor(UUID userId) {
+        return userRepository.findById(userId)
+                .map(User::getPhone)
+                .orElse(null);
     }
 }

@@ -9,5 +9,10 @@ public interface NotificationTemplate {
     /** Only "deposit, withdrawal, security alert, KYC decision, dispute resolved" per the AC. */
     boolean requiresEmail();
 
+    /** Opt-in SMS channel; default off so existing templates stay email/push only. */
+    default boolean requiresSms() {
+        return false;
+    }
+
     RenderedNotification render(JsonNode payload);
 }

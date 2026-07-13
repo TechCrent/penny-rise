@@ -9,7 +9,7 @@ export interface WithdrawalPayload {
 
 export interface WithdrawalResponse {
   transaction_reference: string;
-  paystack_transfer_code: string;
+  provider_transfer_code: string;
   status: string;
 }
 

@@ -61,7 +61,7 @@ class VaultWithdrawalServiceTest {
                 service.initiateWithdrawal(VAULT_ID, USER_ID, request(), CORR, IDEM_KEY);
 
         assertThat(result.transactionReference()).isEqualTo("STSH-202606-WD001");
-        assertThat(result.paystackTransferCode()).isEqualTo("TRF_test001");
+        assertThat(result.providerTransferCode()).isEqualTo("TRF_test001");
         assertThat(result.status()).isEqualTo("PENDING");
     }
 

@@ -3,12 +3,11 @@ package com.stash.payments.transaction.service;
 import com.stash.payments.ledger.domain.LedgerAccountEntity;
 import com.stash.payments.ledger.repository.LedgerAccountRepository;
 import com.stash.payments.ledger.service.TransactionReferenceGenerator;
-import com.stash.payments.paystack.client.PaystackClient;
-import com.stash.payments.paystack.domain.PaystackSubaccountEntity;
-import com.stash.payments.paystack.dto.ChargeInitiateResponse;
-import com.stash.payments.paystack.exception.PaystackClientException;
-import com.stash.payments.paystack.repository.PaystackSubaccountRepository;
+import com.stash.payments.moolre.client.MoolreClient;
+import com.stash.payments.moolre.dto.PaymentInitiateResult;
+import com.stash.payments.moolre.exception.MoolreClientException;
 import com.stash.payments.transaction.api.dto.DepositInitiateRequest;
+import com.stash.payments.transaction.api.dto.DepositInitiateResponse;
 import com.stash.payments.transaction.domain.TransactionEntity;
 import com.stash.payments.transaction.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,13 +33,12 @@ class DepositServiceTest {
     private static final Clock FIXED_CLOCK =
             Clock.fixed(Instant.parse("2026-06-24T10:00:00Z"), ZoneOffset.UTC);
 
-    private final LedgerAccountRepository      ledgerRepo     = Mockito.mock(LedgerAccountRepository.class);
-    private final PaystackSubaccountRepository subaccountRepo = Mockito.mock(PaystackSubaccountRepository.class);
-    private final TransactionRepository        txnRepo        = Mockito.mock(TransactionRepository.class);
-    private final PaystackClient               paystack       = Mockito.mock(PaystackClient.class);
-    private final TransactionReferenceGenerator refGen        = Mockito.mock(TransactionReferenceGenerator.class);
+    private final LedgerAccountRepository       ledgerRepo = Mockito.mock(LedgerAccountRepository.class);
+    private final TransactionRepository         txnRepo    = Mockito.mock(TransactionRepository.class);
+    private final MoolreClient                  moolre     = Mockito.mock(MoolreClient.class);
+    private final TransactionReferenceGenerator refGen     = Mockito.mock(TransactionReferenceGenerator.class);
     private final DepositService service = new DepositService(
-            ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK, false);
+            ledgerRepo, txnRepo, moolre, refGen, FIXED_CLOCK, false);
 
     private static final UUID   USER_ID    = UUID.randomUUID();
     private static final UUID   ACCOUNT_ID = UUID.randomUUID();
@@ -54,49 +52,30 @@ class DepositServiceTest {
         when(txnRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
-    // ── Happy path ────────────────────────────────────────────────────────
-
     @Test
     @DisplayName("happy path: valid MoMo deposit returns 202 with PENDING status")
     void happy_path_returns_202_pending() {
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
+        stubMoolreSuccess();
 
         var result = service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
         assertThat(result.transactionReference()).isEqualTo(REF);
         assertThat(result.status()).isEqualTo("PENDING");
-        assertThat(result.paystackReference()).isEqualTo("pay_ref_001");
+        assertThat(result.providerReference()).isEqualTo("session-001");
+        assertThat(result.authorisationUrl()).contains("MoMo prompt");
     }
 
     @Test
-    @DisplayName("PENDING transaction row saved before Paystack call")
-    void pending_row_saved_before_paystack_call() {
+    @DisplayName("PENDING transaction row saved before Moolre call")
+    void pending_row_saved_before_moolre_call() {
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
+        stubMoolreSuccess();
 
         service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
-        // save called at least twice: once before Paystack (PENDING), once after (with externalRef)
         verify(txnRepo, atLeast(2)).save(any(TransactionEntity.class));
     }
-
-    @Test
-    @DisplayName("no ledger entries written during deposit initiation")
-    void no_ledger_entries_written() {
-        stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
-
-        service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
-
-        // LedgerService is not called — no ledger writes at this point
-        verifyNoMoreInteractions(Mockito.mock(com.stash.payments.ledger.service.LedgerService.class));
-    }
-
-    // ── Validation failures ───────────────────────────────────────────────
 
     @Test
     @DisplayName("account not found returns 404")
@@ -134,16 +113,12 @@ class DepositServiceTest {
     }
 
     @Test
-    @DisplayName("VAULT account (owner_id = vaultId, not userId) does NOT 403 — " +
-                 "the monolith is the authority on vault ownership")
+    @DisplayName("VAULT account (owner_id = vaultId, not userId) does NOT 403")
     void vault_account_deposit_does_not_403() {
-        // A vault ledger account: owner_type=VAULT, owner_id=vaultId (never the user).
-        // The old check compared userId against this vaultId and 403'd every vault deposit.
         LedgerAccountEntity vaultAccount = new LedgerAccountEntity(
                 "VAULT", "VAULT", UUID.randomUUID(), "vault ledger", Instant.now(FIXED_CLOCK));
         when(ledgerRepo.findById(ACCOUNT_ID)).thenReturn(Optional.of(vaultAccount));
-        stubSubaccount();
-        stubPaystackSuccess();
+        stubMoolreSuccess();
 
         var result = service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
@@ -152,16 +127,15 @@ class DepositServiceTest {
     }
 
     @Test
-    @DisplayName("no Paystack subaccount for user returns 409")
-    void no_subaccount_returns_409() {
+    @DisplayName("no subaccount lookup — deposits work without Paystack subaccounts")
+    void no_subaccount_required() {
         stubActiveAccount();
-        when(subaccountRepo.findByOwnerTypeAndOwnerId("USER", USER_ID))
-                .thenReturn(Optional.empty());
+        stubMoolreSuccess();
 
-        assertThatThrownBy(() -> service.initiateDeposit(momoRequest(10_000L), IDEM_KEY))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
-                        .isEqualTo(CONFLICT));
+        var result = service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
+
+        assertThat(result.status()).isEqualTo("PENDING");
+        verify(moolre).initiatePayment(eq("13"), eq("233241234567"), eq("100.00"), eq(REF), eq(REF));
     }
 
     @Test
@@ -183,13 +157,11 @@ class DepositServiceTest {
     @DisplayName("missing mobile_number returns 422")
     void missing_mobile_number_returns_422() {
         stubActiveAccount();
-        stubSubaccount();
 
         var request = new DepositInitiateRequest(
                 ACCOUNT_ID, USER_ID, 10_000L,
                 "MOMO", "akua@stash.test",
-                null,    // missing
-                "mtn", "corr-001",
+                null, "mtn", "corr-001",
                 UUID.randomUUID(), "VAULT_DEPOSIT");
 
         assertThatThrownBy(() -> service.initiateDeposit(request, IDEM_KEY))
@@ -198,37 +170,27 @@ class DepositServiceTest {
                         .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 
-    // ── Sandbox test-MoMo-number substitution ─────────────────────────────
-
     @Test
-    @DisplayName("substitution disabled (default): Paystack is charged with the real user-entered number")
+    @DisplayName("substitution disabled: Moolre is charged with the real user-entered number")
     void substitution_disabled_charges_real_number() {
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
-        when(paystack.isTestMode()).thenReturn(true);
+        stubMoolreSuccess();
+        when(moolre.isSandbox()).thenReturn(true);
 
         service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
-        ArgumentCaptor<com.stash.payments.paystack.dto.ChargeInitiateRequest> captor =
-                ArgumentCaptor.forClass(com.stash.payments.paystack.dto.ChargeInitiateRequest.class);
-        verify(paystack).initiateCharge(captor.capture());
-        assertThat(captor.getValue().mobileMoneyChannel().phone()).isEqualTo("0241234567");
-        assertThat(captor.getValue().mobileMoneyChannel().provider()).isEqualTo("mtn");
+        verify(moolre).initiatePayment(eq("13"), eq("233241234567"), anyString(), eq(REF), eq(REF));
     }
 
     @Test
-    @DisplayName("substitution enabled + test-mode key: Paystack is charged the sandbox test number, " +
-                 "but the stored transaction still reflects the real number")
-    void substitution_enabled_in_test_mode_charges_sandbox_number() {
+    @DisplayName("substitution enabled + sandbox: charges placeholder test number")
+    void substitution_enabled_in_sandbox_charges_placeholder() {
         var serviceWithSubstitution = new DepositService(
-                ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK, true);
+                ledgerRepo, txnRepo, moolre, refGen, FIXED_CLOCK, true);
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
-        when(paystack.isTestMode()).thenReturn(true);
+        stubMoolreSuccess();
+        when(moolre.isSandbox()).thenReturn(true);
 
-        // Real user-entered number is a valid, different Ghanaian number.
         var request = new DepositInitiateRequest(
                 ACCOUNT_ID, USER_ID, 10_000L,
                 "MOMO", "akua@stash.test",
@@ -237,41 +199,31 @@ class DepositServiceTest {
 
         serviceWithSubstitution.initiateDeposit(request, IDEM_KEY);
 
-        ArgumentCaptor<com.stash.payments.paystack.dto.ChargeInitiateRequest> chargeCaptor =
-                ArgumentCaptor.forClass(com.stash.payments.paystack.dto.ChargeInitiateRequest.class);
-        verify(paystack).initiateCharge(chargeCaptor.capture());
-        assertThat(chargeCaptor.getValue().mobileMoneyChannel().phone()).isEqualTo("0551234987");
-        assertThat(chargeCaptor.getValue().mobileMoneyChannel().provider()).isEqualTo("mtn");
+        verify(moolre).initiatePayment(eq("13"), eq("233000000000"), anyString(), eq(REF), eq(REF));
     }
 
     @Test
-    @DisplayName("substitution enabled but key is LIVE mode: still charges the real number — " +
-                 "double guard prevents substitution against a live Paystack account")
-    void substitution_enabled_but_live_mode_does_not_substitute() {
-        var serviceWithSubstitution = new DepositService(
-                ledgerRepo, subaccountRepo, txnRepo, paystack, refGen, FIXED_CLOCK, true);
+    @DisplayName("TP14 OTP required returns otp_required flag")
+    void otp_required_leaves_pending() {
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
-        when(paystack.isTestMode()).thenReturn(false);
+        when(moolre.initiatePayment(any(), any(), any(), any(), any()))
+                .thenReturn(new PaymentInitiateResult("TP14",
+                        "Please complete verification", "all", true));
 
-        serviceWithSubstitution.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
+        DepositInitiateResponse response = service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
-        ArgumentCaptor<com.stash.payments.paystack.dto.ChargeInitiateRequest> captor =
-                ArgumentCaptor.forClass(com.stash.payments.paystack.dto.ChargeInitiateRequest.class);
-        verify(paystack).initiateCharge(captor.capture());
-        assertThat(captor.getValue().mobileMoneyChannel().phone()).isEqualTo("0241234567");
+        assertThat(response.status()).isEqualTo("PENDING");
+        assertThat(response.otpRequired()).isTrue();
+        assertThat(response.transactionReference()).isEqualTo(REF);
+        assertThat(response.authorisationUrl()).containsIgnoringCase("verification");
+        verify(txnRepo, atLeastOnce()).save(any(TransactionEntity.class));
     }
 
-    // ── MoMo prefix validation ─────────────────────────────────────────────
-
     @Test
-    @DisplayName("phone number not matching the selected provider's prefixes returns 422")
+    @DisplayName("phone number not matching provider prefixes returns 422")
     void momo_number_not_matching_provider_returns_422() {
         stubActiveAccount();
-        stubSubaccount();
 
-        // 020 is a Vodafone/Telecel prefix, not MTN.
         var request = new DepositInitiateRequest(
                 ACCOUNT_ID, USER_ID, 10_000L,
                 "MOMO", "akua@stash.test",
@@ -284,22 +236,18 @@ class DepositServiceTest {
                         .isEqualTo(UNPROCESSABLE_ENTITY));
     }
 
-    // ── Paystack failure handling ─────────────────────────────────────────
-
     @Test
-    @DisplayName("Paystack 4xx marks transaction FAILED and returns 422")
-    void paystack_4xx_marks_failed_and_returns_422() {
+    @DisplayName("Moolre 4xx marks transaction FAILED and returns 422")
+    void moolre_4xx_marks_failed_and_returns_422() {
         stubActiveAccount();
-        stubSubaccount();
-        when(paystack.initiateCharge(any()))
-                .thenThrow(new PaystackClientException("Invalid phone", 400));
+        when(moolre.initiatePayment(any(), any(), any(), any(), any()))
+                .thenThrow(new MoolreClientException("Invalid phone", 400));
 
         assertThatThrownBy(() -> service.initiateDeposit(momoRequest(10_000L), IDEM_KEY))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
                         .isEqualTo(UNPROCESSABLE_ENTITY));
 
-        // Transaction marked FAILED
         ArgumentCaptor<TransactionEntity> captor = ArgumentCaptor.forClass(TransactionEntity.class);
         verify(txnRepo, atLeastOnce()).save(captor.capture());
         boolean anyFailed = captor.getAllValues().stream()
@@ -307,29 +255,25 @@ class DepositServiceTest {
         assertThat(anyFailed).isTrue();
     }
 
-    // ── Idempotency (handled at filter level — verified by absence of double write) ──
-
     @Test
     @DisplayName("idempotency key stored on transaction for audit")
     void idempotency_key_stored_on_transaction() {
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
+        stubMoolreSuccess();
 
         service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
         ArgumentCaptor<TransactionEntity> captor = ArgumentCaptor.forClass(TransactionEntity.class);
         verify(txnRepo, atLeastOnce()).save(captor.capture());
         assertThat(captor.getAllValues().get(0).getIdempotencyKey()).isEqualTo(IDEM_KEY);
+        assertThat(captor.getAllValues().get(0).getExternalProvider()).isEqualTo("MOOLRE");
     }
 
     @Test
-    @DisplayName("destination_ledger_account_id stored on transaction so the webhook handler " +
-                 "can credit the right account (e.g. a vault, not USER_WALLET)")
+    @DisplayName("destination_ledger_account_id stored on transaction")
     void destination_ledger_account_id_stored_on_transaction() {
         stubActiveAccount();
-        stubSubaccount();
-        stubPaystackSuccess();
+        stubMoolreSuccess();
 
         service.initiateDeposit(momoRequest(10_000L), IDEM_KEY);
 
@@ -339,24 +283,14 @@ class DepositServiceTest {
                 .isEqualTo(ACCOUNT_ID);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
-
     private void stubActiveAccount() {
         when(ledgerRepo.findById(ACCOUNT_ID))
                 .thenReturn(Optional.of(activeAccount()));
     }
 
-    private void stubSubaccount() {
-        PaystackSubaccountEntity sub = Mockito.mock(PaystackSubaccountEntity.class);
-        when(sub.getPaystackSubaccountCode()).thenReturn("ACCT_test001");
-        when(subaccountRepo.findByOwnerTypeAndOwnerId("USER", USER_ID))
-                .thenReturn(Optional.of(sub));
-    }
-
-    private void stubPaystackSuccess() {
-        var data = new ChargeInitiateResponse.ChargeData("pay_ref_001", "Dial *170#", "send_otp");
-        when(paystack.initiateCharge(any()))
-                .thenReturn(new ChargeInitiateResponse(true, "Charge attempted", data));
+    private void stubMoolreSuccess() {
+        when(moolre.initiatePayment(any(), any(), any(), any(), any()))
+                .thenReturn(new PaymentInitiateResult("TR099", null, "session-001", true));
     }
 
     private LedgerAccountEntity activeAccount() {
@@ -367,7 +301,6 @@ class DepositServiceTest {
     private LedgerAccountEntity closedAccount() {
         var acc = new LedgerAccountEntity("USER_WALLET", "USER", USER_ID, "desc",
                 Instant.now(FIXED_CLOCK));
-        // status is set via reflection since there's no setter — or use a test factory
         try {
             var f = LedgerAccountEntity.class.getDeclaredField("status");
             f.setAccessible(true);

@@ -1,0 +1,1172 @@
+# Moolre Full API Reference
+
+This file contains the full technical specification for Moolre APIs. It is optimized for LLM ingestion.
+
+## Environments & Authentication
+- **Live Environment**: `https://api.moolre.com`
+- **Sandbox Environment**: `https://sandbox.moolre.com`
+> **Note on Sandbox**: When using the Sandbox URL, the `X-API-KEY` and `X-API-PUBKEY` headers are **NOT** required for any endpoint. Only `X-API-USER` must be provided. (SMS/WhatsApp endpoints still require `X-API-VASKEY`).
+
+## Send SMS
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/send
+
+The Send SMS (POST) API allows you to send bulk or single SMS messages to recipients across any network. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Request Body
+- `type` (integer): Required. ID of the sms sending function. Must be 1.
+- `senderid` (string): Required. Your registered and approved Sender ID (max 11 chars).
+- `messages` (array): Required. An array of message objects containing recipient, message, and optional ref.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "SMS01",
+  "message": "Success",
+  "data": null,
+  "go": null
+}
+```
+#### 400 - Unapproved Sender ID
+```json
+{
+  "status": 0,
+  "code": "ASMS07",
+  "message": "Sender ID is not approved, Please login on app.moolre.com and setup your Sender ID.",
+  "data": "senderid",
+  "go": null
+}
+```
+#### 401 - Authentication Error
+```json
+{
+  "status": 0,
+  "code": "AIN01",
+  "message": "Authentication Error",
+  "data": null,
+  "go": null
+}
+```
+
+---
+
+## Send SMS (GET)
+**Method**: GET
+**URL**: https://api.moolre.com/open/sms/send
+
+The Send SMS (GET) API allows you to send SMS instantly using query parameters.
+
+### Headers
+- `X-API-VASKEY` (string): Required. Your unique SMS service VAS Key.
+
+### Query Parameters
+- `type` (integer): Required. Must be 1.
+- `senderid` (string): Required. Registered and approved Sender ID.
+- `recipient` (string): Required. Recipient phone number.
+- `message` (string): Required. Message content (max 160 characters).
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "SMS01",
+  "message": "Success",
+  "data": null,
+  "go": null
+}
+```
+#### 401 - Authentication Error
+```json
+{
+  "status": 0,
+  "code": "AIN01",
+  "message": "Authentication Error",
+  "data": null,
+  "go": null
+}
+```
+
+---
+
+## SMS Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/status
+
+Check the delivery status of sent SMS messages. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Request Body
+- `type` (integer): Required. Must be 5.
+- `ref` (array): Required. Array of message references to check.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "ASMQ10",
+  "message": "SMS Status",
+  "data": [
+    {
+      "ref": "0338954001737166274",
+      "status": 3
+    },
+    {
+      "ref": "uuid--001",
+      "status": 2
+    }
+  ],
+  "go": null
+}
+```
+
+---
+
+## Create Sender ID
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/query
+
+Request a new Sender ID for your SMS campaigns. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Request Body
+- `type` (integer): Required. ID of the sender ID creation function. Must be 3.
+- `senderids` (array): Required. An array of sender ID objects containing senderid (max 11 chars) and optional approve boolean.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "ASMQ12",
+  "message": "Sender IDs Created Successfully.",
+  "data": null,
+  "go": null
+}
+```
+#### 400 - Permission Denied
+```json
+{
+  "status": 0,
+  "code": "ASMQ09",
+  "message": "You do not have permission to approve Sender IDs. Contact Customer Support.",
+  "data": "senderid",
+  "go": null
+}
+```
+
+---
+
+## Sender ID Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/status
+
+Check the approval status of a Sender ID. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Request Body
+- `type` (integer): Required. ID of the sender ID status function. Must be 1.
+- `senderid` (string): Required. Sender ID to check.
+
+### Success Response Examples
+#### 200 (Success) - Success
+```json
+{
+  "status": 1,
+  "code": "ASMQ01",
+  "message": "Sender ID Status",
+  "data": {
+    "senderid": "SmartSMS",
+    "approval": "Approved",
+    "whitelisted": false
+  },
+  "go": null
+}
+```
+#### 200 (Pending) - Pending
+```json
+{
+  "status": 1,
+  "code": "ASMQ01",
+  "message": "Sender ID Status",
+  "data": {
+    "senderid": "Dummy",
+    "approval": "Pending",
+    "whitelisted": false
+  },
+  "go": null
+}
+```
+#### 200 (Rejected) - Rejected
+```json
+{
+  "status": 1,
+  "code": "ASMQ01",
+  "message": "Sender ID Status",
+  "data": {
+    "senderid": "Momo",
+    "approval": "Rejected",
+    "whitelisted": false
+  },
+  "go": null
+}
+```
+
+---
+
+## List Sender IDs
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/status
+
+Retrieve a list of all your registered Sender IDs along with their status. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Request Body
+- `type` (integer): Required. ID of the list sender IDs function. Must be 7.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "ASMQ08",
+  "message": "List of Your Sender IDs.",
+  "data": [
+    {
+      "id": 13,
+      "senderid": "SmartSMS",
+      "approval": "Approved",
+      "whitelisted": false
+    },
+    {
+      "id": 14,
+      "senderid": "Dummy",
+      "approval": "Pending",
+      "whitelisted": false
+    },
+    {
+      "id": 15,
+      "senderid": "Dymmy ID",
+      "approval": "Pending",
+      "whitelisted": false
+    },
+    {
+      "id": 4010,
+      "senderid": "Momo",
+      "approval": "Rejected",
+      "whitelisted": false
+    }
+  ],
+  "go": null
+}
+```
+
+---
+
+## Approve Sender ID
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/status
+
+Approve or reject registered Sender IDs. Note: This API requires X-API-VASKEY in the header for authentication and specific administrative permissions.
+
+
+### Request Body
+- `type` (integer): Required. ID of the approve sender ID function. Must be 6.
+- `senderids` (array): Required. An array of sender ID objects containing senderid and approve (0 = Pending, 1 = Approved, 2 = Rejected).
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "ASMQ07",
+  "message": "Sender IDs updated successfully.",
+  "data": [
+    {
+      "id": "14",
+      "senderid": "Dummy",
+      "approval": "Approved",
+      "whitelisted": false
+    },
+    {
+      "id": "13",
+      "senderid": "SmartSMS",
+      "approval": "Rejected",
+      "whitelisted": false
+    }
+  ],
+  "go": null
+}
+```
+#### 400 - Permission Denied
+```json
+{
+  "status": 0,
+  "code": "ASMQ09",
+  "message": "You do not have permission to update Sender IDs. Contact Customer Support.",
+  "data": "senderid",
+  "go": null
+}
+```
+
+---
+
+## SMS Account Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/sms/status
+
+Check your SMS credit balance. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Request Body
+- `type` (integer): Required. Must be 2.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "ASMQ03",
+  "message": "Account Status",
+  "data": {
+    "balance": 857
+  },
+  "go": null
+}
+```
+
+---
+
+## Get Templates
+**Method**: GET
+**URL**: https://api.moolre.com/open/whatsapp/template
+
+Fetch your approved WhatsApp message templates. Note: This API requires X-API-VASKEY in the header for authentication.
+
+
+### Success Response Examples
+#### 200 (Approved) - Success
+```json
+{
+  "status": 1,
+  "code": "WAS200",
+  "message": "Templates retrieved successfully",
+  "data": [
+    {
+      "id": "1218877297066056",
+      "name": "promotion",
+      "language": "en",
+      "status": "APPROVED",
+      "message": "Hello {{1}},\n\nMelchizedek Technologies would like to share information about our {{2}} designed to support businesses like {{3}}.\n\nIf you would like to learn more or speak with our team, please reply to this message and we will be happy to assist.\n",
+      "placeholders": [
+        "1",
+        "2",
+        "3"
+      ]
+    }
+  ]
+}
+```
+#### 200 (Rejected) - Success
+```json
+{
+  "status": 1,
+  "code": "WAS200",
+  "message": "Templates retrieved successfully",
+  "data": [
+    {
+      "id": "1470051854524583",
+      "name": "whatsapp_test",
+      "language": "en",
+      "status": "REJECTED",
+      "message": "Hello {{1}},\n\nYou are receiving this message from Melchizedek Technologies in response to your request with {{2}}.\n\nIf you need any assistance, please reply to this message and our support team will assist you.\n",
+      "placeholders": [
+        "1",
+        "2"
+      ]
+    }
+  ]
+}
+```
+#### 200 (Pending) - Success
+```json
+{
+  "status": 1,
+  "code": "WAS200",
+  "message": "Templates retrieved successfully",
+  "data": [
+    {
+      "id": "1709192906730643",
+      "name": "update",
+      "language": "en",
+      "status": "PENDING",
+      "message": "Hello {{1}},\n\nThank you for contacting Melchizedek Technologies.\nYour request regarding {{2}} has been received and our team will assist you shortly.\n",
+      "placeholders": [
+        "1",
+        "2"
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Send Message
+**Method**: POST
+**URL**: https://api.moolre.com/open/whatsapp/send
+
+Send batch WhatsApp messages using an approved template name. The unique reference (ref) is optional; however, without it, the message status cannot be tracked.
+
+
+### Request Body
+- `template_name` (string): Required. The name of the approved WhatsApp template.
+- `language` (string): Required. The language code for the template (English only).
+- `messages` (array): Required. An array of message objects containing recipient, optional ref, and placeholders. Note: If ref is omitted, the status cannot be checked later.
+
+### Success Response Examples
+#### 200 (Success) - Success
+```json
+{
+  "status": 1,
+  "code": "WAS200",
+  "message": "suceess",
+  "error": [],
+  "data": []
+}
+```
+#### 200 (Duplicate Refs) - Warning
+```json
+{
+  "status": 1,
+  "code": "WAS200",
+  "error": "Some ref are not unique, corresponding messages will not be sent",
+  "message": "",
+  "data": [
+    {
+      "recipient": "233531419000",
+      "ref": "879883HGU334553GF887799HF20004"
+    },
+    {
+      "recipient": "233531419011",
+      "ref": "879883HGU334553GF887799HF20006"
+    }
+  ]
+}
+```
+#### 401 (Insufficient Balance) - Insufficient Balance
+```json
+{
+  "status": 0,
+  "code": "WAS401",
+  "message": "Insufficient balance to send messages. Please top up your WhatsApp bundle."
+}
+```
+
+---
+
+## Message Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/whatsapp/status
+
+Track the delivery status of your WhatsApp messages using their unique references. Supports batch status checks.
+
+
+### Request Body
+- `ref` (array): Required. An array of unique message references to check.
+
+### Success Response Examples
+#### 200 (Success) - Success
+```json
+{
+  "status": 1,
+  "code": "WAS200",
+  "message": "success",
+  "data": [
+    {
+      "ref": "879883HGUGF45583499HF2089001",
+      "status": "read"
+    },
+    {
+      "ref": "879883HGUGF45583499HF2089005",
+      "status": "accepted"
+    }
+  ]
+}
+```
+
+---
+
+## Create Account
+**Method**: POST
+**URL**: https://api.moolre.com/open/account/create
+
+Create a new business wallet/account.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `accountname` (string): Required. Registered name of the business.
+- `currency` (string): Required. Currency code (e.g., GHS).
+- `api` (boolean): Indicates if the account supports API transactions.
+- `callback` (string): Webhook URL for processing real-time transaction callbacks.
+- `settlement` (object): Optional settlement details (currency, frequency, channel, recipient, sublist).
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": "1",
+  "code": "WC02",
+  "message": [
+    "Wallet Created Successfully",
+    "Your wallet will be reloaded shortly or Click close to refresh now."
+  ],
+  "data": {
+    "status": 1,
+    "accountnumber": "100000157291",
+    "accountname": "My Business LTD",
+    "paymentid": "0757291",
+    "api": 0,
+    "callback": "",
+    "settlement": {},
+    "secret": "cf2a797f-c8d8-470c-a736-6f5f78ae1d86"
+  },
+  "go": [
+    "wallets",
+    "1.57291"
+  ]
+}
+```
+
+---
+
+## Update Account
+**Method**: POST
+**URL**: https://api.moolre.com/open/account/update
+
+Update business wallet/account details and settlement settings.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `accountnumber` (string): Required. The account number you want to update.
+- `accountname` (string): Updated business name.
+- `api` (boolean): Indicates if the account supports API transactions.
+- `callback` (string): Webhook URL for callbacks.
+- `settlement` (object): Settlement details object (currency, frequency, channel, recipient, sublist).
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": "1",
+  "code": "WCU02",
+  "message": "Account Updated Successfully",
+  "data": {
+    "status": 1,
+    "accountnumber": "100000157257",
+    "accountname": "My Business PLC",
+    "paymentid": "0757257",
+    "api": 0,
+    "callback": "https://nocall.com/noend",
+    "settlement": {
+      "currency": "GHS",
+      "frequency": "1",
+      "channel": "1",
+      "recipient": "0246798090",
+      "sublist": "300303"
+    },
+    "secret": "bcec3865-bea1-4a99-8e70-c6a434cac757"
+  },
+  "go": null
+}
+```
+
+---
+
+## Account Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/account/status
+
+Check wallet balance and status.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `accountnumber` (string): Required. Account number to check.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "SW01",
+  "message": "Wallet Found",
+  "data": {
+    "balance": 10.67,
+    "accountname": "Zagey",
+    "callback": "https://moolre.requestcatcher.com/test"
+  },
+  "go": null
+}
+```
+#### 401 - Authentication Error
+```json
+{
+  "status": 0,
+  "code": "AIN04",
+  "message": "Authentication Error, API Access not activated.",
+  "data": "all",
+  "go": null
+}
+```
+
+---
+
+## List Transactions
+**Method**: POST
+**URL**: https://api.moolre.com/open/account/status
+
+Fetch a list of transactions linked with a specific account.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 2.
+- `accountnumber` (string): Required. Your Account Number.
+- `startdate` (string): Start date (YYYY-MM-DD HH:MM:SS).
+- `enddate` (string): End date (YYYY-MM-DD HH:MM:SS).
+- `limit` (string): Max transactions per page.
+- `status` (string): Filter by status (0=Pending, 1=Success, 2=Failed).
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "ST08",
+  "message": "Transactions Found",
+  "data": {
+    "txcount": "1",
+    "transactions": [
+      {
+        "txstatus": 1,
+        "txtype": 1,
+        "accountnumber": "100000100002",
+        "payer": "233551300186",
+        "payee": "Zagey",
+        "amount": "1.00",
+        "value": "1",
+        "transactionid": "34008096",
+        "externalref": "0",
+        "thirdpartyref": "55730796319",
+        "ts": "2025-04-15 12:36:28"
+      }
+    ]
+  },
+  "go": null
+}
+```
+
+---
+
+## Validate Name
+**Method**: POST
+**URL**: https://api.moolre.com/open/transact/validate
+
+Confirm the name of a Mobile Money or Bank Account holder before initiating a transfer.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key (accepts both Public Key and Private Key). *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `receiver` (string): Required. Phone number or bank account number.
+- `channel` (string): Required. 1=MTN, 6=Telecel, 7=AT, 2=Instant Bank Transfer.
+- `sublistid` (string): Bank ID if channel is Bank Transfer.
+- `currency` (string): Required. Currency code (e.g., GHS).
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "AVD01",
+  "message": "Successful",
+  "data": "BRIGHT BUAME",
+  "go": null
+}
+```
+#### 400 - Not Found
+```json
+{
+  "status": 0,
+  "code": "AVD02",
+  "message": "Phone No. not found",
+  "data": "Phone No. not found",
+  "go": null
+}
+```
+
+---
+
+## Initiate Transfer
+**Method**: POST
+**URL**: https://api.moolre.com/open/transact/transfer
+
+Send money to a Mobile Money or Bank Account instantly.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key (Private Key only). *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `channel` (string): Required. 1=MTN, 6=Telecel, 7=AT, 2=Instant Bank Transfer.
+- `currency` (string): Required. Currency code (e.g., GHS).
+- `amount` (string): Required. Amount to transfer.
+- `receiver` (string): Required. Recipient phone or account number.
+- `sublistid` (string): Bank ID if channel is Bank Transfer.
+- `externalref` (string): Required. Unique reference for the transfer.
+- `reference` (string): Optional message/reference.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": "1",
+  "code": "OBGH01",
+  "message": [
+    "Pay out Successful",
+    "Click close to view transactions."
+  ],
+  "data": {
+    "txstatus": 1,
+    "receiver": "0246798993",
+    "transactionid": "32759150",
+    "externalref": "28171451",
+    "thirdpartyref": "901733241086",
+    "receivername": "YUSIF YA-ADZAGEY",
+    "amount": "1",
+    "amountfee": "1.01",
+    "networkfee": "0.00",
+    "fee": "0.01"
+  },
+  "go": null
+}
+```
+
+---
+
+## Transfer Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/transact/status
+
+Check the final status of a previously initiated transfer.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your API Key (accepts both Public Key and Private Key). *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `idtype` (string): Required. 1 = Unique externalref, 2 = Moolre Generated ID.
+- `id` (string): Required. The reference ID to check.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "SS01",
+  "message": "Transaction Successful",
+  "data": {
+    "txstatus": 1,
+    "txtype": 2,
+    "accountnumber": "100000100002",
+    "payer": "",
+    "payee": "0246798993",
+    "amount": "5",
+    "value": "5",
+    "transactionid": "31830714",
+    "externalref": "1231231-12985",
+    "thirdpartyref": "141704447750",
+    "ts": "2024-01-05 09:42:33"
+  },
+  "go": null
+}
+```
+
+---
+
+## Initiate Payment
+**Method**: POST
+**URL**: https://api.moolre.com/open/transact/payment
+
+Send a USSD payment request to a payer's phone number for approval.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your Private API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `channel` (string): Required. 13=MTN, 6=Telecel, 7=AT.
+- `currency` (string): Required. Currency code (e.g., GHS).
+- `payer` (string): Required. Customer's phone number.
+- `amount` (string): Required. Amount to collect.
+- `externalref` (string): Required. Unique reference for the payment.
+- `otpcode` (string): OTP code if required by the flow.
+- `reference` (string): Optional payment reference.
+- `sessionid` (string): USSD session ID if applicable.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 (OTP Required) - OTP Required
+```json
+{
+  "status": 1,
+  "code": "TP14",
+  "message": "Please complete the verification process sent to you via SMS and try again.",
+  "data": "all",
+  "go": null
+}
+```
+#### 200 (Payment Request) - Success
+```json
+{
+  "status": 1,
+  "code": "TR099",
+  "message": null,
+  "data": "f25fc80e-791b-495b-8799-dcf87660457d",
+  "go": null
+}
+```
+#### 400 - Duplicate Reference
+```json
+{
+  "status": "0",
+  "code": "TP13",
+  "message": "External Reference is required and must be unique.",
+  "data": "externalref",
+  "go": null
+}
+```
+
+---
+
+## Internal Transfer
+**Method**: POST
+**URL**: https://api.moolre.com/open/transact/internal
+
+Initiate an internal transfer using your Moolre account.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-KEY` (string): Required. Your Private API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `currency` (string): Required. Currency code (e.g., GHS).
+- `amount` (string): Required. Amount to transfer.
+- `receiver` (string): Required. Receiver account or wallet number.
+- `externalref` (string): Required. Unique reference for the transfer.
+- `reference` (string): Optional narration or reference text.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 (OTP Required) - OTP Required
+```json
+{
+  "status": 1,
+  "code": "TP14",
+  "message": "Please complete the verification process sent to you via SMS and try again.",
+  "data": "all",
+  "go": null
+}
+```
+#### 200 (Payment Request) - Success
+```json
+{
+  "status": 1,
+  "code": "TR099",
+  "message": null,
+  "data": "f25fc80e-791b-495b-8799-dcf87660457d",
+  "go": null
+}
+```
+#### 400 - Duplicate Reference
+```json
+{
+  "status": "0",
+  "code": "TP13",
+  "message": "External Reference is required and must be unique.",
+  "data": "externalref",
+  "go": null
+}
+```
+
+---
+
+## Create Payment ID
+**Method**: POST
+**URL**: https://api.moolre.com/open/account/create
+
+Generate a unique permanent payment ID for use in making payments. Customers can make payments by dialing *203*paymentid#.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-PUBKEY` (string): Required. Your Public API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. ID of the function. Must be 2.
+- `phone` (string): Required. Phone number of the customer (e.g., +233267606822).
+- `name` (string): Required. Name of the Customer or a Unique ID.
+- `currency` (string): Required. Currency of your account/wallet.
+- `externalref` (string): Unique ID to identify the request.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "AD14",
+  "message": "Terminal Creation Successful",
+  "data": {
+    "paymentid": "08160984",
+    "name": "Kofi Adeniyi",
+    "qrcode": null
+  },
+  "go": null
+}
+```
+
+---
+
+## Create Bank Account Number
+**Method**: POST
+**URL**: https://api.moolre.com/open/account/create
+
+Generate a permanent virtual bank account number linked to your wallet/account for secure payments.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-PUBKEY` (string): Required. Your Public API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 9.
+- `currency` (string): Required. Currency code (e.g., GHS).
+- `amount` (number): Optional initial amount.
+- `firstname` (string): Required. First name of the account holder.
+- `lastname` (string): Required. Last name of the account holder.
+- `phone` (string): Required. Phone number of the account holder.
+- `email` (string): Required. Email address of the account holder.
+- `uref` (string): Required. Unique request reference.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "AD19",
+  "message": "Account No. Creation Successful",
+  "data": {
+    "accountno": "0014730001001",
+    "accountname": "Kofi Adeniyi3 MoolrePay",
+    "bankname": "First Atlantic Bank",
+    "uref": "uref001"
+  },
+  "go": null
+}
+```
+#### 400 (Duplicate Name) - Failed
+```json
+{
+  "status": 0,
+  "code": "AD32",
+  "message": "Account No. Creation Failed",
+  "data": "all",
+  "go": null
+}
+```
+
+---
+
+## Generate Payment Link
+**Method**: POST
+**URL**: https://api.moolre.com/embed/link
+
+Create a hosted payment page URL. The Payment link system is used to generate a URL that opens a Moolre Web POS page for collecting payments.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-PUBKEY` (string): Required. Your Public API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `amount` (string): Required. Amount to be paid.
+- `email` (string): Required. Email of the business.
+- `externalref` (string): Required. Unique ID to identify the payment.
+- `callback` (string): Callback URL for payment notifications.
+- `redirect` (string): Redirect URL after successful payment.
+- `reusable` (string): Required. Determines if the link can be used for repeat payments. 0=No, 1=Yes.
+- `expiration_time` (integer): Link expiry time in minutes. Minimum 1 minute.
+- `currency` (string): Required. Currency of your account/wallet.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+- `metadata` (object): Optional metadata to be returned in callbacks.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "POS09",
+  "message": "POS payment link successfully generated.",
+  "data": {
+    "authorization_url": "https://pos.moolre.com/RZWs1yB6amGjNoiEQvlHPS5uqgp3Jc",
+    "reference": "uuid-1234as2"
+  }
+}
+```
+#### 400 - Duplicate Transaction
+```json
+{
+  "status": 0,
+  "code": "INP02",
+  "message": "Transaction already exits!",
+  "data": []
+}
+```
+
+---
+
+## Payment Status
+**Method**: POST
+**URL**: https://api.moolre.com/open/transact/status
+
+Check the final status of a previously initiated payment collection.
+
+### Headers
+- `X-API-USER` (string): Required. Your Moolre username.
+- `X-API-PUBKEY` (string): Required. Your Public API Key. *(Note: Not required in Sandbox environment)*
+
+### Request Body
+- `type` (integer): Required. Must be 1.
+- `idtype` (string): Required. 1 = Unique externalref, 2 = Moolre Generated ID.
+- `id` (string): Required. The reference ID to check.
+- `accountnumber` (string): Required. Your Moolre Account Number.
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "SS01",
+  "message": "Transaction Successful",
+  "data": {
+    "txstatus": 1,
+    "txtype": 2,
+    "accountnumber": "100000100002",
+    "payer": "",
+    "payee": "0209151872",
+    "amount": "1",
+    "value": "1",
+    "transactionid": "31772290",
+    "externalref": "1231231-128",
+    "thirdpartyref": "471700539041",
+    "ts": "2023-11-21 03:57:25"
+  },
+  "go": null
+}
+```
+
+---
+
+## Miscellaneous Data
+**Method**: GET
+**URL**: https://api.moolre.com/open/transact/data
+
+Fetch real-time system data such as supported banks, mobile money channels, and other configuration data.
+
+
+### Query Parameters
+- `country` (string): Required. Country code (e.g., gha).
+- `data` (string): Required. Type of data to fetch (e.g., banks).
+
+### Success Response Examples
+#### 200 - Success
+```json
+{
+  "status": 1,
+  "code": "SD01",
+  "message": "Banks Found",
+  "data": [
+    {
+      "name": "ABSA BANK GHANA LTD",
+      "code": "030100"
+    },
+    {
+      "name": "ACCESS BANK GHANA LTD",
+      "code": "030402"
+    },
+    {
+      "name": "ADB BANK GHANA LTD",
+      "code": "030301"
+    }
+  ],
+  "go": null
+}
+```
+
+---
+
+## Payment Webhook
+**Method**: POST
+**URL**: {{YOUR_CALLBACK_URL}}
+
+Moolre sends real-time HTTP POST notifications (callbacks) to your server when a payment is received or its status changes.
+
+
+### Request Body
+- `status` (integer): Required. 1 for success
+- `code` (string): Required. P01
+- `message` (string): Required. Transaction Successful
+- `data` (object): Required. The transaction details
+
+### Success Response Examples
+
+---
+
+## USSD Integration
+**Method**: USSD
+**URL**: *203#
+
+Our USSD integration allows your customers to make payments, check balances, and perform other actions using standard USSD codes.
+
+
+### Success Response Examples
+
+---
+

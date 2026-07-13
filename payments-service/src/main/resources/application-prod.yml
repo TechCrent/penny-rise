@@ -9,6 +9,9 @@ springdoc:
   swagger-ui:
     enabled: false
 
+moolre:
+  sandbox: false
+
 stash:
   paystack:
     sandbox:
@@ -17,4 +20,8 @@ stash:
       simulate-blocked-transfers: false
       # Defense-in-depth: this must always be false in production, regardless of the
       # base application.yml default or any stray env var. See DepositService.
+      substitute-test-momo-number: false
+  moolre:
+    sandbox:
+      # Defense-in-depth: must always be false in production.
       substitute-test-momo-number: false

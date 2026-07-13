@@ -129,11 +129,23 @@ paystack:
     multiplier: 2.0
     max-interval-ms: 4000
 
+moolre:
+  base-url: ${MOOLRE_BASE_URL:https://sandbox.moolre.com}
+  api-user: ${MOOLRE_API_USER:}
+  api-key: ${MOOLRE_API_KEY:}
+  api-pubkey: ${MOOLRE_API_PUBKEY:}
+  account-number: ${MOOLRE_ACCOUNT_NUMBER:}
+  webhook-secret: ${MOOLRE_WEBHOOK_SECRET:}
+  timeout-seconds: 30
+  sandbox: ${MOOLRE_SANDBOX:true}
+
 stash:
   internal:
     service-token: ${INTERNAL_SERVICE_TOKEN}
   ledger:
     paystack-settlement-account-id: ${PAYSTACK_SETTLEMENT_ACCOUNT_ID}
+    # 0004 — 0001=PAYSTACK_SETTLEMENT, 0002=FEE_REVENUE, 0003=PENALTY_REVENUE
+    moolre-settlement-account-id: ${MOOLRE_SETTLEMENT_ACCOUNT_ID:00000000-0000-0000-0000-000000000004}
   paystack:
     sandbox:
       # DEV/SANDBOX ONLY — never set true in any deployed environment. When enabled,
@@ -157,6 +169,14 @@ stash:
       # delivery — it only kicks in when one is missed, delayed, or never had a
       # reachable callback URL to land on (e.g. local dev with no public tunnel).
       pending-threshold-seconds: ${PAYSTACK_RECONCILIATION_PENDING_THRESHOLD_SECONDS:60}
+  moolre:
+    sandbox:
+      # DEV/SANDBOX ONLY — never set true in any deployed environment. When enabled
+      # (AND moolre.sandbox=true), deposits may substitute a known Moolre sandbox
+      # test MoMo number for the user-entered one. See DepositService when wired.
+      substitute-test-momo-number: ${MOOLRE_SANDBOX_SUBSTITUTE_TEST_MOMO_NUMBER:false}
+    reconciliation:
+      pending-threshold-seconds: ${MOOLRE_RECONCILIATION_PENDING_THRESHOLD_SECONDS:60}
 
 resilience4j:
   circuitbreaker:
@@ -185,6 +205,14 @@ resilience4j:
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
         register-health-indicator: true
+      moolre:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
   retry:
     instances:
       paystack-idempotent:
@@ -195,3 +223,11 @@ resilience4j:
         retry-exceptions:
           - java.util.concurrent.TimeoutException
           - com.stash.payments.paystack.exception.PaystackServerException
+      moolre-idempotent:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - java.util.concurrent.TimeoutException
+          - com.stash.payments.moolre.exception.MoolreServerException

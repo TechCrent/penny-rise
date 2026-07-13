@@ -102,6 +102,7 @@ public class AccountBalanceService {
         // SYSTEM accounts: never visible to user callers
         if ("SYSTEM".equals(account.getOwnerType())
                 || type.equals("PAYSTACK_SETTLEMENT")
+                || type.equals("MOOLRE_SETTLEMENT")
                 || type.equals("FEE_REVENUE")
                 || type.equals("PENALTY_REVENUE")) {
             throw notFound(accountId, caller, "system account hidden from user callers");

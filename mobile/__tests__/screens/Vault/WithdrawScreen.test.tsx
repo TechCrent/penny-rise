@@ -54,7 +54,7 @@ beforeEach(() => {
   useVaultWithdrawal.mockReturnValue({ mutateAsync: mockMutateAsync, isPending: false });
   mockMutateAsync.mockResolvedValue({
     transaction_reference: 'STSH-202606-WD001',
-    paystack_transfer_code: 'TRF_test001',
+    provider_transfer_code: 'TRF_test001',
     status: 'PENDING',
   });
 });
@@ -190,7 +190,7 @@ test('idempotency key stays the same across retries', async () => {
     )
     .mockResolvedValue({
       transaction_reference: 'STSH-202606-WD002',
-      paystack_transfer_code: 'TRF_002',
+      provider_transfer_code: 'TRF_002',
       status: 'PENDING',
     });
 

@@ -165,6 +165,15 @@ stash:
     from-name: ${STASH_EMAIL_FROM_NAME:Stash}
     resend-api-key: ${RESEND_API_KEY:}
     base-url: ${STASH_BASE_URL:http://localhost:8080}
+  sms:
+    # noop (default) is safe for local/dev — no outbound SMS.
+    # Set SMS_PROVIDER=moolre in staging/prod when VAS key is configured.
+    provider: ${SMS_PROVIDER:noop}
+  moolre:
+    sms:
+      base-url: ${MOOLRE_BASE_URL:https://sandbox.moolre.com}
+      vas-key: ${MOOLRE_VAS_KEY:}
+      sender-id: ${MOOLRE_SENDER_ID:PennyRise}
   admin:
     jwt:
       # Admin JWT access-token TTL. ISO-8601 duration. Default is 8 hours for

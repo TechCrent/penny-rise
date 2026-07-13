@@ -8,6 +8,7 @@ jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn().mockResolvedValue({ type: 'dismiss' }),
 }));
 jest.mock('../../../src/api/hooks/useVaultDeposit');
+jest.mock('../../../src/api/hooks/useWalletDeposit');
 jest.mock('../../../src/api/hooks/useVaultDetail');
 jest.mock('../../../src/api/hooks/useTransactionPoll');
 jest.mock('../../../src/hooks/useAuth', () => ({
@@ -18,11 +19,16 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({ params: { vaultId: 'vault-001' } }),
 }));
 
-const { useVaultDeposit } = require('../../../src/api/hooks/useVaultDeposit');
+const { useVaultDeposit, useVaultDepositOtp } = require('../../../src/api/hooks/useVaultDeposit');
+const {
+  useWalletDeposit,
+  useWalletDepositOtp,
+} = require('../../../src/api/hooks/useWalletDeposit');
 const { useVaultDetail } = require('../../../src/api/hooks/useVaultDetail');
 const { useTransactionPoll } = require('../../../src/api/hooks/useTransactionPoll');
 
 const mockMutateAsync = jest.fn();
+const mockOtpMutateAsync = jest.fn();
 const mockVault = {
   id: 'vault-001',
   name: 'Emergency Fund',
@@ -50,12 +56,23 @@ beforeEach(() => {
   jest.clearAllMocks();
   useVaultDetail.mockReturnValue({ data: mockVault });
   useVaultDeposit.mockReturnValue({ mutateAsync: mockMutateAsync, isPending: false });
+  useVaultDepositOtp.mockReturnValue({ mutateAsync: mockOtpMutateAsync, isPending: false });
+  useWalletDeposit.mockReturnValue({ mutateAsync: jest.fn(), isPending: false });
+  useWalletDepositOtp.mockReturnValue({ mutateAsync: jest.fn(), isPending: false });
   useTransactionPoll.mockReturnValue({ data: null });
   mockMutateAsync.mockResolvedValue({
     transaction_reference: 'STSH-202606-DEP001',
     authorisation_url: null,
-    paystack_reference: 'pay_ref_001',
+    provider_reference: 'pay_ref_001',
     status: 'PENDING',
+    otp_required: false,
+  });
+  mockOtpMutateAsync.mockResolvedValue({
+    transaction_reference: 'STSH-202606-DEP001',
+    authorisation_url: null,
+    provider_reference: 'pay_ref_001',
+    status: 'PENDING',
+    otp_required: false,
   });
 });
 
@@ -162,33 +179,35 @@ test('confirm button calls deposit mutation with correct pesewas', async () => {
 // ── Idempotency key stability ──────────────────────────────────────────────
 
 test('idempotency key stays the same across retries', async () => {
-  mockMutateAsync
-    .mockRejectedValueOnce(
-      new axios.AxiosError('Service Unavailable', '503', undefined, undefined, {
-        status: 503,
-        data: { error: { code: 'SERVICE_UNAVAILABLE', message: 'Retry.' } },
-      } as AxiosResponse),
-    )
-    .mockResolvedValue({
-      transaction_reference: 'STSH-202606-DEP002',
-      authorisation_url: null,
-      paystack_reference: 'r',
-      status: 'PENDING',
-    });
+  const err503 = new axios.AxiosError('Service Unavailable', '503', undefined, undefined, {
+    status: 503,
+    data: { error: { code: 'SERVICE_UNAVAILABLE', message: 'Retry.' } },
+  } as AxiosResponse);
+
+  mockMutateAsync.mockRejectedValue(err503);
 
   await advanceToConfirm();
-  fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
-  await waitFor(() =>
-    expect(
-      screen.getByText(
-        'Payment service is unavailable. Make sure the payments service is running on port 8081.',
-      ),
-    ).toBeTruthy(),
-  );
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
+  });
+
+  await waitFor(() => {
+    expect(screen.getByText(/Payment service is unavailable/)).toBeTruthy();
+  });
 
   const key1 = mockMutateAsync.mock.calls[0][0].idempotencyKey;
 
-  fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
+  mockMutateAsync.mockResolvedValue({
+    transaction_reference: 'STSH-202606-DEP002',
+    authorisation_url: null,
+    provider_reference: 'r',
+    status: 'PENDING',
+    otp_required: false,
+  });
+
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
+  });
   await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(2));
 
   const key2 = mockMutateAsync.mock.calls[1][0].idempotencyKey;
@@ -310,4 +329,28 @@ test('server error displayed inline on confirm screen', async () => {
     expect(screen.getByText(/don't have permission/)).toBeTruthy();
   });
   expect(screen.getByText('Confirm deposit')).toBeTruthy();
+});
+
+// ── OTP phase ──────────────────────────────────────────────────────────────
+
+test('otp_required true shows verification code input', async () => {
+  mockMutateAsync.mockResolvedValue({
+    transaction_reference: 'STSH-202606-DEP001',
+    authorisation_url: null,
+    provider_reference: 'pay_ref_001',
+    status: 'PENDING',
+    otp_required: true,
+  });
+
+  await advanceToConfirm();
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: /Confirm deposit/ }));
+  });
+
+  await waitFor(() => {
+    expect(screen.getByText('Enter verification code')).toBeTruthy();
+    expect(screen.getByLabelText('Verification code')).toBeTruthy();
+    expect(screen.getByText('Verify and continue')).toBeTruthy();
+  });
+  expect(mockOtpMutateAsync).not.toHaveBeenCalled();
 });

@@ -2,6 +2,9 @@ spring:
   jpa:
     show-sql: true
 
+moolre:
+  sandbox: true
+
 stash:
   paystack:
     sandbox:
@@ -11,3 +14,8 @@ stash:
       # feature exists precisely for this — it was just never turned on for the
       # local profile, so deposit testing against a real local stack always 422s.
       substitute-test-momo-number: true
+  moolre:
+    sandbox:
+      # Keep false until Moolre publishes a known sandbox test MoMo number.
+      # Enabling with the placeholder 0000000000 produces invalid payer 233000000000.
+      substitute-test-momo-number: false

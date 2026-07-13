@@ -42,7 +42,6 @@ class ChargeSuccessHandlerTest {
     private static final UUID   VAULT_LEDGER_ACCOUNT_ID = UUID.randomUUID();
     private static final UUID   SETTLEMENT_ID           = UUID.randomUUID();
     private static final UUID   LEDGER_TXN_ID           = UUID.randomUUID();
-    private static final String PAYSTACK_REF            = "pay_ref_001";
     private static final String INTERNAL_REF            = "STSH-202606-DEP001";
     private static final String CORR                    = "corr-webhook-001";
 
@@ -57,13 +56,11 @@ class ChargeSuccessHandlerTest {
         when(outbox.publish(any(), any())).thenReturn(null);
     }
 
-    // ── The bug fix: vault deposits credit the vault, not USER_WALLET ──────
-
     @Test
     @DisplayName("vault deposit credits the vault's ledger account, not USER_WALLET")
     void vault_deposit_credits_vault_account() {
         TransactionEntity txn = pendingDepositTo(VAULT_LEDGER_ACCOUNT_ID);
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
         when(accountRepo.findById(VAULT_LEDGER_ACCOUNT_ID))
                 .thenReturn(Optional.of(vaultAccount(VAULT_LEDGER_ACCOUNT_ID)));
 
@@ -76,10 +73,10 @@ class ChargeSuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("direct USER_WALLET deposit credits the wallet (unchanged behaviour)")
+    @DisplayName("direct USER_WALLET deposit credits the wallet")
     void direct_wallet_deposit_credits_wallet() {
         TransactionEntity txn = pendingDepositTo(USER_WALLET_ID);
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
         when(accountRepo.findById(USER_WALLET_ID))
                 .thenReturn(Optional.of(walletAccount()));
 
@@ -92,10 +89,10 @@ class ChargeSuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("outbox DepositCompletedEvent carries the actual credited account, not USER_WALLET")
+    @DisplayName("outbox DepositCompletedEvent carries the actual credited account")
     void outbox_event_carries_credited_account() {
         TransactionEntity txn = pendingDepositTo(VAULT_LEDGER_ACCOUNT_ID);
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
         when(accountRepo.findById(VAULT_LEDGER_ACCOUNT_ID))
                 .thenReturn(Optional.of(vaultAccount(VAULT_LEDGER_ACCOUNT_ID)));
 
@@ -107,13 +104,11 @@ class ChargeSuccessHandlerTest {
         assertThat(event.ledgerAccountId()).isEqualTo(VAULT_LEDGER_ACCOUNT_ID);
     }
 
-    // ── Legacy fallback (pre-V3 rows with no destination stored) ───────────
-
     @Test
     @DisplayName("null destination_ledger_account_id falls back to resolving USER_WALLET")
     void null_destination_falls_back_to_user_wallet() {
         TransactionEntity txn = pendingDepositTo(null);
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
         when(accountRepo.findByOwnerTypeAndOwnerIdAndAccountType("USER", USER_ID, "USER_WALLET"))
                 .thenReturn(Optional.of(walletAccount()));
         when(accountRepo.findById(USER_WALLET_ID))
@@ -130,7 +125,7 @@ class ChargeSuccessHandlerTest {
     @DisplayName("null destination with no USER_WALLET on record throws")
     void null_destination_no_wallet_throws() {
         TransactionEntity txn = pendingDepositTo(null);
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
         when(accountRepo.findByOwnerTypeAndOwnerIdAndAccountType("USER", USER_ID, "USER_WALLET"))
                 .thenReturn(Optional.empty());
 
@@ -139,12 +134,11 @@ class ChargeSuccessHandlerTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
-    // ── Idempotency / unknown reference ─────────────────────────────────────
-
     @Test
-    @DisplayName("unknown Paystack reference returns null without writing anything")
+    @DisplayName("unknown reference returns null without writing anything")
     void unknown_reference_returns_null() {
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.empty());
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.empty());
+        when(txnRepo.findByExternalReference(INTERNAL_REF)).thenReturn(Optional.empty());
 
         UUID result = handler.handle(chargeSuccessPayload(), CORR);
 
@@ -153,11 +147,11 @@ class ChargeSuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("already-COMPLETED transaction is a no-op (duplicate webhook delivery)")
+    @DisplayName("already-COMPLETED transaction is a no-op")
     void already_completed_is_noop() {
         TransactionEntity txn = pendingDepositTo(VAULT_LEDGER_ACCOUNT_ID);
         txn.markCompleted(LEDGER_TXN_ID, Instant.now(FIXED_CLOCK));
-        when(txnRepo.findByExternalReference(PAYSTACK_REF)).thenReturn(Optional.of(txn));
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
 
         UUID result = handler.handle(chargeSuccessPayload(), CORR);
 
@@ -165,13 +159,26 @@ class ChargeSuccessHandlerTest {
         verifyNoInteractions(ledgerService, outbox);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    @Test
+    @DisplayName("GHS amount string is converted to pesewas")
+    void ghs_amount_converted_to_pesewas() {
+        TransactionEntity txn = pendingDepositTo(USER_WALLET_ID);
+        when(txnRepo.findByReference(INTERNAL_REF)).thenReturn(Optional.of(txn));
+        when(accountRepo.findById(USER_WALLET_ID))
+                .thenReturn(Optional.of(walletAccount()));
+
+        handler.handle(Map.of("externalref", INTERNAL_REF, "amount", "100.00"), CORR);
+
+        ArgumentCaptor<LedgerWriteCommand> captor = ArgumentCaptor.forClass(LedgerWriteCommand.class);
+        verify(ledgerService).writeTransaction(captor.capture());
+        assertThat(captor.getValue().entries().get(0).amount()).isEqualTo(10_000L);
+    }
 
     private TransactionEntity pendingDepositTo(UUID destinationLedgerAccountId) {
         TransactionEntity txn = TransactionEntity.pendingDeposit(
                 INTERNAL_REF, USER_ID, 10_000L, destinationLedgerAccountId,
                 CORR, "idem-001", Instant.now(FIXED_CLOCK));
-        txn.setExternalReference(PAYSTACK_REF);
+        txn.setExternalReference("session-001");
         return txn;
     }
 
@@ -202,6 +209,6 @@ class ChargeSuccessHandlerTest {
     }
 
     private Map<String, Object> chargeSuccessPayload() {
-        return Map.of("reference", PAYSTACK_REF, "amount", 10_000);
+        return Map.of("externalref", INTERNAL_REF, "amount", "100.00");
     }
 }

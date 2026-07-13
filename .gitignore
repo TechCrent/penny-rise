@@ -61,3 +61,8 @@ git-account-tokens
 sw.ps1
 sw.sh
 f1.md
+
+# Local Moolre smoke-test boot artifacts
+payments-moolre-boot.*.log
+payments-moolre-pid.txt
+

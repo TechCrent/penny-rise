@@ -20,6 +20,9 @@ public class DepositCompletedTemplate implements NotificationTemplate {
     public boolean requiresEmail() { return true; }
 
     @Override
+    public boolean requiresSms() { return true; }
+
+    @Override
     public RenderedNotification render(JsonNode payload) {
         long amountPesewas = payload.get("amount").asLong();
         String cedis = String.format("%.2f", amountPesewas / 100.0);

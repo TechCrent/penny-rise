@@ -1,6 +1,7 @@
 package com.stash.platform.user.api;
 
 import com.stash.platform.user.service.WalletDepositService;
+import com.stash.platform.vault.api.dto.DepositOtpCompleteRequest;
 import com.stash.platform.vault.api.dto.VaultDepositRequest;
 import com.stash.platform.vault.api.dto.VaultDepositResponse;
 import jakarta.validation.Valid;
@@ -32,6 +33,23 @@ public class WalletDepositController {
                 userId,
                 request,
                 correlationId != null ? correlationId : "wallet-deposit-" + UUID.randomUUID(),
+                idempotencyKey);
+    }
+
+    @PostMapping("/deposits/{transactionReference}/otp")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public VaultDepositResponse completeDepositOtp(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable String transactionReference,
+            @Valid @RequestBody DepositOtpCompleteRequest request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId) {
+
+        return walletDepositService.completeDepositOtp(
+                userId,
+                transactionReference,
+                request,
+                correlationId != null ? correlationId : "wallet-deposit-otp-" + UUID.randomUUID(),
                 idempotencyKey);
     }
 }

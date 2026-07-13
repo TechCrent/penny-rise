@@ -1,6 +1,7 @@
 package com.stash.platform.vault.api;
 
 import com.stash.platform.vault.api.dto.CreateVaultRequest;
+import com.stash.platform.vault.api.dto.DepositOtpCompleteRequest;
 import com.stash.platform.vault.api.dto.VaultDepositRequest;
 import com.stash.platform.vault.api.dto.VaultDepositResponse;
 import com.stash.platform.vault.api.dto.VaultListResponse;
@@ -90,6 +91,23 @@ public class VaultController {
         return depositService.initiateDeposit(
                 vaultId, userId, request,
                 correlationId != null ? correlationId : "vault-deposit-" + UUID.randomUUID(),
+                idempotencyKey);
+    }
+
+    @PostMapping("/{vaultId}/deposits/{transactionReference}/otp")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public VaultDepositResponse completeDepositOtp(
+            @PathVariable UUID vaultId,
+            @PathVariable String transactionReference,
+            @Valid @RequestBody DepositOtpCompleteRequest request,
+            @AuthenticationPrincipal UUID userId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestHeader(value = "X-Correlation-Id", required = false)
+            String correlationId) {
+
+        return depositService.completeDepositOtp(
+                vaultId, userId, transactionReference, request,
+                correlationId != null ? correlationId : "vault-deposit-otp-" + UUID.randomUUID(),
                 idempotencyKey);
     }
 

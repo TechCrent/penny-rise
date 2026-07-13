@@ -3,13 +3,15 @@ package com.stash.payments.transaction.service;
 import com.stash.payments.ledger.domain.LedgerAccountEntity;
 import com.stash.payments.ledger.repository.LedgerAccountRepository;
 import com.stash.payments.ledger.service.TransactionReferenceGenerator;
-import com.stash.payments.paystack.client.PaystackClient;
-import com.stash.payments.paystack.dto.ChargeInitiateRequest;
-import com.stash.payments.paystack.dto.ChargeInitiateResponse;
-import com.stash.payments.paystack.exception.PaystackClientException;
-import com.stash.payments.paystack.repository.PaystackSubaccountRepository;
+import com.stash.payments.moolre.amount.MoolreAmountConverter;
+import com.stash.payments.moolre.channel.MoolreChannelMapper;
+import com.stash.payments.moolre.client.MoolreClient;
+import com.stash.payments.moolre.dto.PaymentInitiateResult;
+import com.stash.payments.moolre.exception.MoolreClientException;
+import com.stash.payments.moolre.phone.MomoPhoneFormatter;
 import com.stash.payments.transaction.api.dto.DepositInitiateRequest;
 import com.stash.payments.transaction.api.dto.DepositInitiateResponse;
+import com.stash.payments.transaction.api.dto.DepositOtpRequest;
 import com.stash.payments.transaction.domain.TransactionEntity;
 import com.stash.payments.transaction.repository.TransactionRepository;
 import com.stash.payments.transaction.validation.MomoNumberValidator;
@@ -25,31 +27,29 @@ import java.time.Clock;
 import java.time.Instant;
 
 /**
- * Initiates a deposit against a ledger account.
+ * Initiates a deposit against a ledger account via Moolre MoMo collection.
  *
  * <p><strong>What this service does:</strong>
  * <ol>
  *   <li>Validates the ledger account exists and is ACTIVE.</li>
- *   <li>Resolves the Paystack subaccount code for the account.</li>
  *   <li>Generates a transaction reference (STSH-yyyymm-XXXXXX).</li>
  *   <li>Creates a PENDING {@code transaction.transactions} row.</li>
- *   <li>Calls Paystack charge initialisation.</li>
- *   <li>Stores the Paystack reference on the PENDING row and commits.</li>
- *   <li>Returns 202 with the authorisation URL.</li>
+ *   <li>Calls Moolre payment initiation (single merchant account).</li>
+ *   <li>Stores the Moolre session id on the PENDING row and commits.</li>
+ *   <li>Returns 202 with MoMo-prompt display text.</li>
  * </ol>
  *
  * <p><strong>What this service does NOT do:</strong>
  * <ul>
  *   <li>Post ledger entries — that happens in the webhook handler when
- *       Paystack confirms payment.</li>
+ *       Moolre confirms payment.</li>
  *   <li>Create a {@code ledger_transactions} row — also the webhook handler.</li>
  * </ul>
  *
- * <p><strong>Paystack call not retried:</strong> {@code initiateCharge} is
- * not idempotent from Paystack's perspective. If it times out, we do not know
- * whether Paystack received it. The PENDING row is left without an
- * {@code externalReference}. The nightly integrity job (v0.3-022) flags these
- * as stale PENDING rows after a configurable timeout.
+ * <p><strong>Moolre call not retried:</strong> {@code initiatePayment} is
+ * not retried. If it times out, we do not know whether Moolre received it.
+ * The PENDING row is left without an {@code externalReference}. The nightly
+ * integrity job flags these as stale PENDING rows after a configurable timeout.
  */
 @Service
 public class DepositService {
@@ -57,44 +57,45 @@ public class DepositService {
     private static final Logger log = LoggerFactory.getLogger(DepositService.class);
 
     /**
-     * Paystack's documented Ghana sandbox MoMo test number (MTN) — the only
-     * number that actually resolves to a completed charge in test mode. See
-     * docs/paystack-api-reference.md.
+     * Placeholder sandbox MoMo number — Moolre docs do not publish a known
+     * test number (unlike Paystack's 0551234987). Disabled by default via
+     * {@code stash.moolre.sandbox.substitute-test-momo-number}. Only enable
+     * once a real sandbox test number is confirmed with Moolre.
      */
-    private static final String SANDBOX_TEST_MOMO_NUMBER = "0551234987";
+    private static final String SANDBOX_TEST_MOMO_NUMBER = "0000000000";
     private static final String SANDBOX_TEST_MOMO_PROVIDER = "mtn";
 
-    private final LedgerAccountRepository      ledgerAccountRepo;
-    private final PaystackSubaccountRepository subaccountRepo;
-    private final TransactionRepository        transactionRepo;
-    private final PaystackClient               paystackClient;
+    private static final String MOMO_PROMPT_DISPLAY =
+            "Approve the MoMo prompt on your phone";
+
+    private final LedgerAccountRepository       ledgerAccountRepo;
+    private final TransactionRepository         transactionRepo;
+    private final MoolreClient                  moolreClient;
     private final TransactionReferenceGenerator referenceGenerator;
-    private final Clock                        clock;
-    private final boolean                      substituteTestMomoNumber;
+    private final Clock                         clock;
+    private final boolean                       substituteTestMomoNumber;
 
     public DepositService(LedgerAccountRepository ledgerAccountRepo,
-                          PaystackSubaccountRepository subaccountRepo,
                           TransactionRepository transactionRepo,
-                          PaystackClient paystackClient,
+                          MoolreClient moolreClient,
                           TransactionReferenceGenerator referenceGenerator,
                           Clock clock,
-                          @Value("${stash.paystack.sandbox.substitute-test-momo-number:false}")
+                          @Value("${stash.moolre.sandbox.substitute-test-momo-number:false}")
                           boolean substituteTestMomoNumber) {
-        this.ledgerAccountRepo   = ledgerAccountRepo;
-        this.subaccountRepo      = subaccountRepo;
-        this.transactionRepo     = transactionRepo;
-        this.paystackClient      = paystackClient;
-        this.referenceGenerator  = referenceGenerator;
-        this.clock               = clock;
+        this.ledgerAccountRepo        = ledgerAccountRepo;
+        this.transactionRepo          = transactionRepo;
+        this.moolreClient             = moolreClient;
+        this.referenceGenerator       = referenceGenerator;
+        this.clock                    = clock;
         this.substituteTestMomoNumber = substituteTestMomoNumber;
     }
 
     /**
-     * Initiates a deposit. Returns 202 with the authorisation URL.
+     * Initiates a deposit. Returns 202 with MoMo-prompt display text.
      *
-     * @param request       validated deposit request from the monolith
+     * @param request        validated deposit request from the monolith
      * @param idempotencyKey the Idempotency-Key header value (for audit trail on the row)
-     * @throws ResponseStatusException 422 for invalid amount or account state;
+     * @throws ResponseStatusException 422 for invalid amount, account state, or OTP required;
      *                                 404 for unknown account;
      *                                 409 for closed account;
      *                                 501 for CARD (not yet implemented)
@@ -102,7 +103,6 @@ public class DepositService {
     @Transactional
     public DepositInitiateResponse initiateDeposit(DepositInitiateRequest request,
                                                     String idempotencyKey) {
-        // ── Validate payment method ───────────────────────────────────────
         if ("CARD".equalsIgnoreCase(request.paymentMethod())) {
             throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
                     "CARD deposits are not implemented in v0.3. Use MOMO.");
@@ -113,10 +113,8 @@ public class DepositService {
                     ". Supported values: MOMO");
         }
 
-        // ── Validate MoMo fields ──────────────────────────────────────────
         MomoNumberValidator.validate(request.mobileProvider(), request.mobileNumber());
 
-        // ── Validate ledger account ───────────────────────────────────────
         LedgerAccountEntity account = ledgerAccountRepo
                 .findById(request.ledgerAccountId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -128,18 +126,7 @@ public class DepositService {
                     " is not ACTIVE (current status: " + account.getStatus() + ").");
         }
 
-        // ── Validate ownership ────────────────────────────────────────────
-        // USER-owned accounts (direct wallet deposits) carry owner_id = the user
-        // themselves, so ownership can be verified directly here. VAULT (and other
-        // entity) accounts carry owner_id = the ENTITY's id (e.g. the vault UUID),
-        // NOT the user's — see PaymentsServiceClient#provisionVaultLedgerAccount.
-        // For those, the monolith is the authority on whether the user owns the
-        // entity and has already validated it (VaultDepositService) before calling
-        // this internal endpoint; Payments cannot independently re-derive the
-        // vault→user mapping (it doesn't hold that data). So the direct
-        // owner_id == userId check only applies to USER-owned accounts — applying
-        // it to VAULT accounts compared userId against vaultId and rejected every
-        // vault deposit with a 403.
+        // USER-owned accounts: verify ownership. VAULT accounts: monolith already validated.
         if ("USER".equals(account.getOwnerType())
                 && !request.userId().equals(account.getOwnerId())) {
             log.warn("Deposit ownership mismatch: requesting user={} account owner={}",
@@ -148,102 +135,181 @@ public class DepositService {
                     "Ledger account does not belong to the authenticated user.");
         }
 
-        // ── Resolve Paystack subaccount code ──────────────────────────────
-        String subaccountCode = subaccountRepo
-                .findByOwnerTypeAndOwnerId("USER", request.userId())
-                .map(sub -> sub.getPaystackSubaccountCode())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
-                        "No Paystack subaccount found for user " + request.userId() +
-                        ". KYC may not be complete or provisioning is still in progress."));
-
-        // ── Generate reference ────────────────────────────────────────────
         String txnReference = generateUniqueReference();
 
-        // ── Create PENDING transaction row ────────────────────────────────
-        // destinationLedgerAccountId is the already-validated, already-owned
-        // account from above (USER_WALLET for a direct deposit, or a vault's
-        // ledger account for a vault deposit) — stored so ChargeSuccessHandler
-        // can route the webhook credit correctly instead of defaulting to
-        // USER_WALLET.
         TransactionEntity txn = TransactionEntity.pendingDeposit(
                 txnReference, request.userId(), request.amount(),
                 request.ledgerAccountId(),
                 request.correlationId(), idempotencyKey, Instant.now(clock));
         transactionRepo.save(txn);
 
-        // ── Call Paystack ─────────────────────────────────────────────────
-        // Sandbox-only, double-guarded: charges Paystack's real test MoMo number
-        // instead of the user-entered one, so any valid Ghanaian number/provider
-        // combination can be used for testing without every deposit requiring the
-        // one number Paystack's sandbox actually resolves. Never touches the
-        // TransactionEntity/ledger/receipts — request.mobileNumber() (the real
-        // number) is still what's stored and shown everywhere else. Requires BOTH
-        // the config flag AND a sk_test_ key, so a stray flag can never fire
-        // against a live Paystack account. Must never be enabled outside
-        // local/sandbox dev — see application-prod.yml.
         String effectiveMobileNumber = request.mobileNumber();
         String effectiveMobileProvider = request.mobileProvider();
-        if (substituteTestMomoNumber && paystackClient.isTestMode()) {
-            log.info("[SANDBOX_MOMO_SUBSTITUTION] Charging Paystack's sandbox test MoMo number " +
-                    "instead of the user-entered number for txn={} — internal records and the UI " +
-                    "still show the real number the user entered.", txnReference);
+        if (substituteTestMomoNumber && moolreClient.isSandbox()) {
+            log.info("[SANDBOX_MOMO_SUBSTITUTION] Charging placeholder Moolre sandbox test MoMo " +
+                    "number instead of the user-entered number for txn={} — internal records and " +
+                    "the UI still show the real number. Confirm a real Moolre sandbox test number " +
+                    "before relying on this flag.", txnReference);
             effectiveMobileNumber = SANDBOX_TEST_MOMO_NUMBER;
             effectiveMobileProvider = SANDBOX_TEST_MOMO_PROVIDER;
         }
 
-        // NOT retried — non-idempotent. See class javadoc.
-        ChargeInitiateRequest chargeRequest = new ChargeInitiateRequest(
-                request.customerEmail(),
-                request.amount(),
-                new ChargeInitiateRequest.MobileMoneyChannel(
-                        effectiveMobileNumber, effectiveMobileProvider),
-                "GHS",
-                subaccountCode
-        );
+        String channel = MoolreChannelMapper.forPayment(effectiveMobileProvider);
+        String payerInternational = MomoPhoneFormatter.toInternational(effectiveMobileNumber);
+        String amountGhs = MoolreAmountConverter.pesewasToGhsString(request.amount());
 
-        ChargeInitiateResponse chargeResponse;
+        PaymentInitiateResult paymentResult;
         try {
-            chargeResponse = paystackClient.initiateCharge(chargeRequest);
-        } catch (PaystackClientException e) {
-            // 4xx from Paystack — client error, not retryable. Mark FAILED immediately.
-            log.error("Paystack rejected charge initiation: status={} message={}",
+            paymentResult = moolreClient.initiatePayment(
+                    channel, payerInternational, amountGhs, txnReference, txnReference);
+        } catch (MoolreClientException e) {
+            log.error("Moolre rejected payment initiation: status={} message={}",
                     e.getHttpStatus(), e.getMessage());
             txn.markFailed(Instant.now(clock));
             transactionRepo.save(txn);
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Paystack rejected the charge: " + e.getMessage());
+                    "Moolre rejected the charge: " + e.getMessage());
         }
         // 5xx or timeout: let the exception propagate. The PENDING row stays.
-        // The nightly integrity job flags it as stale after 30 minutes.
 
-        // ── Store Paystack reference ──────────────────────────────────────
-        txn.setExternalReference(chargeResponse.data().reference());
+        if ("TP14".equalsIgnoreCase(paymentResult.code())) {
+            txn.setExternalReference(txnReference);
+            transactionRepo.save(txn);
+            log.info("Moolre OTP required (TP14) for txn={} — awaiting user OTP",
+                    txnReference);
+            return DepositInitiateResponse.otpRequired(txnReference, txnReference);
+        }
+
+        if (!"TR099".equalsIgnoreCase(paymentResult.code())) {
+            log.error("Unexpected Moolre payment code={} message={} txn={}",
+                    paymentResult.code(), paymentResult.message(), txnReference);
+            txn.markFailed(Instant.now(clock));
+            transactionRepo.save(txn);
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Moolre rejected the charge: " +
+                    (paymentResult.message() != null ? paymentResult.message() : paymentResult.code()));
+        }
+
+        String providerRef = paymentResult.sessionId() != null && !paymentResult.sessionId().isBlank()
+                ? paymentResult.sessionId()
+                : txnReference;
+        txn.setExternalReference(providerRef);
         transactionRepo.save(txn);
 
-        log.info("Deposit initiated: ref={} paystackRef={} amount={}p user={} correlation={}",
-                txnReference, chargeResponse.data().reference(),
+        log.info("Deposit initiated: ref={} moolreSession={} amount={}p user={} correlation={}",
+                txnReference, providerRef,
                 request.amount(), request.userId(), request.correlationId());
-
-        // Paystack sandbox always returns null for authorisation_url on MoMo —
-        // the user completes on their phone, not a URL. Return display_text instead
-        // when authorisation_url is absent.
-        String authUrl = chargeResponse.data() != null
-                ? chargeResponse.data().displayText()
-                : null;
 
         return DepositInitiateResponse.pending(
                 txnReference,
-                authUrl,
-                chargeResponse.data().reference()
+                MOMO_PROMPT_DISPLAY,
+                providerRef
         );
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
-
     /**
-     * Generates a unique transaction reference with collision retry.
-     * See v0.3-002 tracking item: the caller retries on DB UNIQUE constraint violation.
+     * Completes a PENDING deposit that required Moolre SMS OTP ({@code TP14}).
+     *
+     * <p>Observed sandbox sequence: OTP submit → {@code TP17} (verified) →
+     * resubmit with same OTP → {@code TR099} (USSD/MoMo prompt). We perform
+     * both steps here so the mobile app only collects the code once.
      */
+    @Transactional
+    public DepositInitiateResponse completeDepositOtp(String transactionReference,
+                                                      DepositOtpRequest request) {
+        MomoNumberValidator.validate(request.mobileProvider(), request.mobileNumber());
+
+        TransactionEntity txn = transactionRepo.findByReference(transactionReference)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Deposit not found: " + transactionReference));
+
+        if (!"DEPOSIT".equals(txn.getTransactionType())) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Transaction is not a deposit.");
+        }
+        if (!"PENDING".equals(txn.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Deposit is not PENDING (status: " + txn.getStatus() + ").");
+        }
+        if (!request.userId().equals(txn.getInitiatingUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Deposit does not belong to the authenticated user.");
+        }
+
+        String otp = request.otpCode() == null ? "" : request.otpCode().trim();
+        if (otp.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "otp_code is required.");
+        }
+
+        String channel = MoolreChannelMapper.forPayment(request.mobileProvider());
+        String payerInternational = MomoPhoneFormatter.toInternational(request.mobileNumber());
+        String amountGhs = MoolreAmountConverter.pesewasToGhsString(txn.getGrossAmount());
+
+        PaymentInitiateResult result;
+        try {
+            result = moolreClient.initiatePaymentWithOtp(
+                    channel, payerInternational, amountGhs,
+                    transactionReference, transactionReference, otp);
+        } catch (MoolreClientException e) {
+            log.error("Moolre rejected OTP completion: status={} message={} ref={}",
+                    e.getHttpStatus(), e.getMessage(), transactionReference);
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Moolre rejected the OTP: " + e.getMessage());
+        }
+
+        // Phone verified — push the MoMo prompt with the same OTP (sandbox sequence).
+        if ("TP17".equalsIgnoreCase(result.code())) {
+            log.info("Moolre TP17 phone verified for ref={} — re-initiating payment with OTP",
+                    transactionReference);
+            try {
+                result = moolreClient.initiatePaymentWithOtp(
+                        channel, payerInternational, amountGhs,
+                        transactionReference, transactionReference, otp);
+            } catch (MoolreClientException e) {
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                        "Moolre rejected post-OTP payment: " + e.getMessage());
+            }
+        }
+
+        if ("TP14".equalsIgnoreCase(result.code())) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "OTP was not accepted. Check the code and try again.");
+        }
+
+        if (!"TR099".equalsIgnoreCase(result.code())) {
+            // Payment may already have succeeded synchronously in some sandbox cases.
+            try {
+                var status = moolreClient.queryStatus(transactionReference, true);
+                if (status.txStatus() != null && status.txStatus() == 1) {
+                    log.info("Deposit OTP path: Moolre already success for ref={}", transactionReference);
+                    return DepositInitiateResponse.pending(
+                            transactionReference, MOMO_PROMPT_DISPLAY, transactionReference);
+                }
+            } catch (Exception ignored) {
+                // fall through to rejection
+            }
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Moolre rejected the charge after OTP: " +
+                    (result.message() != null ? result.message() : result.code()));
+        }
+
+        String providerRef = result.sessionId() != null && !result.sessionId().isBlank()
+                ? result.sessionId()
+                : transactionReference;
+        txn.setExternalReference(providerRef);
+        transactionRepo.save(txn);
+
+        log.info("Deposit OTP completed: ref={} moolreSession={} user={}",
+                transactionReference, providerRef, request.userId());
+
+        return DepositInitiateResponse.pending(
+                transactionReference,
+                MOMO_PROMPT_DISPLAY,
+                providerRef
+        );
+    }
+
     private String generateUniqueReference() {
         for (int attempt = 0; attempt < 5; attempt++) {
             String candidate = referenceGenerator.generate();

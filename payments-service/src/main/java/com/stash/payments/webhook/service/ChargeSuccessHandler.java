@@ -6,6 +6,7 @@ import com.stash.payments.ledger.service.LedgerWriteCommand;
 import com.stash.payments.ledger.service.LedgerWriteResult;
 import com.stash.payments.ledger.service.LedgerService;
 import com.stash.payments.ledger.repository.LedgerAccountRepository;
+import com.stash.payments.moolre.amount.MoolreAmountConverter;
 import com.stash.payments.outbox.service.OutboxPublisher;
 import com.stash.payments.transaction.domain.TransactionEntity;
 import com.stash.payments.transaction.event.DepositCompletedEvent;
@@ -22,68 +23,72 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Handles Paystack {@code charge.success} events.
+ * Handles successful MoMo collection events (Moolre webhook / reconciliation).
  *
  * <p>Flow:
  * <ol>
- *   <li>Look up the local {@code TransactionEntity} by the Paystack reference.</li>
+ *   <li>Look up the local {@code TransactionEntity} by our STSH reference
+ *       ({@code data.externalref}), falling back to {@code external_reference}.</li>
  *   <li>Resolve the destination ledger account stored on the transaction row
- *       at deposit-initiation time (the USER_WALLET for a direct deposit, or
- *       a vault's ledger account for a vault deposit).</li>
- *   <li>Post a double-entry: CREDIT the destination account + DEBIT PAYSTACK_SETTLEMENT.</li>
+ *       at deposit-initiation time.</li>
+ *   <li>Post a double-entry: CREDIT the destination account + DEBIT MOOLRE_SETTLEMENT.</li>
  *   <li>Mark the transaction COMPLETED and publish {@link DepositCompletedEvent}.</li>
  * </ol>
- *
- * <p>All writes happen inside the caller's {@code @Transactional} context
- * (PaystackWebhookService). If any step throws, the whole transaction rolls back
- * and Paystack will retry the webhook delivery.
  */
 @Component
 public class ChargeSuccessHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ChargeSuccessHandler.class);
 
-    private final TransactionRepository  transactionRepository;
+    private final TransactionRepository   transactionRepository;
     private final LedgerAccountRepository ledgerAccountRepository;
-    private final LedgerService          ledgerService;
-    private final OutboxPublisher        outboxPublisher;
-    private final Clock                  clock;
-    private final UUID                   paystackSettlementAccountId;
+    private final LedgerService           ledgerService;
+    private final OutboxPublisher         outboxPublisher;
+    private final Clock                   clock;
+    private final UUID                    moolreSettlementAccountId;
 
     public ChargeSuccessHandler(TransactionRepository transactionRepository,
                                 LedgerAccountRepository ledgerAccountRepository,
                                 LedgerService ledgerService,
                                 OutboxPublisher outboxPublisher,
                                 Clock clock,
-                                @Value("${stash.ledger.paystack-settlement-account-id}")
-                                UUID paystackSettlementAccountId) {
-        this.transactionRepository       = transactionRepository;
-        this.ledgerAccountRepository     = ledgerAccountRepository;
-        this.ledgerService               = ledgerService;
-        this.outboxPublisher             = outboxPublisher;
-        this.clock                       = clock;
-        this.paystackSettlementAccountId = paystackSettlementAccountId;
+                                @Value("${stash.ledger.moolre-settlement-account-id:00000000-0000-0000-0000-000000000004}")
+                                UUID moolreSettlementAccountId) {
+        this.transactionRepository     = transactionRepository;
+        this.ledgerAccountRepository   = ledgerAccountRepository;
+        this.ledgerService             = ledgerService;
+        this.outboxPublisher           = outboxPublisher;
+        this.clock                     = clock;
+        this.moolreSettlementAccountId = moolreSettlementAccountId;
     }
 
     /**
-     * Processes a charge.success payload.
+     * Processes a successful charge/collection payload.
      *
-     * @param data          the {@code data} object from the Paystack event
+     * @param data          the {@code data} object from the provider event
+     *                      (expects {@code externalref} or {@code reference}, and {@code amount})
      * @param correlationId the webhook request correlation ID
      * @return the resulting {@code transaction.transactions.id},
-     *         or {@code null} if the Paystack reference is not recognised
+     *         or {@code null} if the reference is not recognised
      */
     public UUID handle(Map<String, Object> data, String correlationId) {
-        String paystackReference = (String) data.get("reference");
-        long amountPesewas = toLong(data.get("amount"));
+        String lookupKey = firstNonBlank(
+                stringVal(data.get("externalref")),
+                stringVal(data.get("reference")));
+        long amountPesewas = parseAmountToPesewas(data.get("amount"));
+
+        if (lookupKey == null) {
+            log.warn("charge.success: missing externalref/reference — ignoring");
+            return null;
+        }
 
         TransactionEntity txn = transactionRepository
-                .findByExternalReference(paystackReference)
+                .findByReference(lookupKey)
+                .or(() -> transactionRepository.findByExternalReference(lookupKey))
                 .orElse(null);
 
         if (txn == null) {
-            log.warn("charge.success: no transaction found for Paystack ref={} — ignoring",
-                    paystackReference);
+            log.warn("charge.success: no transaction found for ref={} — ignoring", lookupKey);
             return null;
         }
 
@@ -104,10 +109,10 @@ public class ChargeSuccessHandler {
                 businessRefType,
                 List.of(
                     EntryRequest.of(destinationAccountId, EntryDirection.CREDIT, amountPesewas),
-                    EntryRequest.of(paystackSettlementAccountId, EntryDirection.DEBIT, amountPesewas)
+                    EntryRequest.of(moolreSettlementAccountId, EntryDirection.DEBIT, amountPesewas)
                 ),
                 correlationId,
-                "Paystack charge.success: " + paystackReference
+                "Moolre charge.success: " + lookupKey
         );
 
         LedgerWriteResult result = ledgerService.writeTransaction(command);
@@ -129,21 +134,14 @@ public class ChargeSuccessHandler {
                 correlationId
         );
 
-        log.info("charge.success processed: paystackRef={} internalRef={} amount={}p userId={} " +
+        log.info("charge.success processed: lookupKey={} internalRef={} amount={}p userId={} " +
                 "destinationAccount={} ledgerTxn={}",
-                paystackReference, txn.getReference(), amountPesewas,
+                lookupKey, txn.getReference(), amountPesewas,
                 userId, destinationAccountId, result.ledgerTransactionId());
 
         return txn.getId();
     }
 
-    /**
-     * Resolves the ledger account to credit. Uses {@code destination_ledger_account_id}
-     * stored on the transaction row at deposit-initiation time (the USER_WALLET for a
-     * direct deposit, or a vault's ledger account for a vault deposit). Falls back to
-     * resolving USER_WALLET only for legacy rows created before this column existed —
-     * this fallback should not be hit for any deposit initiated after V3.
-     */
     private String resolveDepositBusinessReferenceType(UUID destinationAccountId) {
         return ledgerAccountRepository.findById(destinationAccountId)
                 .map(account -> "USER_WALLET".equals(account.getAccountType())
@@ -169,8 +167,38 @@ public class ChargeSuccessHandler {
                 .getId();
     }
 
-    private static long toLong(Object value) {
-        if (value instanceof Number n) return n.longValue();
-        return Long.parseLong(String.valueOf(value));
+    /**
+     * Moolre amounts arrive as GHS strings (e.g. {@code "20.00"}); legacy Paystack
+     * payloads used pesewas as a number. Accept both.
+     */
+    static long parseAmountToPesewas(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("amount is required");
+        }
+        if (value instanceof Number n) {
+            // Heuristic: fractional → GHS; integer → already pesewas (Paystack-style)
+            if (value instanceof Double || value instanceof Float
+                    || (n.doubleValue() != Math.rint(n.doubleValue()))) {
+                return MoolreAmountConverter.ghsStringToPesewas(String.valueOf(n));
+            }
+            return n.longValue();
+        }
+        String raw = String.valueOf(value).trim();
+        if (raw.contains(".")) {
+            return MoolreAmountConverter.ghsStringToPesewas(raw);
+        }
+        return Long.parseLong(raw);
+    }
+
+    private static String stringVal(Object value) {
+        if (value == null) return null;
+        String s = String.valueOf(value).trim();
+        return s.isEmpty() || "null".equalsIgnoreCase(s) ? null : s;
+    }
+
+    private static String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) return a;
+        if (b != null && !b.isBlank()) return b;
+        return null;
     }
 }

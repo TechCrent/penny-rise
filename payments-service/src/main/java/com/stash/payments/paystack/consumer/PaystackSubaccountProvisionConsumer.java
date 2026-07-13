@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -26,9 +27,11 @@ import java.util.UUID;
  *
  * <p><strong>Queue:</strong> {@code payments.paystack.subaccount.provision.queue}
  * bound to {@code payments.events} with routing key
- * {@code paystack.subaccount.provision.requested}.
+ * <p>Disabled by default under Moolre (single merchant account). Enable only with
+ * {@code stash.paystack.subaccounts.enabled=true} if Paystack subaccounts are needed again.
  */
 @Component
+@ConditionalOnProperty(name = "stash.paystack.subaccounts.enabled", havingValue = "true", matchIfMissing = false)
 public class PaystackSubaccountProvisionConsumer {
 
     private static final Logger log =

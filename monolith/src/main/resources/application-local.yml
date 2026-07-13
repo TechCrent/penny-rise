@@ -12,6 +12,8 @@ stash:
     from-address: noreply@stash.local
     from-name: Stash (Local)
     base-url: http://localhost:8080
+  sms:
+    provider: noop
   security:
     jwt:
       access-token-expiry-minutes: 15

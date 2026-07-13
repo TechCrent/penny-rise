@@ -15,20 +15,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Delegates deposit initiation to the Payments Service.
- *
- * <p>The monolith has already validated vault ownership and status.
- * This client passes the vault's {@code ledger_account_id} as the
- * destination and the authenticated user's ID as the initiating user.
- *
- * <p>Uses the internal service token — Payments trusts the monolith
- * to have authenticated the user and resolved the correct ledger account.
+ * Delegates deposit initiation / OTP completion to the Payments Service.
  */
 @Component
 public class PaymentsDepositClient {
 
     private static final Logger   log     = LoggerFactory.getLogger(PaymentsDepositClient.class);
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
     private final WebClient webClient;
 
@@ -43,12 +36,6 @@ public class PaymentsDepositClient {
                 .build();
     }
 
-    /**
-     * Initiates a deposit against a vault's ledger account.
-     *
-     * @return the deposit result from the Payments Service
-     * @throws PaymentsServiceException on HTTP error or timeout
-     */
     public DepositResult initiateDeposit(
             UUID   userId,
             String userEmail,
@@ -67,12 +54,9 @@ public class PaymentsDepositClient {
         Map<String, Object> body = buildBody(userId, userEmail, ledgerAccountId,
                 amountPesewas, paymentMethod, mobileNumber, mobileProvider,
                 vaultId, "VAULT_DEPOSIT", correlationId);
-        return postDeposit(body, idempotencyKey, correlationId);
+        return postDeposit("/api/v1/transactions/deposits", body, idempotencyKey, correlationId);
     }
 
-    /**
-     * Initiates a deposit into the user's USER_WALLET ledger account.
-     */
     public DepositResult initiateWalletDeposit(
             UUID   userId,
             String userEmail,
@@ -90,15 +74,37 @@ public class PaymentsDepositClient {
         Map<String, Object> body = buildBody(userId, userEmail, walletAccountId,
                 amountPesewas, paymentMethod, mobileNumber, mobileProvider,
                 userId, "WALLET_DEPOSIT", correlationId);
-        return postDeposit(body, idempotencyKey, correlationId);
+        return postDeposit("/api/v1/transactions/deposits", body, idempotencyKey, correlationId);
     }
 
-    private DepositResult postDeposit(Map<String, Object> body,
+    public DepositResult completeDepositOtp(
+            UUID   userId,
+            String transactionReference,
+            String otpCode,
+            String mobileNumber,
+            String mobileProvider,
+            String correlationId,
+            String idempotencyKey) {
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("user_id", userId.toString());
+        body.put("otp_code", otpCode);
+        body.put("mobile_number", mobileNumber);
+        body.put("mobile_provider", mobileProvider);
+        body.put("correlation_id", correlationId);
+
+        return postDeposit(
+                "/api/v1/transactions/deposits/" + transactionReference + "/otp",
+                body, idempotencyKey, correlationId);
+    }
+
+    private DepositResult postDeposit(String uri,
+                                      Map<String, Object> body,
                                       String idempotencyKey,
                                       String correlationId) {
         try {
             Map<?, ?> response = webClient.post()
-                    .uri("/api/v1/transactions/deposits")
+                    .uri(uri)
                     .header("Idempotency-Key", idempotencyKey)
                     .header("X-Correlation-Id", correlationId)
                     .bodyValue(body)
@@ -107,17 +113,26 @@ public class PaymentsDepositClient {
                     .timeout(TIMEOUT)
                     .block();
 
+            boolean otpRequired = Boolean.TRUE.equals(response.get("otp_required"));
+            Object otpFlag = response.get("otp_required");
+            if (otpFlag instanceof Boolean b) {
+                otpRequired = b;
+            }
+
             return new DepositResult(
                     (String) response.get("transaction_reference"),
                     (String) response.get("authorisation_url"),
-                    (String) response.get("paystack_reference"),
-                    (String) response.get("status")
+                    firstNonNull(
+                            (String) response.get("provider_reference"),
+                            (String) response.get("paystack_reference")),
+                    (String) response.get("status"),
+                    otpRequired
             );
 
         } catch (WebClientResponseException e) {
             throw new PaymentsServiceException(
                     "Payments Service returned " + e.getStatusCode().value() +
-                    " on deposit initiation: " + e.getResponseBodyAsString(),
+                    " on deposit: " + e.getResponseBodyAsString(),
                     e.getStatusCode().value(), e);
         } catch (Exception e) {
             throw new PaymentsServiceException(
@@ -149,7 +164,12 @@ public class PaymentsDepositClient {
     public record DepositResult(
             String transactionReference,
             String authorisationUrl,
-            String paystackReference,
-            String status
+            String providerReference,
+            String status,
+            boolean otpRequired
     ) {}
+
+    private static String firstNonNull(String a, String b) {
+        return a != null ? a : b;
+    }
 }

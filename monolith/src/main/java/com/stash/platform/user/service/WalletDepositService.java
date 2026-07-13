@@ -4,6 +4,7 @@ import com.stash.platform.transfer.client.PeerTransferPaymentsClient;
 import com.stash.platform.transfer.client.TransferPaymentsException;
 import com.stash.platform.user.domain.User;
 import com.stash.platform.user.repository.UserRepository;
+import com.stash.platform.vault.api.dto.DepositOtpCompleteRequest;
 import com.stash.platform.vault.api.dto.VaultDepositRequest;
 import com.stash.platform.vault.api.dto.VaultDepositResponse;
 import com.stash.platform.vault.client.PaymentsDepositClient;
@@ -75,8 +76,9 @@ public class WalletDepositService {
             return new VaultDepositResponse(
                     result.transactionReference(),
                     result.authorisationUrl(),
-                    result.paystackReference(),
-                    result.status()
+                    result.providerReference(),
+                    result.status(),
+                    result.otpRequired()
             );
         } catch (PaymentsServiceException e) {
             if (e.getHttpStatus() >= 400 && e.getHttpStatus() < 500) {
@@ -85,6 +87,41 @@ public class WalletDepositService {
             }
             log.error("Payments Service error during wallet deposit: user={} error={} correlation={}",
                     userId, e.getMessage(), correlationId);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Payment processing temporarily unavailable. Please retry.");
+        }
+    }
+
+    public VaultDepositResponse completeDepositOtp(UUID userId,
+                                                    String transactionReference,
+                                                    DepositOtpCompleteRequest request,
+                                                    String correlationId,
+                                                    String idempotencyKey) {
+        MomoNumberValidator.validate(request.mobileProvider(), request.mobileNumber(),
+                "mobile_provider", "mobile_number");
+
+        try {
+            PaymentsDepositClient.DepositResult result = paymentsClient.completeDepositOtp(
+                    userId,
+                    transactionReference,
+                    request.otpCode(),
+                    request.mobileNumber(),
+                    request.mobileProvider(),
+                    correlationId,
+                    idempotencyKey
+            );
+            return new VaultDepositResponse(
+                    result.transactionReference(),
+                    result.authorisationUrl(),
+                    result.providerReference(),
+                    result.status(),
+                    result.otpRequired()
+            );
+        } catch (PaymentsServiceException e) {
+            if (e.getHttpStatus() >= 400 && e.getHttpStatus() < 500) {
+                throw new ResponseStatusException(HttpStatus.valueOf(e.getHttpStatus()),
+                        e.getMessage());
+            }
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "Payment processing temporarily unavailable. Please retry.");
         }

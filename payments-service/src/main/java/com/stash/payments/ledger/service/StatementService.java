@@ -157,6 +157,7 @@ public class StatementService {
         String type = account.getAccountType();
         if ("SYSTEM".equals(account.getOwnerType())
                 || "PAYSTACK_SETTLEMENT".equals(type)
+                || "MOOLRE_SETTLEMENT".equals(type)
                 || "FEE_REVENUE".equals(type)) {
             throw notFound(accountId);
         }

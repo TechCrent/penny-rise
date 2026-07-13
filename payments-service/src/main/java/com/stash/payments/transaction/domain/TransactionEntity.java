@@ -42,7 +42,7 @@ public class TransactionEntity {
     private String externalProvider;
 
     @Column(name = "external_reference",     length = 255)
-    private String externalReference;     // Paystack reference
+    private String externalReference;     // Provider session / transaction id (Moolre)
 
     @Column(name = "ledger_transaction_id")
     private UUID ledgerTransactionId;     // NULL until webhook confirms
@@ -83,7 +83,7 @@ public class TransactionEntity {
         t.feeAmount                   = 0L;
         t.netAmount                   = grossAmount;
         t.status                      = "PENDING";
-        t.externalProvider            = "PAYSTACK";
+        t.externalProvider            = "MOOLRE";
         t.destinationLedgerAccountId  = destinationLedgerAccountId;
         t.correlationId               = correlationId;
         t.idempotencyKey              = idempotencyKey;
@@ -108,7 +108,7 @@ public class TransactionEntity {
         t.feeAmount                = 0L;
         t.netAmount                = grossAmount;
         t.status                   = "PENDING";
-        t.externalProvider         = "PAYSTACK";
+        t.externalProvider         = "MOOLRE";
         t.correlationId            = correlationId;
         t.idempotencyKey           = idempotencyKey;
         t.createdAt                = now;
@@ -142,7 +142,7 @@ public class TransactionEntity {
         return t;
     }
 
-    // Called by the webhook handler when Paystack confirms
+    // Called by the webhook handler when the payment provider confirms
     public void markCompleted(UUID ledgerTransactionId, Instant now) {
         this.status               = "COMPLETED";
         this.ledgerTransactionId  = ledgerTransactionId;

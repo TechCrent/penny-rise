@@ -49,7 +49,7 @@ class VaultDepositServiceTest {
         when(paymentsClient.initiateDeposit(any(), any(), any(), anyLong(),
                 any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PaymentsDepositClient.DepositResult(
-                        "STSH-202606-DEP001", "Dial *170#", "pay_ref_001", "PENDING"));
+                        "STSH-202606-DEP001", "Dial *170#", "pay_ref_001", "PENDING", false));
     }
 
     // ── Happy paths ───────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ class VaultDepositServiceTest {
 
         assertThat(result.transactionReference()).isEqualTo("STSH-202606-DEP001");
         assertThat(result.authorisationUrl()).isEqualTo("Dial *170#");
-        assertThat(result.paystackReference()).isEqualTo("pay_ref_001");
+        assertThat(result.providerReference()).isEqualTo("pay_ref_001");
         assertThat(result.status()).isEqualTo("PENDING");
     }
 

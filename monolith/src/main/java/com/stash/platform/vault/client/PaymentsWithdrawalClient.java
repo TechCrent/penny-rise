@@ -99,7 +99,9 @@ public class PaymentsWithdrawalClient {
 
             return new WithdrawalResult(
                     (String) response.get("transaction_reference"),
-                    (String) response.get("paystack_transfer_code"),
+                    firstNonNull(
+                            (String) response.get("provider_transfer_code"),
+                            (String) response.get("paystack_transfer_code")),
                     (String) response.get("status")
             );
 
@@ -116,7 +118,11 @@ public class PaymentsWithdrawalClient {
 
     public record WithdrawalResult(
             String transactionReference,
-            String paystackTransferCode,
+            String providerTransferCode,
             String status
     ) {}
+
+    private static String firstNonNull(String a, String b) {
+        return a != null ? a : b;
+    }
 }

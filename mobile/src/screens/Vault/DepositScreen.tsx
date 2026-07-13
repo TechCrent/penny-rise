@@ -20,8 +20,8 @@ import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
-import { useVaultDeposit } from '../../api/hooks/useVaultDeposit';
-import { useWalletDeposit } from '../../api/hooks/useWalletDeposit';
+import { useVaultDeposit, useVaultDepositOtp } from '../../api/hooks/useVaultDeposit';
+import { useWalletDeposit, useWalletDepositOtp } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
 
@@ -30,7 +30,15 @@ import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoP
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Deposit'>;
 type Route = RouteProp<RootStackParamList, 'Deposit'>;
 
-type Phase = 'amount' | 'method' | 'confirm' | 'authorising' | 'polling' | 'success' | 'failure';
+type Phase =
+  | 'amount'
+  | 'method'
+  | 'confirm'
+  | 'otp'
+  | 'authorising'
+  | 'polling'
+  | 'success'
+  | 'failure';
 
 const QUICK_AMOUNTS_GHS = [10, 20, 50, 100, 200, 500];
 const MIN_DEPOSIT_GHS = 1;
@@ -51,6 +59,11 @@ function formatCedis(pesewas: number): string {
 
 function ghsToPesewas(ghs: string): number {
   return Math.round(parseFloat(ghs || '0') * 100);
+}
+
+function isHttpUrl(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^https?:\/\//i.test(value.trim());
 }
 
 // ── Provider mapping ───────────────────────────────────────────────────────
@@ -82,6 +95,8 @@ export default function DepositScreen() {
 
   const idempotencyKeyRef = useRef<string>(generateKey());
   const lastKeyedPayloadRef = useRef<string | null>(null);
+  const submittingRef = useRef(false);
+  const otpSubmittingRef = useRef(false);
 
   const [phase, setPhase] = useState<Phase>('amount');
   const [amountGhs, setAmountGhs] = useState('');
@@ -92,12 +107,19 @@ export default function DepositScreen() {
   const [momoError, setMomoError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [txnRef, setTxnRef] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState('');
 
   const amountPesewas = ghsToPesewas(amountGhs);
 
   const vaultDeposit = useVaultDeposit(vaultId ?? '');
   const walletDeposit = useWalletDeposit();
   const { mutateAsync, isPending } = isWalletDeposit ? walletDeposit : vaultDeposit;
+
+  const vaultDepositOtp = useVaultDepositOtp(vaultId ?? '');
+  const walletDepositOtp = useWalletDepositOtp();
+  const { mutateAsync: mutateOtpAsync, isPending: isOtpPending } = isWalletDeposit
+    ? walletDepositOtp
+    : vaultDepositOtp;
 
   const { data: polledTxn } = useTransactionPoll(txnRef, phase === 'polling');
 
@@ -125,6 +147,8 @@ export default function DepositScreen() {
   }
 
   const handleConfirm = useCallback(async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setServerError(null);
 
     const payload = {
@@ -155,13 +179,23 @@ export default function DepositScreen() {
 
       setTxnRef(resp.transaction_reference);
 
-      if (resp.authorisation_url) {
+      if (resp.otp_required) {
+        setOtpCode('');
+        setServerError(null);
+        setPhase('otp');
+        return;
+      }
+
+      if (isHttpUrl(resp.authorisation_url)) {
         setPhase('authorising');
-        await WebBrowser.openBrowserAsync(resp.authorisation_url, {
+        await WebBrowser.openBrowserAsync(resp.authorisation_url!, {
           toolbarColor: '#1A1A2E',
           showTitle: false,
           enableBarCollapsing: false,
         });
+        setPhase('polling');
+      } else if (resp.authorisation_url) {
+        // Non-URL text (e.g. MoMo prompt message) — skip browser, poll for completion.
         setPhase('polling');
       } else {
         setPhase('polling');
@@ -177,9 +211,9 @@ export default function DepositScreen() {
         setServerError('This vault is closed and cannot accept deposits.');
       } else if (status === 403) {
         setServerError("You don't have permission to deposit into this vault.");
-      } else if (status === 409 && message?.toLowerCase().includes('paystack subaccount')) {
+      } else if (status === 409 && message?.toLowerCase().includes('subaccount')) {
         setServerError(
-          'Payments are not set up for your account yet. Complete KYC approval and ensure Paystack/RabbitMQ are running, then try again.',
+          'Payments are not set up for your account yet. Complete KYC approval and ensure the payment provider and messaging are running, then try again.',
         );
       } else if (status === 502 || status === 503) {
         setServerError(
@@ -188,15 +222,48 @@ export default function DepositScreen() {
       } else if (status === 500) {
         setServerError(
           message ??
-            'Payment service error. Check PAYSTACK_SECRET_KEY in .env and that payments-service is running.',
+            'Payment service error. Check Moolre credentials in .env and that payments-service is running.',
         );
       } else if (message) {
         setServerError(message);
       } else {
         setServerError('Something went wrong. Your account was not charged — please try again.');
       }
+    } finally {
+      submittingRef.current = false;
     }
   }, [amountPesewas, method, momoNumber, provider, mutateAsync]);
+
+  const handleOtpSubmit = useCallback(async () => {
+    if (!txnRef || otpSubmittingRef.current) return;
+    const trimmed = otpCode.trim();
+    if (!trimmed) {
+      setServerError('Enter the verification code sent to your phone.');
+      return;
+    }
+
+    otpSubmittingRef.current = true;
+    setServerError(null);
+
+    try {
+      await mutateOtpAsync({
+        transactionReference: txnRef,
+        payload: {
+          otp_code: trimmed,
+          mobile_number: momoNumber,
+          mobile_provider: provider,
+        },
+        idempotencyKey: generateKey(),
+      });
+      setPhase('polling');
+    } catch (err: unknown) {
+      console.error(err);
+      const apiError = extractApiError(err);
+      setServerError(apiError?.message ?? 'Verification failed. Check the code and try again.');
+    } finally {
+      otpSubmittingRef.current = false;
+    }
+  }, [txnRef, otpCode, momoNumber, provider, mutateOtpAsync]);
 
   function renderHeader(title: string, canBack = true) {
     return (
@@ -206,6 +273,7 @@ export default function DepositScreen() {
             onPress={() => {
               if (phase === 'method') setPhase('amount');
               else if (phase === 'confirm') setPhase('method');
+              else if (phase === 'otp') setPhase('confirm');
               else navigation.goBack();
             }}
             style={styles.headerBtn}
@@ -481,6 +549,71 @@ export default function DepositScreen() {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // PHASE: otp
+  // ═══════════════════════════════════════════════════════════════════
+  if (phase === 'otp') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {renderHeader('Verification')}
+
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.otpTitle}>Enter verification code</Text>
+            <Text style={styles.otpSubtitle}>
+              An SMS code was sent to your phone. Enter it to continue your deposit.
+            </Text>
+
+            <TextInput
+              style={styles.otpInput}
+              value={otpCode}
+              onChangeText={t => {
+                setOtpCode(t.replace(/[^0-9]/g, ''));
+                setServerError(null);
+              }}
+              keyboardType="number-pad"
+              maxLength={8}
+              autoFocus
+              placeholder="••••••"
+              placeholderTextColor="#D1D5DB"
+              returnKeyType="done"
+              accessibilityLabel="Verification code"
+            />
+
+            {serverError && (
+              <View style={styles.serverErrorBox}>
+                <Text style={styles.serverErrorText}>{serverError}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.cta, isOtpPending && styles.ctaDisabled]}
+              onPress={handleOtpSubmit}
+              disabled={isOtpPending}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityState={{ busy: isOtpPending }}
+              accessibilityLabel="Verify and continue"
+            >
+              {isOtpPending ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.ctaText}>Verify and continue</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // PHASE: authorising
   // ═══════════════════════════════════════════════════════════════════
   if (phase === 'authorising') {
@@ -489,9 +622,9 @@ export default function DepositScreen() {
         {renderHeader('Authorising', false)}
         <View style={styles.waitingCenter}>
           <ActivityIndicator size="large" color={INDIGO} />
-          <Text style={styles.waitingTitle}>Opening Paystack</Text>
+          <Text style={styles.waitingTitle}>Approve on your phone</Text>
           <Text style={styles.waitingSubtitle}>
-            Complete the payment in the browser that just opened. Return here when you&apos;re done.
+            Approve the MoMo prompt on your phone, then return here when you&apos;re done.
           </Text>
         </View>
       </SafeAreaView>
@@ -852,6 +985,36 @@ const styles = StyleSheet.create({
     borderColor: '#FCA5A5',
   },
   serverErrorText: { fontSize: 13, color: '#991B1B' },
+
+  // OTP phase
+  otpTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: DARK,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  otpSubtitle: {
+    fontSize: 14,
+    color: MUTED,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 28,
+  },
+  otpInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 16 : 12,
+    fontSize: 28,
+    fontWeight: '700',
+    color: DARK,
+    letterSpacing: 8,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
 
   // Waiting / result screens
   waitingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },

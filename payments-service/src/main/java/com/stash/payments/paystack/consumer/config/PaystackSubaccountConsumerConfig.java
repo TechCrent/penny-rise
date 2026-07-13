@@ -1,10 +1,12 @@
 package com.stash.payments.paystack.consumer.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(name = "stash.paystack.subaccounts.enabled", havingValue = "true", matchIfMissing = false)
 public class PaystackSubaccountConsumerConfig {
 
     public static final String PAYMENTS_EXCHANGE        = "payments.events";

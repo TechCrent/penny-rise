@@ -12,6 +12,7 @@ import com.stash.platform.notification.repository.ProcessedWorkerEventRepository
 import com.stash.platform.notification.template.NotificationTemplate;
 import com.stash.platform.notification.template.NotificationTemplateRegistry;
 import com.stash.platform.notification.template.RenderedNotification;
+import com.stash.platform.user.repository.UserRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,8 @@ class NotificationDispatchServiceTest {
     private final NotificationPreferencesService preferencesService       = mock(NotificationPreferencesService.class);
     private final ExpoPushClient                 expoPushClient           = mock(ExpoPushClient.class);
     private final EmailSender                    emailSender              = mock(EmailSender.class);
+    private final SmsSender                      smsSender                = mock(SmsSender.class);
+    private final UserRepository                 userRepository           = mock(UserRepository.class);
     private final MeterRegistry                  meterRegistry            = new SimpleMeterRegistry();
 
     private NotificationDispatchService service;
@@ -50,11 +53,12 @@ class NotificationDispatchServiceTest {
     @BeforeEach
     void setUp() {
         reset(processedEventRepository, notificationRepository, deviceTokenRepository,
-              template, templateRegistry, preferencesService, expoPushClient, emailSender);
+              template, templateRegistry, preferencesService, expoPushClient, emailSender,
+              smsSender, userRepository);
 
         service = new NotificationDispatchService(processedEventRepository, notificationRepository,
                 deviceTokenRepository, templateRegistry, preferencesService, expoPushClient,
-                emailSender, FIXED_CLOCK, meterRegistry);
+                emailSender, smsSender, userRepository, FIXED_CLOCK, meterRegistry);
 
         when(preferencesService.isEnabled(any(), any())).thenReturn(true);
         when(notificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

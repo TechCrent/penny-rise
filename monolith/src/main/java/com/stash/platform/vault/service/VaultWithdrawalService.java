@@ -144,7 +144,7 @@ public class VaultWithdrawalService {
 
             return new VaultWithdrawalResponse(
                     result.transactionReference(),
-                    result.paystackTransferCode(),
+                    result.providerTransferCode(),
                     result.status()
             );
 

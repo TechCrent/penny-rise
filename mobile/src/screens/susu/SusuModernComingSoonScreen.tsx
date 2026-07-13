@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { Icon, PressableScale } from '../../components/ui';
-import { colors, radii, spacing } from '../../theme';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { Icon, ScreenHeader, fadeInUp } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SusuModernComingSoon'>;
 
@@ -21,34 +23,28 @@ export function SusuModernComingSoonScreen() {
   return (
     <SafeAreaView style={styles.safe} testID="susu-modern-coming-soon-screen">
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.headerBtnIcon}>←</Text>
-        </TouchableOpacity>
+        <ScreenHeader onBack={() => navigation.goBack()} />
       </View>
 
       <View style={styles.body}>
-        <View style={styles.iconBadge}>
-          <Icon name="construct-outline" size={30} color={colors.gold.text} />
-        </View>
-        <Text style={styles.title}>Modern susu is coming soon</Text>
-        <Text style={styles.description}>
-          A fixed-term susu where you save toward your own goal, on your own schedule — no
-          rotation, no waiting for your turn. We&apos;re still building this.
-        </Text>
+        <Animated.View entering={fadeInUp(40)} style={styles.iconBadge}>
+          <Icon name="construct-outline" size={32} color={colors.gold.text} />
+        </Animated.View>
+        <Animated.View entering={fadeInUp(90)} style={styles.copyBlock}>
+          <Text style={styles.title}>Modern susu is coming soon</Text>
+          <Text style={styles.description}>
+            A fixed-term susu where you save toward your own goal, on your own schedule — no
+            rotation, no waiting for your turn. We&apos;re still building this.
+          </Text>
+        </Animated.View>
 
-        <PressableScale
-          style={styles.cta}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Create a Traditional susu instead"
-        >
-          <Text style={styles.ctaText}>Create a Traditional susu instead</Text>
-        </PressableScale>
+        <Animated.View entering={fadeInUp(140)} style={styles.ctaWrap}>
+          <PrimaryButton
+            title="Create a Traditional susu instead"
+            onPress={() => navigation.goBack()}
+            accessibilityLabel="Create a Traditional susu instead"
+          />
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -56,32 +52,35 @@ export function SusuModernComingSoonScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  body: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing['3xl'],
+  },
   iconBadge: {
-    width: 64,
-    height: 64,
+    width: 84,
+    height: 84,
     borderRadius: radii.pill,
     backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    ...shadows.sm,
   },
-  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm, textAlign: 'center' },
+  copyBlock: { alignItems: 'center', marginBottom: spacing['2xl'] },
+  title: {
+    ...typography.h2,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
   description: {
-    fontSize: 14,
+    ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: spacing['2xl'],
+    lineHeight: 22,
   },
-  cta: {
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.md,
-  },
-  ctaText: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
+  ctaWrap: { alignSelf: 'stretch' },
 });

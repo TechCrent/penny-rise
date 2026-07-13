@@ -1,28 +1,38 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { useAuth } from '../../auth/AuthContext';
-import { PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { PressableScale, ScreenHeader, Icon, fadeInUp, type IconName } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 interface SettingsRowConfig {
   label: string;
+  icon: IconName;
   onPress: () => void;
   destructive?: boolean;
+  isLast?: boolean;
 }
 
-function SettingsRow({ label, onPress, destructive }: SettingsRowConfig) {
+function SettingsRow({ label, icon, onPress, destructive, isLast }: SettingsRowConfig) {
   return (
-    <PressableScale style={styles.row} onPress={onPress}>
+    <PressableScale style={[styles.row, isLast ? styles.rowLast : null]} onPress={onPress}>
+      <View style={[styles.rowBadge, destructive ? styles.rowBadgeDestructive : null]}>
+        <Icon
+          name={icon}
+          size={18}
+          color={destructive ? colors.status.error : colors.gold.text}
+        />
+      </View>
       <Text style={[styles.rowLabel, destructive ? styles.rowLabelDestructive : null]}>
         {label}
       </Text>
-      <Text style={styles.chevron}>›</Text>
+      <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
     </PressableScale>
   );
 }
@@ -40,40 +50,59 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.heading}>Settings</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScreenHeader title="Settings" onBack={() => navigation.goBack()} />
 
-        <Text style={styles.sectionLabel}>Account</Text>
-        <View style={styles.section}>
-          <SettingsRow label="Profile" onPress={() => navigation.navigate('EditProfile')} />
-          <SettingsRow
-            label="Change password"
-            onPress={() => navigation.navigate('ChangePassword')}
-          />
-          <SettingsRow label="App Lock" onPress={() => navigation.navigate('AppLockSettings')} />
-        </View>
+        <Animated.View entering={fadeInUp(60)}>
+          <Text style={styles.sectionLabel}>Account</Text>
+          <View style={styles.section}>
+            <SettingsRow
+              label="Profile"
+              icon="person-circle-outline"
+              onPress={() => navigation.navigate('EditProfile')}
+            />
+            <SettingsRow
+              label="Change password"
+              icon="lock-closed-outline"
+              onPress={() => navigation.navigate('ChangePassword')}
+            />
+            <SettingsRow
+              label="App Lock"
+              icon="shield-checkmark-outline"
+              onPress={() => navigation.navigate('AppLockSettings')}
+              isLast
+            />
+          </View>
+        </Animated.View>
 
-        <Text style={styles.sectionLabel}>Legal</Text>
-        <View style={styles.section}>
-          <SettingsRow label="Terms & Privacy" onPress={() => navigation.navigate('Legal')} />
-        </View>
+        <Animated.View entering={fadeInUp(120)}>
+          <Text style={styles.sectionLabel}>Legal</Text>
+          <View style={styles.section}>
+            <SettingsRow
+              label="Terms & Privacy"
+              icon="receipt-outline"
+              onPress={() => navigation.navigate('Legal')}
+              isLast
+            />
+          </View>
+        </Animated.View>
 
-        <Text style={styles.sectionLabel}>Account management</Text>
-        <View style={styles.section}>
-          <SettingsRow
-            label="Delete account"
-            onPress={() => navigation.navigate('DeleteAccount')}
-          />
-        </View>
+        <Animated.View entering={fadeInUp(180)}>
+          <Text style={styles.sectionLabel}>Account management</Text>
+          <View style={styles.section}>
+            <SettingsRow
+              label="Delete account"
+              icon="warning-outline"
+              onPress={() => navigation.navigate('DeleteAccount')}
+              destructive
+              isLast
+            />
+          </View>
 
-        <View style={styles.section}>
-          <SettingsRow label="Log out" onPress={confirmLogout} destructive />
-        </View>
+          <View style={[styles.section, styles.sectionLoose]}>
+            <SettingsRow label="Log out" icon="lock-open-outline" onPress={confirmLogout} destructive isLast />
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -81,36 +110,42 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: spacing['4xl'] },
-  header: { marginTop: spacing.sm, marginBottom: spacing.lg },
-  backText: { color: colors.textPrimary, fontSize: 15 },
-  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing['2xl'] },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing['4xl'] },
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...typography.label,
     color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
     marginBottom: spacing.sm,
     marginTop: spacing.xl,
   },
   section: {
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
+    ...shadows.sm,
   },
+  sectionLoose: { marginTop: spacing.lg },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 56,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[100],
   },
-  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary },
+  rowLast: { borderBottomWidth: 0 },
+  rowBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowBadgeDestructive: { backgroundColor: colors.status.errorBg },
+  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary, flex: 1 },
   rowLabelDestructive: { color: colors.status.error },
-  chevron: { fontSize: 18, color: colors.textTertiary },
 });

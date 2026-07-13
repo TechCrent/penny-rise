@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -13,13 +11,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
+import Animated from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { FormField } from '../../components/FormField';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { Banner, GradientHero, ScreenHeader, fadeInUp } from '../../components/ui';
 import { extractApiError } from '../../api/client';
 import { useProfile } from './useProfile';
-import { colors, spacing, typography } from '../../theme';
+import { colors, radii, shadows, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'EditProfile'>;
 
@@ -84,56 +84,64 @@ export function ProfileScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-              <Text style={styles.backText}>← Back</Text>
-            </TouchableOpacity>
-          </View>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <ScreenHeader title="Profile" onBack={() => navigation.goBack()} />
 
-          <Text style={styles.heading}>Profile</Text>
+          <Animated.View entering={fadeInUp(50)}>
+            <GradientHero
+              icon="person-circle-outline"
+              title={profile?.display_name || 'Profile'}
+              subtitle={profile?.email ?? ''}
+            />
+          </Animated.View>
 
-          <FormField label="Email" value={profile?.email ?? ''} editable={false} />
+          <Animated.View entering={fadeInUp(110)} style={styles.formCard}>
+            <FormField label="Email" value={profile?.email ?? ''} editable={false} />
 
-          <Controller
-            control={control}
-            name="displayName"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label="Display name"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.displayName?.message}
-              />
-            )}
-          />
+            <Controller
+              control={control}
+              name="displayName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Display name"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.displayName?.message}
+                />
+              )}
+            />
 
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label={phoneAlreadySet ? 'Phone (locked)' : 'Phone'}
-                placeholder="0501234567"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                editable={!phoneAlreadySet}
-                keyboardType="phone-pad"
-                error={phoneError}
-              />
-            )}
-          />
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label={phoneAlreadySet ? 'Phone (locked)' : 'Phone'}
+                  placeholder="0501234567"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  editable={!phoneAlreadySet}
+                  keyboardType="phone-pad"
+                  error={phoneError}
+                />
+              )}
+            />
 
-          {updateSuccess ? <Text style={styles.successText}>Profile updated.</Text> : null}
+            {updateSuccess ? <Banner tone="success" message="Profile updated." /> : null}
 
-          <PrimaryButton
-            title="Save changes"
-            onPress={handleSubmit(onSubmit)}
-            loading={isUpdating}
-            style={styles.submitButton}
-          />
+            <PrimaryButton
+              title="Save changes"
+              onPress={handleSubmit(onSubmit)}
+              loading={isUpdating}
+              style={styles.submitButton}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -144,10 +152,14 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing['4xl'] },
-  header: { marginBottom: spacing['2xl'] },
-  backText: { color: colors.textPrimary, fontSize: 15 },
-  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing['2xl'] },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing['4xl'] },
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    ...shadows.sm,
+  },
   submitButton: { marginTop: spacing.sm },
-  successText: { color: colors.status.successText, fontSize: 13, marginBottom: spacing.md },
 });

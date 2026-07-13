@@ -4,13 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import NetInfo from '@react-native-community/netinfo';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { PressableScale } from '../components/ui';
-import { colors, radii, spacing, typography } from '../theme';
+import { Icon, PressableScale } from '../components/ui';
+import type { IconName } from '../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Welcome'>;
+
+const TRUST_POINTS: { icon: IconName; label: string }[] = [
+  { icon: 'lock-closed', label: 'Bank-grade\nsecurity' },
+  { icon: 'people-outline', label: 'Save with\nyour circle' },
+  { icon: 'target', label: 'Hit every\ngoal' },
+];
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -29,11 +37,18 @@ export default function WelcomeScreen() {
         <View style={styles.spacer} />
 
         <Animated.View entering={FadeIn.duration(500)} style={styles.logoBadge}>
-          <Image
-            source={require('../../assets/images/splash-icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <LinearGradient
+            colors={[colors.gold.base, colors.gold.hover]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.logoBadgeInner}
+          >
+            <Image
+              source={require('../../assets/images/splash-icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </LinearGradient>
         </Animated.View>
 
         <Animated.View entering={FadeIn.delay(100).duration(500)}>
@@ -44,6 +59,17 @@ export default function WelcomeScreen() {
         <Animated.Text entering={FadeIn.delay(180).duration(500)} style={styles.tagline}>
           Save alone, save together, and actually get there.
         </Animated.Text>
+
+        <Animated.View entering={FadeIn.delay(240).duration(500)} style={styles.trustRow}>
+          {TRUST_POINTS.map(point => (
+            <View key={point.label} style={styles.trustItem}>
+              <View style={styles.trustIconWrap}>
+                <Icon name={point.icon} size={18} color={colors.gold.text} />
+              </View>
+              <Text style={styles.trustLabel}>{point.label}</Text>
+            </View>
+          ))}
+        </Animated.View>
 
         <View style={styles.spacer} />
 
@@ -68,7 +94,7 @@ export default function WelcomeScreen() {
             </PressableScale>
           </View>
         ) : (
-          <Animated.View entering={FadeIn.delay(260).duration(500)} style={styles.actions}>
+          <Animated.View entering={FadeIn.delay(300).duration(500)} style={styles.actions}>
             <PressableScale
               style={styles.primaryButton}
               onPress={() => navigation.navigate('Register')}
@@ -104,15 +130,18 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 28, paddingBottom: spacing.lg, alignItems: 'center' },
   spacer: { flex: 1 },
   logoBadge: {
-    width: 120,
-    height: 120,
-    borderRadius: radii.pill,
-    backgroundColor: colors.gold.light,
+    borderRadius: radii['2xl'],
+    marginBottom: spacing['2xl'],
+    ...shadows.lg,
+  },
+  logoBadgeInner: {
+    width: 116,
+    height: 116,
+    borderRadius: radii['2xl'],
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing['2xl'],
   },
-  logo: { width: 72, height: 72, tintColor: colors.gold.text },
+  logo: { width: 66, height: 66, tintColor: colors.neutral[900] },
   title: {
     ...typography.display,
     color: colors.textPrimary,
@@ -124,7 +153,7 @@ const styles = StyleSheet.create({
     color: colors.gold.text,
     textAlign: 'center',
     letterSpacing: 3,
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   tagline: {
     fontSize: 16,
@@ -132,6 +161,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 23,
     paddingHorizontal: spacing.md,
+    marginBottom: spacing['2xl'],
+  },
+  trustRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.md,
+    alignSelf: 'stretch',
+  },
+  trustItem: { flex: 1, alignItems: 'center', gap: spacing.sm },
+  trustIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.lg,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trustLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 16,
+    fontWeight: '500',
   },
   actions: { alignSelf: 'stretch' },
   primaryButton: {
@@ -142,6 +194,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'stretch',
     marginBottom: spacing.md,
+    ...shadows.md,
   },
   primaryButtonText: { ...typography.button, color: colors.neutral[900] },
   secondaryButton: {

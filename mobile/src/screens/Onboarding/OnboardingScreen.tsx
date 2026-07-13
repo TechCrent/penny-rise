@@ -16,7 +16,7 @@ import Animated, { FadeIn, useAnimatedStyle, withTiming } from 'react-native-rea
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { markOnboardingSeen } from '../../storage/onboardingStorage';
 import { PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -92,11 +92,17 @@ export default function OnboardingScreen() {
         onMomentumScrollEnd={onScroll}
         renderItem={({ item }) => (
           <View style={styles.slide} testID="onboarding-slide">
-            <Animated.View entering={FadeIn.duration(400)} style={styles.emojiBadge}>
-              <Text style={styles.emoji}>{item.emoji}</Text>
+            <Animated.View entering={FadeIn.duration(400)} style={styles.emojiHalo}>
+              <View style={styles.emojiBadge}>
+                <Text style={styles.emoji}>{item.emoji}</Text>
+              </View>
             </Animated.View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.body}>{item.body}</Text>
+            <Animated.Text entering={FadeIn.delay(80).duration(400)} style={styles.title}>
+              {item.title}
+            </Animated.Text>
+            <Animated.Text entering={FadeIn.delay(140).duration(400)} style={styles.body}>
+              {item.body}
+            </Animated.Text>
           </View>
         )}
       />
@@ -139,14 +145,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing['3xl'],
   },
-  emojiBadge: {
-    width: 112,
-    height: 112,
+  emojiHalo: {
+    width: 148,
+    height: 148,
     borderRadius: radii.pill,
     backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing['3xl'],
+  },
+  emojiBadge: {
+    width: 112,
+    height: 112,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.md,
   },
   emoji: { fontSize: 52 },
   title: {
@@ -169,6 +186,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.md,
   },
   primaryButtonText: { ...typography.button, color: colors.neutral[900] },
 });

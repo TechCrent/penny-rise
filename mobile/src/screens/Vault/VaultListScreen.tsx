@@ -1,13 +1,14 @@
 import React, { useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { VaultCard } from '../../components/VaultCard';
-import { PressableScale, EmptyState } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { PressableScale, EmptyState, fadeInUp } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 import type { VaultListItem } from '../../api/vaults';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'VaultList'>;

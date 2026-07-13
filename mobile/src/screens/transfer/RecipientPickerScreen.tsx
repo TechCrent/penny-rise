@@ -6,8 +6,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { transferApi } from '../../api/transfers';
 import type { RecipientResult } from '../../api/transfers';
-import { PressableScale } from '../../components/ui';
-import { colors, radii, spacing } from '../../theme';
+import { EmptyState, Icon, PressableScale, ScreenHeader } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RecipientPicker'>;
 
@@ -18,6 +18,10 @@ function useDebounce<T>(value: T, ms: number): T {
     return () => clearTimeout(t);
   }, [value, ms]);
   return debounced;
+}
+
+function initialOf(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || '?';
 }
 
 export function RecipientPickerScreen() {
@@ -60,7 +64,12 @@ export function RecipientPickerScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <View style={styles.header}>
+        <ScreenHeader title="Send money" onBack={() => navigation.goBack()} />
+      </View>
+
       <View style={styles.searchRow}>
+        <Icon name="people-outline" size={18} color={colors.textTertiary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name or email"
@@ -72,30 +81,47 @@ export function RecipientPickerScreen() {
         />
         {loading && <ActivityIndicator style={styles.searchSpinner} color={colors.gold.base} />}
       </View>
+
       {error !== null && (
         <Text style={styles.errorText} testID="search-error">
           {error}
         </Text>
       )}
+
       <FlatList
         data={results}
         keyExtractor={r => r.id}
         testID="results-list"
+        contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
         renderItem={({ item: r }) => (
           <PressableScale
             style={styles.resultRow}
             onPress={() => handleSelect(r)}
             testID={`recipient-${r.id}`}
           >
-            <Text style={styles.resultName}>{r.displayName}</Text>
-            <Text style={styles.resultEmail}>{r.email}</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initialOf(r.displayName)}</Text>
+            </View>
+            <View style={styles.resultBody}>
+              <Text style={styles.resultName} numberOfLines={1}>
+                {r.displayName}
+              </Text>
+              <Text style={styles.resultEmail} numberOfLines={1}>
+                {r.email}
+              </Text>
+            </View>
+            <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
           </PressableScale>
         )}
         ListEmptyComponent={
           debouncedQuery.trim().length >= 2 && !loading ? (
-            <Text style={styles.emptyText} testID="no-results">
-              No results found.
-            </Text>
+            <EmptyState
+              icon="people-outline"
+              title="No results found."
+              message="Try a different name or email address."
+              testID="no-results"
+            />
           ) : null
         }
       />
@@ -105,26 +131,52 @@ export function RecipientPickerScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: spacing.lg,
+    gap: spacing.sm,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    borderWidth: 1.5,
+    borderRadius: radii.lg,
+    borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
+    ...shadows.sm,
   },
-  searchInput: { flex: 1, height: 48, fontSize: 16, color: colors.textPrimary },
+  searchInput: { flex: 1, height: 52, ...typography.body, color: colors.textPrimary },
   searchSpinner: { marginLeft: spacing.sm },
+  listContent: { paddingHorizontal: spacing.xl, paddingBottom: spacing['4xl'] },
   resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    ...shadows.sm,
   },
-  resultName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  resultEmail: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  emptyText: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing['4xl'] },
-  errorText: { color: colors.status.error, textAlign: 'center', marginBottom: spacing.sm },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { ...typography.bodyMedium, color: colors.gold.text, fontWeight: '700' },
+  resultBody: { flex: 1 },
+  resultName: { ...typography.bodyMedium, color: colors.textPrimary },
+  resultEmail: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  errorText: {
+    color: colors.status.error,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+    ...typography.caption,
+  },
 });

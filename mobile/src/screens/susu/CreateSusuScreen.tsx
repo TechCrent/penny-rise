@@ -13,10 +13,11 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import { susuApi } from '../../api/susu';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
-import { colors, radii, spacing } from '../../theme';
+import { PressableScale, ScreenHeader, fadeInUp } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 import {
   validateCreateSusuForm,
   cedisToPesewas,
@@ -108,132 +109,138 @@ export function CreateSusuScreen() {
         keyboardShouldPersistTaps="handled"
         testID="create-susu-screen"
       >
-        <View style={styles.stepRow}>
+        <ScreenHeader onBack={() => navigation.goBack()} />
+
+        <Animated.View entering={fadeInUp(40)} style={styles.stepRow}>
           <Text style={styles.stepLabel}>Step 1 of 3 · Basics</Text>
           <View style={styles.progressBg}>
             <View style={styles.progressFill} />
           </View>
-        </View>
+        </Animated.View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Susu type</Text>
-          <View style={styles.pillRow} testID="group-type-picker">
-            <TouchableOpacity
-              style={[styles.pill, styles.pillActive]}
-              testID="group-type-traditional"
-              accessibilityState={{ selected: true }}
-            >
-              <Text style={[styles.pillText, styles.pillTextActive]}>Traditional</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.pill}
-              onPress={() => navigation.navigate('SusuModernComingSoon')}
-              testID="group-type-modern"
-              accessibilityState={{ selected: false }}
-              accessibilityLabel="Modern — coming soon"
-            >
-              <Text style={styles.pillText}>Modern</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.hint}>
-            Traditional: interest-free rotating credit — each round, one member gets the pot.
-          </Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Group name</Text>
-          <TextInput
-            style={[styles.input, errors.name && styles.inputError]}
-            value={form.name}
-            onChangeText={v => update('name', v)}
-            placeholder="e.g. Akua's Savings Circle"
-            placeholderTextColor={colors.textTertiary}
-            maxLength={100}
-            testID="name-input"
-          />
-          {errors.name && (
-            <Text style={styles.errorText} testID="name-error">
-              {errors.name}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Contribution per round (GHS)</Text>
-          <TextInput
-            style={[styles.input, errors.contributionCedis && styles.inputError]}
-            value={form.contributionCedis}
-            onChangeText={v => update('contributionCedis', v.replace(/[^0-9.]/g, ''))}
-            placeholder="e.g. 200.00"
-            placeholderTextColor={colors.textTertiary}
-            keyboardType="decimal-pad"
-            testID="contribution-input"
-          />
-          {errors.contributionCedis && (
-            <Text style={styles.errorText} testID="contribution-error">
-              {errors.contributionCedis}
-            </Text>
-          )}
-          <Text style={styles.hint}>Each member pays this amount every round.</Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Frequency</Text>
-          <View style={styles.pillRow} testID="frequency-picker">
-            {FREQUENCIES.map(f => (
+        <Animated.View entering={fadeInUp(80)} style={styles.card}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Susu type</Text>
+            <View style={styles.pillRow} testID="group-type-picker">
               <TouchableOpacity
-                key={f.value}
-                style={[styles.pill, form.frequency === f.value && styles.pillActive]}
-                onPress={() => update('frequency', f.value)}
-                testID={`freq-${f.value}`}
+                style={[styles.pill, styles.pillActive]}
+                testID="group-type-traditional"
+                accessibilityState={{ selected: true }}
               >
-                <Text
-                  style={[styles.pillText, form.frequency === f.value && styles.pillTextActive]}
-                >
-                  {f.label}
-                </Text>
+                <Text style={[styles.pillText, styles.pillTextActive]}>Traditional</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>
-            Number of members
-            <Text style={styles.labelSub}> · {form.targetMemberCount} selected</Text>
-          </Text>
-          <View style={styles.pillRow} testID="member-count-picker">
-            {MEMBER_COUNTS.map(n => (
               <TouchableOpacity
-                key={n}
-                style={[
-                  styles.pill,
-                  styles.pillSmall,
-                  form.targetMemberCount === n && styles.pillActive,
-                ]}
-                onPress={() => update('targetMemberCount', n)}
-                testID={`count-${n}`}
+                style={styles.pill}
+                onPress={() => navigation.navigate('SusuModernComingSoon')}
+                testID="group-type-modern"
+                accessibilityState={{ selected: false }}
+                accessibilityLabel="Modern — coming soon"
               >
-                <Text
-                  style={[styles.pillText, form.targetMemberCount === n && styles.pillTextActive]}
-                >
-                  {n}
-                </Text>
+                <Text style={styles.pillText}>Modern</Text>
               </TouchableOpacity>
-            ))}
+            </View>
+            <Text style={styles.hint}>
+              Traditional: interest-free rotating credit — each round, one member gets the pot.
+            </Text>
           </View>
-          {errors.targetMemberCount && (
-            <Text style={styles.errorText}>{errors.targetMemberCount}</Text>
-          )}
-        </View>
+        </Animated.View>
 
-        <View style={styles.helperBox}>
+        <Animated.View entering={fadeInUp(120)} style={styles.card}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Group name</Text>
+            <TextInput
+              style={[styles.input, errors.name && styles.inputError]}
+              value={form.name}
+              onChangeText={v => update('name', v)}
+              placeholder="e.g. Akua's Savings Circle"
+              placeholderTextColor={colors.textTertiary}
+              maxLength={100}
+              testID="name-input"
+            />
+            {errors.name && (
+              <Text style={styles.errorText} testID="name-error">
+                {errors.name}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Contribution per round (GHS)</Text>
+            <TextInput
+              style={[styles.input, styles.inputMoney, errors.contributionCedis && styles.inputError]}
+              value={form.contributionCedis}
+              onChangeText={v => update('contributionCedis', v.replace(/[^0-9.]/g, ''))}
+              placeholder="e.g. 200.00"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="decimal-pad"
+              testID="contribution-input"
+            />
+            {errors.contributionCedis && (
+              <Text style={styles.errorText} testID="contribution-error">
+                {errors.contributionCedis}
+              </Text>
+            )}
+            <Text style={styles.hint}>Each member pays this amount every round.</Text>
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Frequency</Text>
+            <View style={styles.pillRow} testID="frequency-picker">
+              {FREQUENCIES.map(f => (
+                <TouchableOpacity
+                  key={f.value}
+                  style={[styles.pill, form.frequency === f.value && styles.pillActive]}
+                  onPress={() => update('frequency', f.value)}
+                  testID={`freq-${f.value}`}
+                >
+                  <Text
+                    style={[styles.pillText, form.frequency === f.value && styles.pillTextActive]}
+                  >
+                    {f.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.fieldLast}>
+            <Text style={styles.label}>
+              Number of members
+              <Text style={styles.labelSub}> · {form.targetMemberCount} selected</Text>
+            </Text>
+            <View style={styles.pillRow} testID="member-count-picker">
+              {MEMBER_COUNTS.map(n => (
+                <TouchableOpacity
+                  key={n}
+                  style={[
+                    styles.pill,
+                    styles.pillSmall,
+                    form.targetMemberCount === n && styles.pillActive,
+                  ]}
+                  onPress={() => update('targetMemberCount', n)}
+                  testID={`count-${n}`}
+                >
+                  <Text
+                    style={[styles.pillText, form.targetMemberCount === n && styles.pillTextActive]}
+                  >
+                    {n}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {errors.targetMemberCount && (
+              <Text style={styles.errorText}>{errors.targetMemberCount}</Text>
+            )}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={fadeInUp(160)} style={styles.helperBox}>
           <Text style={styles.helperText}>
             {"After creating, you'll share a join code with "}
             {form.targetMemberCount - 1}
             {' other members. The susu starts once everyone has joined and you activate it.'}
           </Text>
-        </View>
+        </Animated.View>
 
         <PressableScale
           style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
-  stepRow: { marginBottom: spacing['2xl'] },
+  stepRow: { marginBottom: spacing.xl },
   stepLabel: {
     fontSize: 12,
     color: colors.textSecondary,
@@ -265,9 +272,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  progressBg: { height: 4, backgroundColor: colors.neutral[200], borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: colors.gold.base, borderRadius: 2, width: '33%' },
+  progressBg: { height: 6, backgroundColor: colors.neutral[200], borderRadius: radii.pill },
+  progressFill: { height: 6, backgroundColor: colors.gold.base, borderRadius: radii.pill, width: '33%' },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
   field: { marginBottom: spacing.xl },
+  fieldLast: { marginBottom: 0 },
   label: { fontSize: 14, fontWeight: '600', color: colors.neutral[700], marginBottom: spacing.sm },
   labelSub: { fontWeight: '400', color: colors.textTertiary },
   input: {
@@ -280,6 +297,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
+  inputMoney: { ...typography.numericMedium, color: colors.textPrimary },
   inputError: { borderColor: colors.status.error },
   errorText: { color: colors.status.error, fontSize: 12, marginTop: spacing.xs },
   hint: { color: colors.textTertiary, fontSize: 12, marginTop: spacing.xs },
@@ -295,15 +313,21 @@ const styles = StyleSheet.create({
   pillSmall: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   pillActive: { backgroundColor: colors.gold.base, borderColor: colors.gold.base },
   pillText: { fontSize: 14, fontWeight: '500', color: colors.neutral[700] },
-  pillTextActive: { color: colors.neutral[900] },
-  helperBox: { backgroundColor: colors.status.infoBg, borderRadius: radii.md, padding: spacing.md, marginBottom: spacing['2xl'] },
-  helperText: { color: colors.status.infoText, fontSize: 13 },
+  pillTextActive: { color: colors.neutral[900], fontWeight: '700' },
+  helperBox: {
+    backgroundColor: colors.status.infoBg,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  helperText: { color: colors.status.infoText, fontSize: 13, lineHeight: 19 },
   submitBtn: {
     backgroundColor: colors.gold.base,
     paddingVertical: spacing.lg,
     borderRadius: radii.md,
     alignItems: 'center',
+    ...shadows.sm,
   },
   submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
+  submitBtnText: { ...typography.button, color: colors.neutral[900] },
 });

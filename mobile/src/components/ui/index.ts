@@ -5,4 +5,8 @@ export { PressableScale } from './PressableScale';
 export { EmptyState } from './EmptyState';
 export { Icon } from './Icon';
 export type { IconName } from './Icon';
+export { Banner } from './Banner';
+export type { BannerTone } from './Banner';
+export { ScreenHeader } from './ScreenHeader';
+export { GradientHero } from './GradientHero';
 export { fadeInUp } from './motion';

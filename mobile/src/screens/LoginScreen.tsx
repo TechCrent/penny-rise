@@ -15,16 +15,17 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { Banner, GradientHero, Icon, fadeInUp } from '../components/ui';
 import { login } from '../api/auth';
 import { extractApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { isKycUnderReviewBannerPending } from '../storage/kycStorage';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, shadows, spacing } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 type Route = RouteProp<RootStackParamList, 'Login'>;
@@ -122,116 +123,126 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow} hitSlop={8}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-
-          {successBanner ? (
-            <Animated.View entering={FadeInUp.duration(300)} style={styles.successBanner}>
-              <Text style={styles.successBannerText}>{successBanner}</Text>
-            </Animated.View>
-          ) : null}
-
-          {showUnderReviewBanner ? (
-            <View style={styles.reviewBanner}>
-              <Text style={styles.reviewBannerText}>
-                Your KYC verification is under review. Log in to check your status.
-              </Text>
-            </View>
-          ) : null}
-
-          <Text style={styles.heading}>Welcome back</Text>
-          <Text style={styles.subheading}>Sign in to your Stash account.</Text>
-
-          {globalError ? (
-            <Animated.View entering={FadeInUp.duration(300)} style={styles.globalError}>
-              <Text style={styles.globalErrorText}>{globalError}</Text>
-            </Animated.View>
-          ) : null}
-
-          {isLocked ? (
-            <Animated.View entering={FadeInUp.duration(300)} style={styles.lockoutBox}>
-              <Text style={styles.lockoutTitle}>Account temporarily locked</Text>
-              <Text style={styles.lockoutBody}>
-                Too many failed attempts. Try again in{' '}
-                <Text style={styles.lockoutTimer}>
-                  {lockoutMinutes}:{lockoutSeconds.toString().padStart(2, '0')}
-                </Text>
-              </Text>
-            </Animated.View>
-          ) : null}
-
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label="Email address"
-                placeholder="you@example.com"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                editable={!isLocked}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label="Password"
-                placeholder="Your password"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.password?.message}
-                secureTextEntry={!showPassword}
-                textContentType="password"
-                editable={!isLocked}
-                rightElement={
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(v => !v)}
-                    style={styles.eyeButton}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
-                  </TouchableOpacity>
-                }
-              />
-            )}
-          />
-
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity
-            onPress={() => navigation.navigate('ForgotPassword')}
-            style={styles.forgotRow}
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Icon name="chevron-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
 
-          <PrimaryButton
-            title={
-              isLocked
-                ? `Locked (${lockoutMinutes}:${lockoutSeconds.toString().padStart(2, '0')})`
-                : 'Sign in'
-            }
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            disabled={isLocked}
-            style={styles.submitButton}
-          />
+          <Animated.View entering={fadeInUp(40)}>
+            <GradientHero showLogo title="Welcome back" subtitle="Sign in to your Stash account." />
+          </Animated.View>
 
-          <View style={styles.registerRow}>
+          <Animated.View entering={fadeInUp(110)} style={styles.formCard}>
+            {successBanner ? <Banner tone="success" message={successBanner} /> : null}
+
+            {showUnderReviewBanner ? (
+              <Banner
+                tone="info"
+                message="Your KYC verification is under review. Log in to check your status."
+              />
+            ) : null}
+
+            {globalError ? <Banner tone="error" message={globalError} /> : null}
+
+            {isLocked ? (
+              <Banner
+                tone="warning"
+                icon="lock-closed"
+                title="Account temporarily locked"
+                message={`Too many failed attempts. Try again in ${lockoutMinutes}:${lockoutSeconds
+                  .toString()
+                  .padStart(2, '0')}`}
+              />
+            ) : null}
+
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Email address"
+                  placeholder="you@example.com"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.email?.message}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  editable={!isLocked}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Password"
+                  placeholder="Your password"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.password?.message}
+                  secureTextEntry={!showPassword}
+                  textContentType="password"
+                  editable={!isLocked}
+                  rightElement={
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(v => !v)}
+                      style={styles.eyeButton}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <Icon
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={colors.textTertiary}
+                      />
+                    </TouchableOpacity>
+                  }
+                />
+              )}
+            />
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ForgotPassword')}
+              style={styles.forgotRow}
+              hitSlop={8}
+            >
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </TouchableOpacity>
+
+            <PrimaryButton
+              title={
+                isLocked
+                  ? `Locked (${lockoutMinutes}:${lockoutSeconds.toString().padStart(2, '0')})`
+                  : 'Sign in'
+              }
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              disabled={isLocked}
+              style={styles.submitButton}
+            />
+          </Animated.View>
+
+          <Animated.View entering={fadeInUp(180)} style={styles.registerRow}>
             <Text style={styles.registerText}>Don&apos;t have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')} hitSlop={8}>
               <Text style={styles.registerLink}>Register</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -241,51 +252,35 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
-  backRow: { marginBottom: spacing.xl },
-  backText: { color: colors.textPrimary, fontSize: 15 },
-  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
-  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
-  successBanner: {
-    backgroundColor: colors.status.successBg,
-    borderRadius: radii.sm,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
+  scroll: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
   },
-  successBannerText: { color: colors.status.successText, fontSize: 14, fontWeight: '500' },
-  reviewBanner: {
-    backgroundColor: colors.status.infoBg,
-    borderRadius: radii.sm,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  reviewBannerText: { color: colors.status.infoText, fontSize: 14, fontWeight: '500' },
-  globalError: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.sm,
-    padding: spacing.md,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.xl,
   },
-  globalErrorText: { color: colors.status.errorText, fontSize: 14 },
-  lockoutBox: {
-    backgroundColor: colors.status.warningBg,
-    borderRadius: radii.sm,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: colors.border,
+    padding: spacing.xl,
+    ...shadows.sm,
   },
-  lockoutTitle: { fontSize: 15, fontWeight: '600', color: colors.status.warningText, marginBottom: spacing.sm },
-  lockoutBody: { fontSize: 14, color: colors.status.warningText },
-  lockoutTimer: { fontWeight: '700', fontVariant: ['tabular-nums'] },
   eyeButton: { paddingHorizontal: spacing.md },
-  eyeText: { color: colors.textSecondary, fontSize: 14 },
-  forgotRow: { alignSelf: 'flex-end', marginBottom: spacing.xl, marginTop: -spacing.xs },
-  forgotText: { color: colors.textPrimary, fontSize: 14, textDecorationLine: 'underline' },
+  forgotRow: { alignSelf: 'flex-end', marginBottom: spacing.lg, marginTop: -spacing.xs },
+  forgotText: { color: colors.gold.text, fontSize: 14, fontWeight: '600' },
   submitButton: { marginTop: spacing.xxs },
-  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl },
+  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },
   registerText: { color: colors.textSecondary, fontSize: 14 },
-  registerLink: { color: colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  registerLink: { color: colors.gold.text, fontSize: 14, fontWeight: '700' },
 });

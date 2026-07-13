@@ -4,11 +4,12 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated from 'react-native-reanimated';
 import { shareJoinCode } from '../../api/susu';
 import { useSusuDetail } from '../../hooks/useSusuDetail';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { PressableScale } from '../../components/ui';
-import { colors, radii, spacing } from '../../theme';
+import { Icon, PressableScale, ScreenHeader, fadeInUp } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 export function CreateSusuInviteScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -39,32 +40,37 @@ export function CreateSusuInviteScreen() {
 
   return (
     <View style={styles.screen} testID="create-susu-invite-screen">
-      <View style={styles.stepRow}>
+      <ScreenHeader onBack={() => navigation.goBack()} />
+
+      <Animated.View entering={fadeInUp(40)} style={styles.stepRow}>
         <Text style={styles.stepLabel}>Step 2 of 3 · Invite members</Text>
         <View style={styles.progressBg}>
           <View style={styles.progressFill} />
         </View>
-      </View>
+      </Animated.View>
 
-      <LinearGradient
-        colors={[colors.heroFrom, colors.heroTo]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.codeHero}
-        testID="join-code-card"
-      >
-        <Text style={styles.codeLabel}>Share this code</Text>
-        <Text style={styles.code} testID="join-code-text">
-          {joinCode}
-        </Text>
-        <Text style={styles.codeHint}>Send this code to your future members so they can join.</Text>
-      </LinearGradient>
+      <Animated.View entering={fadeInUp(80)}>
+        <LinearGradient
+          colors={[colors.heroFrom, colors.heroTo]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.codeHero}
+          testID="join-code-card"
+        >
+          <Text style={styles.codeLabel}>Share this code</Text>
+          <Text style={styles.code} testID="join-code-text">
+            {joinCode}
+          </Text>
+          <Text style={styles.codeHint}>Send this code to your future members so they can join.</Text>
+        </LinearGradient>
 
-      <PressableScale style={styles.shareBtn} onPress={handleShare} testID="share-btn">
-        <Text style={styles.shareBtnText}>Share code</Text>
-      </PressableScale>
+        <PressableScale style={styles.shareBtn} onPress={handleShare} testID="share-btn">
+          <Icon name="share-social-outline" size={18} color={colors.neutral[900]} />
+          <Text style={styles.shareBtnText}>Share code</Text>
+        </PressableScale>
+      </Animated.View>
 
-      <View style={styles.memberProgress} testID="member-progress">
+      <Animated.View entering={fadeInUp(120)} style={styles.memberProgress} testID="member-progress">
         <Text style={styles.memberProgressLabel}>Members joined</Text>
         <Text style={styles.memberProgressCount}>
           {memberCount} / {targetMemberCount}
@@ -93,9 +99,9 @@ export function CreateSusuInviteScreen() {
             </PressableScale>
           </View>
         )}
-      </View>
+      </Animated.View>
 
-      <View style={styles.summary} testID="group-summary">
+      <Animated.View entering={fadeInUp(160)} style={styles.summary} testID="group-summary">
         <Text style={styles.summaryTitle}>{groupName}</Text>
         <Text style={styles.summaryMeta}>
           {'GHS '}
@@ -110,7 +116,7 @@ export function CreateSusuInviteScreen() {
           {targetMemberCount}
           {' members'}
         </Text>
-      </View>
+      </Animated.View>
 
       <View style={styles.ctaRow}>
         <PressableScale
@@ -137,7 +143,7 @@ export function CreateSusuInviteScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background, padding: spacing.xl },
-  stepRow: { marginBottom: spacing['2xl'] },
+  stepRow: { marginBottom: spacing.xl },
   stepLabel: {
     fontSize: 12,
     color: colors.textSecondary,
@@ -146,13 +152,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  progressBg: { height: 4, backgroundColor: colors.neutral[200], borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: colors.gold.base, borderRadius: 2, width: '66%' },
+  progressBg: { height: 6, backgroundColor: colors.neutral[200], borderRadius: radii.pill },
+  progressFill: { height: 6, backgroundColor: colors.gold.base, borderRadius: radii.pill, width: '66%' },
   codeHero: {
-    borderRadius: radii.lg,
+    borderRadius: radii['2xl'],
     padding: spacing['2xl'],
     alignItems: 'center',
     marginBottom: spacing.md,
+    ...shadows.lg,
   },
   codeLabel: {
     color: colors.textOnDarkMuted,
@@ -160,34 +167,54 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
-  code: { color: colors.textOnDark, fontSize: 36, fontWeight: '900', letterSpacing: 6, marginBottom: spacing.sm },
+  code: {
+    ...typography.numericHero,
+    color: colors.textOnDark,
+    letterSpacing: 6,
+    marginBottom: spacing.md,
+  },
   codeHint: { color: colors.textOnDarkMuted, fontSize: 13, textAlign: 'center' },
   shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.gold.base,
     paddingVertical: spacing.md,
     borderRadius: radii.md,
-    alignItems: 'center',
     marginBottom: spacing['2xl'],
+    ...shadows.sm,
   },
-  shareBtnText: { color: colors.neutral[900], fontWeight: '700' },
+  shareBtnText: { ...typography.button, fontSize: 15, color: colors.neutral[900] },
   memberProgress: {
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
-    padding: spacing.lg,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
     marginBottom: spacing.lg,
+    ...shadows.sm,
   },
-  memberProgressLabel: { fontSize: 12, color: colors.textSecondary, marginBottom: spacing.xs },
-  memberProgressCount: { fontSize: 24, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
-  memberFill: { height: 4, backgroundColor: colors.gold.base, borderRadius: 2 },
-  memberProgressHint: { color: colors.textTertiary, fontSize: 12, marginTop: spacing.xs },
+  memberProgressLabel: { ...typography.label, color: colors.textSecondary, marginBottom: spacing.xs },
+  memberProgressCount: { ...typography.numericLarge, color: colors.textPrimary, marginBottom: spacing.sm },
+  memberFill: { height: 6, backgroundColor: colors.gold.base, borderRadius: radii.pill },
+  memberProgressHint: { color: colors.textTertiary, fontSize: 12, marginTop: spacing.sm },
   memberProgressLoading: { marginTop: spacing.sm, alignItems: 'flex-start' },
   memberProgressError: { marginTop: spacing.sm },
   memberProgressErrorText: { color: colors.status.error, fontSize: 12 },
   memberProgressRetryText: { color: colors.textPrimary, fontSize: 12, fontWeight: '700', marginTop: spacing.xs },
-  summary: { backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.lg, marginBottom: spacing['2xl'] },
-  summaryTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  summary: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing['2xl'],
+    ...shadows.sm,
+  },
+  summaryTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.xs },
   summaryMeta: { fontSize: 13, color: colors.textSecondary },
   ctaRow: { marginTop: 'auto' },
   continueBtn: {
@@ -195,8 +222,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderRadius: radii.md,
     alignItems: 'center',
+    ...shadows.sm,
   },
-  continueBtnSecondary: { backgroundColor: colors.neutral[100] },
-  continueBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
+  continueBtnSecondary: { backgroundColor: colors.neutral[100], ...shadows.none },
+  continueBtnText: { ...typography.button, color: colors.neutral[900] },
   continueBtnTextSecondary: { color: colors.textPrimary },
 });

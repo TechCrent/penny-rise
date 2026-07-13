@@ -14,14 +14,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
-import { Icon } from '../components/ui';
+import { GradientHero, Icon, fadeInUp } from '../components/ui';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { forgotPassword } from '../api/auth';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, shadows, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ForgotPassword'>;
 
@@ -58,7 +58,7 @@ export default function ForgotPasswordScreen() {
   if (submitted) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Animated.View entering={FadeIn.duration(400)} style={styles.confirmedContainer}>
+        <Animated.View entering={fadeInUp(40)} style={styles.confirmedContainer}>
           <View style={styles.iconBadge}>
             <Icon name="mail-outline" size={32} color={colors.gold.text} />
           </View>
@@ -67,8 +67,12 @@ export default function ForgotPasswordScreen() {
             If an account exists for that email address, we&apos;ve sent a password reset link. The
             link expires in 1 hour.
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>Back to sign in</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            style={styles.backLink}
+            hitSlop={8}
+          >
+            <Text style={styles.backLinkText}>Back to sign in</Text>
           </TouchableOpacity>
         </Animated.View>
       </SafeAreaView>
@@ -81,39 +85,54 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow}>
-            <Text style={styles.backText}>← Back</Text>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon name="chevron-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
 
-          <Text style={styles.heading}>Reset your password</Text>
-          <Text style={styles.subheading}>
-            Enter your email address and we&apos;ll send you a reset link if an account exists.
-          </Text>
+          <Animated.View entering={fadeInUp(40)}>
+            <GradientHero
+              showLogo
+              title="Reset your password"
+              subtitle="Enter your email address and we'll send you a reset link if an account exists."
+            />
+          </Animated.View>
 
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label="Email address"
-                placeholder="you@example.com"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-              />
-            )}
-          />
+          <Animated.View entering={fadeInUp(110)} style={styles.formCard}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Email address"
+                  placeholder="you@example.com"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.email?.message}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                />
+              )}
+            />
 
-          <PrimaryButton
-            title="Send reset link"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            style={styles.submitButton}
-          />
+            <PrimaryButton
+              title="Send reset link"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              style={styles.submitButton}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -123,8 +142,37 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
-  confirmedContainer: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: 80, alignItems: 'center' },
+  scroll: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    ...shadows.sm,
+  },
+  submitButton: { marginTop: spacing.xxs },
+  confirmedContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   iconBadge: {
     width: 72,
     height: 72,
@@ -133,13 +181,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing['2xl'],
+    ...shadows.sm,
   },
-  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
-  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  heading: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
   body: { fontSize: 16, color: colors.textSecondary, textAlign: 'center', lineHeight: 24 },
-  backRow: { marginBottom: spacing['3xl'] },
-  backText: { color: colors.textPrimary, fontSize: 15 },
-  submitButton: { marginTop: spacing.sm },
-  backButton: { marginTop: spacing['3xl'], padding: spacing.md },
-  backButtonText: { color: colors.textPrimary, fontSize: 15, textDecorationLine: 'underline' },
+  backLink: { marginTop: spacing['3xl'], padding: spacing.md },
+  backLinkText: { color: colors.gold.text, fontSize: 15, fontWeight: '700' },
 });

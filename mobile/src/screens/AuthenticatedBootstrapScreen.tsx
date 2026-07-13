@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../auth/AuthContext';
@@ -11,7 +13,7 @@ import {
   markKycUnderReviewBannerPending,
   clearKycUnderReviewBannerPending,
 } from '../storage/kycStorage';
-import { colors } from '../theme';
+import { colors, radii, shadows, spacing } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AuthenticatedBootstrap'>;
 
@@ -63,11 +65,45 @@ export default function AuthenticatedBootstrapScreen() {
 
   return (
     <View style={styles.loading}>
-      <ActivityIndicator size="large" color={colors.gold.base} />
+      <Animated.View entering={FadeIn.duration(500)} style={styles.logoBadge}>
+        <LinearGradient
+          colors={[colors.gold.base, colors.gold.hover]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.logoBadgeInner}
+        >
+          <Image
+            source={require('../../assets/images/splash-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </LinearGradient>
+      </Animated.View>
+      <Animated.View entering={FadeIn.delay(180).duration(500)}>
+        <ActivityIndicator size="small" color={colors.gold.base} style={styles.spinner} />
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  logoBadge: {
+    borderRadius: radii['2xl'],
+    ...shadows.lg,
+  },
+  logoBadgeInner: {
+    width: 96,
+    height: 96,
+    borderRadius: radii['2xl'],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: { width: 54, height: 54, tintColor: colors.neutral[900] },
+  spinner: { marginTop: spacing['2xl'] },
 });

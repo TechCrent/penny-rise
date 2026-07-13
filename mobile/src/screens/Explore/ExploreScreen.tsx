@@ -9,9 +9,10 @@ import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { MainTabParamList } from '../../navigation/MainTabNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
+import Animated from 'react-native-reanimated';
 import { useChallenges } from '../Challenges/useChallenges';
 import { sectionFor } from '../Challenges/types';
-import { Icon, PressableScale, type IconName } from '../../components/ui';
+import { Icon, PressableScale, fadeInUp, type IconName } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = CompositeNavigationProp<

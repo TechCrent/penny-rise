@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 
@@ -14,12 +15,13 @@ import {
   type UploadState,
 } from '../components/DocumentUploadSlot';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { GradientHero, Icon, fadeInUp } from '../components/ui';
 import { extractApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { decodeUserIdFromJwt } from '../auth/jwt';
 import { uploadDocumentToSignedUrl, confirmDocumentUpload } from '../api/kyc';
 import { saveKycSubmission, loadKycSubmission, clearKycSubmission } from '../storage/kycStorage';
-import { colors, spacing, typography } from '../theme';
+import { colors, radii, shadows, spacing, typography } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'KycDocumentUpload'>;
 type Route = RouteProp<RootStackParamList, 'KycDocumentUpload'>;
@@ -202,29 +204,49 @@ export default function KycDocumentUploadScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.stepIndicator}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={fadeInUp(30)} style={styles.stepBadge}>
+          <Icon name="lock-closed" size={12} color={colors.gold.text} />
           <Text style={styles.stepText}>Step 2 of 3</Text>
-        </View>
+        </Animated.View>
 
-        <Text style={styles.heading}>Upload your documents</Text>
-        <Text style={styles.subheading}>
-          {uploadedCount < 3
-            ? `${uploadedCount} of 3 documents uploaded`
-            : 'All 3 documents uploaded'}
-        </Text>
+        <Animated.View entering={fadeInUp(50)}>
+          <GradientHero icon="shield-checkmark-outline" title="Upload your documents" />
+        </Animated.View>
 
-        {DOC_CONFIG.map(doc => (
-          <DocumentUploadSlot
-            key={doc.type}
-            label={doc.label}
-            description={doc.description}
-            state={docStates[doc.type].state}
-            progress={docStates[doc.type].progress}
-            previewUri={docStates[doc.type].previewUri}
-            error={docStates[doc.type].error}
-            onImageSelected={uri => handleDocumentSelected(doc.type, uri)}
-          />
+        <Animated.View entering={fadeInUp(110)} style={styles.progressCard}>
+          <View style={styles.progressRow}>
+            <Text style={styles.progressText}>
+              {uploadedCount < 3
+                ? `${uploadedCount} of 3 documents uploaded`
+                : 'All 3 documents uploaded'}
+            </Text>
+            {allUploaded ? (
+              <Icon name="checkmark-circle" size={18} color={colors.status.success} />
+            ) : null}
+          </View>
+          <View style={styles.segments}>
+            {[0, 1, 2].map(i => (
+              <View
+                key={i}
+                style={[styles.segment, i < uploadedCount ? styles.segmentFilled : null]}
+              />
+            ))}
+          </View>
+        </Animated.View>
+
+        {DOC_CONFIG.map((doc, index) => (
+          <Animated.View key={doc.type} entering={fadeInUp(150 + index * 60)}>
+            <DocumentUploadSlot
+              label={doc.label}
+              description={doc.description}
+              state={docStates[doc.type].state}
+              progress={docStates[doc.type].progress}
+              previewUri={docStates[doc.type].previewUri}
+              error={docStates[doc.type].error}
+              onImageSelected={uri => handleDocumentSelected(doc.type, uri)}
+            />
+          </Animated.View>
         ))}
 
         <PrimaryButton
@@ -242,11 +264,47 @@ export default function KycDocumentUploadScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
-  stepIndicator: { marginBottom: spacing.xl },
-  stepText: { fontSize: 13, color: colors.textTertiary, fontWeight: '500' },
-  heading: { ...typography.h1, fontSize: 26, color: colors.textPrimary, marginBottom: spacing.sm },
-  subheading: { fontSize: 15, color: colors.textSecondary, marginBottom: spacing['2xl'] },
+  scroll: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing['4xl'],
+  },
+  stepBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    backgroundColor: colors.gold.light,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  stepText: { ...typography.label, color: colors.gold.text },
+  progressCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    ...shadows.sm,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  progressText: { ...typography.bodyMedium, color: colors.textPrimary },
+  segments: { flexDirection: 'row', gap: spacing.sm },
+  segment: {
+    flex: 1,
+    height: 6,
+    borderRadius: radii.pill,
+    backgroundColor: colors.neutral[200],
+  },
+  segmentFilled: { backgroundColor: colors.gold.base },
   submitButton: { marginTop: spacing.sm },
   hint: { textAlign: 'center', color: colors.textTertiary, fontSize: 13, marginTop: spacing.md },
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  View,
   Text,
   StyleSheet,
   TouchableOpacity,
@@ -14,14 +15,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { FormField } from '../components/FormField';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { Banner, GradientHero, Icon, fadeInUp } from '../components/ui';
 import { resetPassword } from '../api/auth';
 import { extractApiError } from '../api/client';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, shadows, spacing } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ResetPassword'>;
 type Route = RouteProp<RootStackParamList, 'ResetPassword'>;
@@ -92,76 +94,116 @@ export default function ResetPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={styles.heading}>Set a new password</Text>
-          <Text style={styles.subheading}>
-            Choose a strong password with at least one number and one special character.
-          </Text>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Icon name="chevron-back" size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
 
-          {globalError ? (
-            <Animated.View entering={FadeInUp.duration(300)} style={styles.globalError}>
-              <Text style={styles.globalErrorText}>{globalError}</Text>
-              {globalError.includes('expired') || globalError.includes('already been used') ? (
-                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text style={styles.requestNewLink}>Request a new reset link →</Text>
-                </TouchableOpacity>
-              ) : null}
-            </Animated.View>
-          ) : null}
+          <Animated.View entering={fadeInUp(40)}>
+            <GradientHero
+              showLogo
+              title="Set a new password"
+              subtitle="Choose a strong password with at least one number and one special character."
+            />
+          </Animated.View>
 
-          <Controller
-            control={control}
-            name="newPassword"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label="New password"
-                placeholder="Min. 8 characters"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.newPassword?.message}
-                secureTextEntry={!showNew}
-                textContentType="newPassword"
-                rightElement={
-                  <TouchableOpacity onPress={() => setShowNew(v => !v)} style={styles.eyeButton}>
-                    <Text style={styles.eyeText}>{showNew ? 'Hide' : 'Show'}</Text>
-                  </TouchableOpacity>
-                }
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormField
-                label="Confirm new password"
-                placeholder="Repeat your new password"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.confirmPassword?.message}
-                secureTextEntry={!showConfirm}
-                textContentType="newPassword"
-                rightElement={
+          <Animated.View entering={fadeInUp(110)} style={styles.formCard}>
+            {globalError ? (
+              <View>
+                <Banner tone="error" message={globalError} />
+                {globalError.includes('expired') || globalError.includes('already been used') ? (
                   <TouchableOpacity
-                    onPress={() => setShowConfirm(v => !v)}
-                    style={styles.eyeButton}
+                    onPress={() => navigation.navigate('ForgotPassword')}
+                    style={styles.requestNewRow}
+                    hitSlop={8}
                   >
-                    <Text style={styles.eyeText}>{showConfirm ? 'Hide' : 'Show'}</Text>
+                    <Text style={styles.requestNewLink}>Request a new reset link →</Text>
                   </TouchableOpacity>
-                }
-              />
-            )}
-          />
+                ) : null}
+              </View>
+            ) : null}
 
-          <PrimaryButton
-            title="Set new password"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-            style={styles.submitButton}
-          />
+            <Controller
+              control={control}
+              name="newPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="New password"
+                  placeholder="Min. 8 characters"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.newPassword?.message}
+                  secureTextEntry={!showNew}
+                  textContentType="newPassword"
+                  rightElement={
+                    <TouchableOpacity
+                      onPress={() => setShowNew(v => !v)}
+                      style={styles.eyeButton}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={showNew ? 'Hide password' : 'Show password'}
+                    >
+                      <Icon
+                        name={showNew ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={colors.textTertiary}
+                      />
+                    </TouchableOpacity>
+                  }
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <FormField
+                  label="Confirm new password"
+                  placeholder="Repeat your new password"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.confirmPassword?.message}
+                  secureTextEntry={!showConfirm}
+                  textContentType="newPassword"
+                  rightElement={
+                    <TouchableOpacity
+                      onPress={() => setShowConfirm(v => !v)}
+                      style={styles.eyeButton}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={showConfirm ? 'Hide password' : 'Show password'}
+                    >
+                      <Icon
+                        name={showConfirm ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={colors.textTertiary}
+                      />
+                    </TouchableOpacity>
+                  }
+                />
+              )}
+            />
+
+            <PrimaryButton
+              title="Set new password"
+              onPress={handleSubmit(onSubmit)}
+              loading={isSubmitting}
+              style={styles.submitButton}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -171,16 +213,31 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing['5xl'], paddingBottom: spacing['4xl'] },
-  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
-  subheading: { fontSize: 16, color: colors.textSecondary, marginBottom: spacing['3xl'] },
-  globalError: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.sm,
-    padding: spacing.md,
+  scroll: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.xl,
   },
-  globalErrorText: { color: colors.status.errorText, fontSize: 14, marginBottom: spacing.sm },
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    ...shadows.sm,
+  },
+  requestNewRow: { marginTop: -spacing.sm, marginBottom: spacing.lg },
   requestNewLink: {
     color: colors.status.errorText,
     fontSize: 13,
@@ -188,6 +245,5 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   eyeButton: { paddingHorizontal: spacing.md },
-  eyeText: { color: colors.textSecondary, fontSize: 14 },
-  submitButton: { marginTop: spacing.sm },
+  submitButton: { marginTop: spacing.xxs },
 });

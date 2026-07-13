@@ -6,12 +6,14 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import Animated from 'react-native-reanimated';
 import { extractApiError } from '../../api/client';
 import { initiateUpgrade, confirmUpgrade } from '../../api/subscriptionApi';
 import { useSubscriptionStatus } from '../../api/hooks/useSubscriptionStatus';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-import { Icon, PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { GradientHero, Icon, PressableScale, ScreenHeader, fadeInUp } from '../../components/ui';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SubscriptionUpgrade'>;
 
@@ -113,10 +115,17 @@ export function UpgradeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <Text style={styles.title} testID="already-premium-message">
-            You&apos;re already on Premium
-          </Text>
-          <Text style={styles.subtitle}>Enjoy unlimited vaults, susu groups, and transfers.</Text>
+          <Animated.View entering={fadeInUp(40)} style={styles.centeredInner}>
+            <View style={styles.goldIconBadge}>
+              <Icon name="star" size={38} color={colors.gold.text} />
+            </View>
+            <Text style={styles.centeredTitle} testID="already-premium-message">
+              You&apos;re already on Premium
+            </Text>
+            <Text style={styles.centeredSubtitle}>
+              Enjoy unlimited vaults, susu groups, and transfers.
+            </Text>
+          </Animated.View>
         </View>
       </SafeAreaView>
     );
@@ -127,7 +136,7 @@ export function UpgradeScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.gold.base} testID="upgrade-progress" />
-          <Text style={styles.subtitle}>
+          <Text style={styles.progressText}>
             {phase === 'authorising' ? 'Opening payment…' : 'Confirming your upgrade…'}
           </Text>
         </View>
@@ -139,21 +148,20 @@ export function UpgradeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <View style={styles.successIconBadge}>
-            <Icon name="checkmark-circle" size={40} color={colors.status.success} />
-          </View>
-          <Text style={styles.title} testID="upgrade-success">
-            You&apos;re now on Premium!
-          </Text>
-          <Text style={styles.subtitle}>All limits are lifted immediately.</Text>
-          <PressableScale
-            style={styles.primaryButton}
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Done"
-          >
-            <Text style={styles.primaryButtonLabel}>Done</Text>
-          </PressableScale>
+          <Animated.View entering={fadeInUp(40)} style={styles.centeredInner}>
+            <View style={styles.successIconBadge}>
+              <Icon name="checkmark-circle" size={40} color={colors.status.success} />
+            </View>
+            <Text style={styles.centeredTitle} testID="upgrade-success">
+              You&apos;re now on Premium!
+            </Text>
+            <Text style={styles.centeredSubtitle}>All limits are lifted immediately.</Text>
+            <PrimaryButton
+              title="Done"
+              onPress={() => navigation.goBack()}
+              style={styles.centeredCta}
+            />
+          </Animated.View>
         </View>
       </SafeAreaView>
     );
@@ -163,31 +171,31 @@ export function UpgradeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.centered}>
-          <View style={styles.failureIconBadge}>
-            <Icon name="close-circle" size={40} color={colors.status.error} />
-          </View>
-          <Text style={styles.title} testID="upgrade-error-title">
-            {phase === 'network_error' ? "Couldn't reach Stash" : "Upgrade didn't complete"}
-          </Text>
-          <Text style={styles.subtitle} testID="upgrade-error-message">
-            {errorMessage ?? 'Please try again.'}
-          </Text>
-          <PressableScale
-            style={styles.primaryButton}
-            onPress={retry}
-            accessibilityRole="button"
-            accessibilityLabel="Retry upgrade"
-          >
-            <Text style={styles.primaryButtonLabel}>Try Again</Text>
-          </PressableScale>
-          <PressableScale
-            style={styles.secondaryButton}
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Text style={styles.secondaryButtonLabel}>Back</Text>
-          </PressableScale>
+          <Animated.View entering={fadeInUp(40)} style={styles.centeredInner}>
+            <View style={styles.failureIconBadge}>
+              <Icon name="close-circle" size={40} color={colors.status.error} />
+            </View>
+            <Text style={styles.centeredTitle} testID="upgrade-error-title">
+              {phase === 'network_error' ? "Couldn't reach Stash" : "Upgrade didn't complete"}
+            </Text>
+            <Text style={styles.centeredSubtitle} testID="upgrade-error-message">
+              {errorMessage ?? 'Please try again.'}
+            </Text>
+            <PrimaryButton
+              title="Try Again"
+              onPress={retry}
+              accessibilityLabel="Retry upgrade"
+              style={styles.centeredCta}
+            />
+            <PressableScale
+              style={styles.secondaryButton}
+              onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Text style={styles.secondaryButtonLabel}>Back</Text>
+            </PressableScale>
+          </Animated.View>
         </View>
       </SafeAreaView>
     );
@@ -196,27 +204,42 @@ export function UpgradeScreen() {
   // benefits state — the default entry point
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Stash Premium</Text>
-        <Text style={styles.price}>GHS 15 / month</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScreenHeader onBack={() => navigation.goBack()} />
 
-        <View style={styles.benefitsList}>
-          {PREMIUM_BENEFITS.map((benefit, i) => (
-            <View key={i} style={styles.benefitRow}>
-              <Icon name="checkmark-circle" size={17} color={colors.status.success} style={styles.benefitIcon} />
-              <Text style={styles.benefitText}>{benefit}</Text>
-            </View>
-          ))}
-        </View>
+        <Animated.View entering={fadeInUp(40)}>
+          <GradientHero icon="star" title="Stash Premium" />
+        </Animated.View>
 
-        <PressableScale
-          style={styles.primaryButton}
-          onPress={startUpgrade}
-          accessibilityRole="button"
-          accessibilityLabel="Upgrade to Premium"
-        >
-          <Text style={styles.primaryButtonLabel}>Upgrade to Premium</Text>
-        </PressableScale>
+        <Animated.View entering={fadeInUp(110)} style={styles.card}>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>GHS 15 / month</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.benefitsList}>
+            {PREMIUM_BENEFITS.map((benefit, i) => (
+              <View key={i} style={styles.benefitRow}>
+                <Icon
+                  name="checkmark-circle"
+                  size={18}
+                  color={colors.status.success}
+                  style={styles.benefitIcon}
+                />
+                <Text style={styles.benefitText}>{benefit}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={fadeInUp(180)}>
+          <PrimaryButton
+            title="Upgrade to Premium"
+            onPress={startUpgrade}
+            style={styles.cta}
+          />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -224,26 +247,66 @@ export function UpgradeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.xl, alignItems: 'center' },
+  scroll: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
+  },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
-  title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing['2xl'], lineHeight: 21 },
-  price: { fontSize: 18, fontWeight: '700', color: colors.gold.text, marginBottom: spacing['2xl'] },
-  benefitsList: { alignSelf: 'stretch', marginBottom: spacing['3xl'] },
-  benefitRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
+  centeredInner: { alignItems: 'center', alignSelf: 'stretch' },
+  centeredTitle: {
+    ...typography.h2,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  centeredSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing['2xl'],
+    lineHeight: 21,
+  },
+  centeredCta: { alignSelf: 'stretch', marginTop: spacing.xs },
+  progressText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.lg,
+    lineHeight: 21,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    ...shadows.sm,
+  },
+  priceRow: { alignItems: 'center' },
+  price: { ...typography.numericLarge, color: colors.gold.text },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginVertical: spacing.xl,
+  },
+  benefitsList: { alignSelf: 'stretch' },
+  benefitRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.lg },
   benefitIcon: { marginRight: spacing.sm, marginTop: 1 },
   benefitText: { fontSize: 15, color: colors.textPrimary, flex: 1, lineHeight: 21 },
-  primaryButton: {
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.md,
-    paddingVertical: 15,
-    paddingHorizontal: spacing['2xl'],
-    alignSelf: 'stretch',
-    alignItems: 'center',
-  },
-  primaryButtonLabel: { fontSize: 16, fontWeight: '700', color: colors.neutral[900] },
+  cta: { marginTop: spacing.xxs },
   secondaryButton: { paddingVertical: spacing.md, marginTop: spacing.sm },
   secondaryButtonLabel: { fontSize: 14, color: colors.textSecondary },
+  goldIconBadge: {
+    width: 76,
+    height: 76,
+    borderRadius: radii.pill,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
   successIconBadge: {
     width: 76,
     height: 76,
@@ -251,7 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.status.successBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   failureIconBadge: {
     width: 76,
@@ -260,6 +323,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.status.errorBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
 });

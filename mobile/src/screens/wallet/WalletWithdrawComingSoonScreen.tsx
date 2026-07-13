@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { Icon, PressableScale } from '../../components/ui';
-import { colors, radii, spacing } from '../../theme';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { Icon, ScreenHeader, fadeInUp } from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'WalletWithdrawComingSoon'>;
 
@@ -21,34 +23,27 @@ export function WalletWithdrawComingSoonScreen() {
   return (
     <SafeAreaView style={styles.safe} testID="wallet-withdraw-coming-soon-screen">
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.headerBtnIcon}>←</Text>
-        </TouchableOpacity>
+        <ScreenHeader onBack={() => navigation.goBack()} />
       </View>
 
       <View style={styles.body}>
-        <View style={styles.iconBadge}>
-          <Icon name="construct-outline" size={30} color={colors.gold.text} />
-        </View>
-        <Text style={styles.title}>Wallet withdrawals are coming soon</Text>
-        <Text style={styles.description}>
-          Moving wallet balance out to MoMo isn&apos;t available yet. In the meantime you can
-          withdraw from a vault instead.
-        </Text>
+        <Animated.View entering={fadeInUp(60)} style={styles.card}>
+          <View style={styles.iconBadge}>
+            <Icon name="construct-outline" size={34} color={colors.gold.text} />
+          </View>
+          <Text style={styles.title}>Wallet withdrawals are coming soon</Text>
+          <Text style={styles.description}>
+            Moving wallet balance out to MoMo isn&apos;t available yet. In the meantime you can
+            withdraw from a vault instead.
+          </Text>
 
-        <PressableScale
-          style={styles.cta}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.ctaText}>Got it</Text>
-        </PressableScale>
+          <PrimaryButton
+            title="Got it"
+            onPress={() => navigation.goBack()}
+            accessibilityLabel="Go back"
+            style={styles.cta}
+          />
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -56,32 +51,44 @@ export function WalletWithdrawComingSoonScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  header: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  body: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  card: {
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing['4xl'],
+    paddingHorizontal: spacing.xl,
+    ...shadows.sm,
+  },
   iconBadge: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 80,
     borderRadius: radii.pill,
     backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm, textAlign: 'center' },
+  title: {
+    ...typography.h2,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
   description: {
-    fontSize: 14,
+    ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 21,
     marginBottom: spacing['2xl'],
   },
-  cta: {
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.md,
-  },
-  ctaText: { fontSize: 15, fontWeight: '700', color: colors.neutral[900] },
+  cta: { alignSelf: 'stretch' },
 });

@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Switch, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Switch,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import * as LocalAuthentication from 'expo-local-authentication';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { PinEntryPad } from '../../components/PinEntryPad';
-import { colors, spacing, typography } from '../../theme';
+import {
+  Banner,
+  Icon,
+  PressableScale,
+  ScreenHeader,
+  fadeInUp,
+  type IconName,
+} from '../../components/ui';
+import { colors, radii, shadows, spacing, typography } from '../../theme';
 import {
   isAppLockEnabled,
   setAppLockEnabled,
@@ -158,26 +175,28 @@ export function AppLockSettingsScreen() {
   if (step === 'choose-method') {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setStep('main')} hitSlop={8}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.heading}>Choose unlock method</Text>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {hardwareAvailable ? (
-          <TouchableOpacity style={styles.optionRow} onPress={chooseSystem}>
-            <Text style={styles.rowLabel}>Device unlock (Face ID / fingerprint / passcode)</Text>
-          </TouchableOpacity>
-        ) : null}
-        <TouchableOpacity style={styles.optionRow} onPress={choosePin}>
-          <Text style={styles.rowLabel}>6-digit PIN</Text>
-        </TouchableOpacity>
-        {hardwareAvailable ? (
-          <TouchableOpacity style={styles.optionRow} onPress={chooseBoth}>
-            <Text style={styles.rowLabel}>Both</Text>
-          </TouchableOpacity>
-        ) : null}
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScreenHeader title="Choose unlock method" onBack={() => setStep('main')} />
+          {error ? <Banner tone="error" message={error} /> : null}
+          <Animated.View entering={fadeInUp(60)} style={styles.card}>
+            {hardwareAvailable ? (
+              <OptionRow
+                icon="shield-checkmark-outline"
+                label="Device unlock (Face ID / fingerprint / passcode)"
+                onPress={chooseSystem}
+              />
+            ) : null}
+            <OptionRow
+              icon="lock-closed-outline"
+              label="6-digit PIN"
+              onPress={choosePin}
+              isLast={!hardwareAvailable}
+            />
+            {hardwareAvailable ? (
+              <OptionRow icon="sparkles" label="Both" onPress={chooseBoth} isLast />
+            ) : null}
+          </Animated.View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -210,99 +229,188 @@ export function AppLockSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.heading}>App Lock</Text>
-      <Text style={styles.subheading}>
-        Require unlocking to open Stash after it&apos;s been backgrounded. Optional — use your
-        device unlock, a 6-digit PIN, or both.
-      </Text>
-
-      {loading ? (
-        <ActivityIndicator style={styles.loading} color={colors.gold.base} />
-      ) : !hardwareAvailable && !pinSet ? (
-        <Text style={styles.unavailableText}>
-          No biometrics or device passcode is set up on this device. You can still use a 6-digit
-          PIN below.
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScreenHeader title="App Lock" onBack={() => navigation.goBack()} />
+        <Text style={styles.subheading}>
+          Require unlocking to open Stash after it&apos;s been backgrounded. Optional — use your
+          device unlock, a 6-digit PIN, or both.
         </Text>
-      ) : null}
 
-      {!loading && (
-        <>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Require unlock on launch</Text>
-            <Switch
-              value={enabled}
-              onValueChange={onToggle}
-              trackColor={{ true: colors.gold.base, false: colors.neutral[300] }}
-              thumbColor={colors.neutral[0]}
-            />
-          </View>
+        {loading ? (
+          <ActivityIndicator style={styles.loading} color={colors.gold.base} />
+        ) : !hardwareAvailable && !pinSet ? (
+          <Text style={styles.unavailableText}>
+            No biometrics or device passcode is set up on this device. You can still use a 6-digit
+            PIN below.
+          </Text>
+        ) : null}
 
-          {enabled && method ? (
-            <>
+        {!loading && (
+          <>
+            <Animated.View entering={fadeInUp(60)} style={styles.card}>
               <View style={styles.row}>
-                <Text style={styles.rowLabel}>Method</Text>
-                <Text style={styles.methodValue}>
-                  {method === 'system' ? 'Device unlock' : method === 'pin' ? 'PIN' : 'Both'}
-                </Text>
+                <View style={styles.rowLeft}>
+                  <View style={styles.badge}>
+                    <Icon name="lock-closed-outline" size={18} color={colors.gold.text} />
+                  </View>
+                  <Text style={styles.rowLabel}>Require unlock on launch</Text>
+                </View>
+                <Switch
+                  value={enabled}
+                  onValueChange={onToggle}
+                  trackColor={{ true: colors.gold.base, false: colors.neutral[300] }}
+                  thumbColor={colors.neutral[0]}
+                />
               </View>
-              <TouchableOpacity onPress={() => setStep('choose-method')} style={styles.linkRow}>
-                <Text style={styles.linkText}>Change method</Text>
-              </TouchableOpacity>
-              {method !== 'system' ? (
-                <>
-                  <TouchableOpacity onPress={startChangePin} style={styles.linkRow}>
-                    <Text style={styles.linkText}>Change PIN</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={removePin} style={styles.linkRow}>
-                    <Text style={styles.linkTextDanger}>Remove PIN</Text>
-                  </TouchableOpacity>
-                </>
-              ) : null}
-            </>
-          ) : null}
-        </>
-      )}
+            </Animated.View>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {enabled && method ? (
+              <Animated.View entering={fadeInUp(120)} style={styles.card}>
+                <View style={[styles.row, styles.rowDivider]}>
+                  <Text style={styles.rowLabel}>Method</Text>
+                  <Text style={styles.methodValue}>
+                    {method === 'system' ? 'Device unlock' : method === 'pin' ? 'PIN' : 'Both'}
+                  </Text>
+                </View>
+                <LinkRow
+                  label="Change method"
+                  icon="swap-horizontal-outline"
+                  onPress={() => setStep('choose-method')}
+                  isLast={method === 'system'}
+                />
+                {method !== 'system' ? (
+                  <>
+                    <LinkRow label="Change PIN" icon="lock-closed-outline" onPress={startChangePin} />
+                    <LinkRow
+                      label="Remove PIN"
+                      icon="close-circle"
+                      onPress={removePin}
+                      destructive
+                      isLast
+                    />
+                  </>
+                ) : null}
+              </Animated.View>
+            ) : null}
+          </>
+        )}
+
+        {error ? <Banner tone="error" message={error} /> : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+interface OptionRowProps {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  isLast?: boolean;
+}
+
+function OptionRow({ icon, label, onPress, isLast }: OptionRowProps) {
+  return (
+    <PressableScale style={[styles.optionRow, isLast ? styles.rowLast : null]} onPress={onPress}>
+      <View style={styles.badge}>
+        <Icon name={icon} size={18} color={colors.gold.text} />
+      </View>
+      <Text style={styles.optionLabel}>{label}</Text>
+      <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
+    </PressableScale>
+  );
+}
+
+interface LinkRowProps {
+  label: string;
+  icon: IconName;
+  onPress: () => void;
+  destructive?: boolean;
+  isLast?: boolean;
+}
+
+function LinkRow({ label, icon, onPress, destructive, isLast }: LinkRowProps) {
+  return (
+    <PressableScale
+      style={[styles.row, styles.linkRow, isLast ? styles.rowLast : null]}
+      onPress={onPress}
+    >
+      <View style={styles.rowLeft}>
+        <View style={[styles.badge, destructive ? styles.badgeDestructive : null]}>
+          <Icon name={icon} size={18} color={destructive ? colors.status.error : colors.gold.text} />
+        </View>
+        <Text style={[styles.linkText, destructive ? styles.linkTextDanger : null]}>{label}</Text>
+      </View>
+      <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
+    </PressableScale>
+  );
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.xl },
-  header: { marginBottom: spacing['2xl'], marginTop: spacing.sm },
-  backText: { color: colors.textPrimary, fontSize: 15 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing['4xl'] },
   heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
-  subheading: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing['3xl'], lineHeight: 20 },
+  subheading: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing['2xl'],
+    lineHeight: 20,
+  },
   loading: { marginTop: spacing.xl },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 56,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
   },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.neutral[100] },
+  rowLast: { borderBottomWidth: 0 },
+  badge: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeDestructive: { backgroundColor: colors.status.errorBg },
   rowLabel: { ...typography.bodyMedium, color: colors.textPrimary },
   methodValue: { fontSize: 15, color: colors.textSecondary },
-  linkRow: { paddingVertical: spacing.md },
-  linkText: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-  linkTextDanger: { fontSize: 15, color: colors.status.error, fontWeight: '500' },
-  unavailableText: { fontSize: 13, color: colors.textTertiary, lineHeight: 19, marginBottom: spacing.md },
-  errorText: { color: colors.status.error, fontSize: 13, marginTop: spacing.lg },
-  optionRow: {
-    paddingVertical: spacing.lg,
+  linkRow: {
     borderBottomWidth: 1,
-    borderColor: colors.border,
+    borderBottomColor: colors.neutral[100],
   },
-  pinContent: { flex: 1, justifyContent: 'center' },
+  linkText: { ...typography.bodyMedium, color: colors.textPrimary },
+  linkTextDanger: { color: colors.status.error },
+  unavailableText: {
+    fontSize: 13,
+    color: colors.textTertiary,
+    lineHeight: 19,
+    marginBottom: spacing.md,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 56,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral[100],
+  },
+  optionLabel: { ...typography.bodyMedium, color: colors.textPrimary, flex: 1 },
+  pinContent: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.xl },
   cancelButton: { alignItems: 'center', marginTop: spacing.lg, padding: spacing.sm },
   skipText: { color: colors.textSecondary, fontSize: 14, fontWeight: '500' },
 });

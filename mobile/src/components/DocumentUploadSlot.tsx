@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Icon, PressableScale } from './ui';
-import { colors, radii, spacing, typography } from '../theme';
+import { colors, radii, shadows, spacing, typography } from '../theme';
 
 export type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -145,9 +145,17 @@ function UploadProgressBar({ progress }: { progress: number }) {
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: spacing['2xl'] },
+  container: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
   label: { ...typography.bodyMedium, color: colors.textPrimary, marginBottom: spacing.xxs },
-  description: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.sm },
+  description: { fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md },
   uploadSlot: {
     borderWidth: 1.5,
     borderColor: colors.borderStrong,

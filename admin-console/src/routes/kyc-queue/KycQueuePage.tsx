@@ -42,14 +42,14 @@ export default function KycQueuePage() {
 
   return (
     <AdminShell title="KYC Review Queue">
-      <div className="mb-6 flex gap-1 border-b border-slate-200">
+      <div className="mb-6 flex gap-1 border-b border-border">
         <button
           type="button"
           onClick={() => setTab('queue')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+          className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'queue'
-              ? 'border-slate-900 text-slate-900'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           Review Queue
@@ -57,10 +57,10 @@ export default function KycQueuePage() {
         <button
           type="button"
           onClick={() => setTab('flagged')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+          className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
             tab === 'flagged'
-              ? 'border-slate-900 text-slate-900'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
           data-testid="flagged-accounts-tab"
         >
@@ -69,7 +69,7 @@ export default function KycQueuePage() {
       </div>
 
       {successMessage ? (
-        <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+        <div className="mb-6 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
           {successMessage}
         </div>
       ) : null}
@@ -77,11 +77,11 @@ export default function KycQueuePage() {
       {tab === 'queue' ? (
         <>
           {queueQuery.isLoading ? (
-            <div className="text-center py-12 text-slate-400">Loading queue…</div>
+            <div className="py-12 text-center text-muted-foreground">Loading queue…</div>
           ) : null}
 
           {queueQuery.isError ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               Failed to load queue. Check that the KYC Service is running and your admin token is
               correct.
               <button type="button" onClick={() => queueQuery.refetch()} className="ml-2 underline">
@@ -91,8 +91,8 @@ export default function KycQueuePage() {
           ) : null}
 
           {queueQuery.data && selectedIds.size > 0 ? (
-            <div className="mb-4 flex items-center justify-between bg-slate-100 rounded-lg px-4 py-2">
-              <span className="text-sm text-slate-600">{selectedIds.size} selected</span>
+            <div className="mb-4 flex items-center justify-between rounded-lg bg-card-secondary px-4 py-2">
+              <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
               <Button
                 size="sm"
                 disabled={bulkApproveMutation.isPending}
@@ -116,13 +116,9 @@ export default function KycQueuePage() {
           ) : null}
 
           {queueQuery.data ? (
-            <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
               <span>{queueQuery.data.items.length} submission(s) awaiting review</span>
-              <button
-                type="button"
-                onClick={() => queueQuery.refetch()}
-                className="hover:text-slate-600"
-              >
+              <button type="button" onClick={() => queueQuery.refetch()} className="hover:text-foreground">
                 Refresh
               </button>
             </div>
@@ -131,11 +127,11 @@ export default function KycQueuePage() {
       ) : (
         <>
           {flaggedQuery.isLoading ? (
-            <div className="text-center py-12 text-slate-400">Loading flagged accounts…</div>
+            <div className="py-12 text-center text-muted-foreground">Loading flagged accounts…</div>
           ) : null}
 
           {flaggedQuery.isError ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               Failed to load flagged accounts.
               <button
                 type="button"
@@ -168,8 +164,8 @@ export default function KycQueuePage() {
       ) : null}
 
       {modalState.kind !== 'closed' && detailQuery.isLoading ? (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl px-8 py-6 text-slate-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="rounded-xl bg-card px-8 py-6 text-muted-foreground shadow-lg">
             Loading submission details…
           </div>
         </div>

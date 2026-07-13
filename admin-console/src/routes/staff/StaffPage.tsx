@@ -3,7 +3,9 @@ import { AdminShell } from '../../components/layout/AdminShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { extractApiError } from '../../api/client';
 import { useStaff } from './useStaff';
 import type { AdminAccountType } from '../../api/staffAdmin';
@@ -54,7 +56,7 @@ export default function StaffPage() {
 
   return (
     <AdminShell title="Staff">
-      <div className="flex justify-end mb-4">
+      <div className="mb-4 flex justify-end">
         <Button onClick={() => setShowForm((v) => !v)}>
           {showForm ? 'Cancel' : 'Invite Admin'}
         </Button>
@@ -97,7 +99,7 @@ export default function StaffPage() {
                     required
                     minLength={8}
                   />
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     Relay this to the new admin out-of-band — there's no invite-email flow.
                   </p>
                 </div>
@@ -105,7 +107,7 @@ export default function StaffPage() {
                   <Label htmlFor="staff-account-type">Account type</Label>
                   <select
                     id="staff-account-type"
-                    className="h-9 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+                    className="h-9 rounded-lg border border-input bg-card-secondary px-2.5 text-sm text-foreground"
                     value={accountType}
                     onChange={(e) => setAccountType(e.target.value as AdminAccountType)}
                   >
@@ -117,7 +119,7 @@ export default function StaffPage() {
                   </select>
                 </div>
                 {accountType === 'TAB' && (
-                  <div className="flex flex-col gap-2 col-span-2">
+                  <div className="col-span-2 flex flex-col gap-2">
                     <Label htmlFor="staff-role-name">
                       Role name (must match an admin resource, e.g. KYC, DISPUTES)
                     </Label>
@@ -130,7 +132,7 @@ export default function StaffPage() {
                   </div>
                 )}
               </div>
-              {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
+              {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
               <Button type="submit" disabled={isCreating}>
                 {isCreating ? 'Creating…' : 'Create Admin Account'}
               </Button>
@@ -140,77 +142,61 @@ export default function StaffPage() {
       )}
 
       {listQuery.isError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 mb-4">
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Couldn't load the staff directory. Only SUPER admins can view this page.
         </div>
       )}
 
       {listQuery.isLoading ? (
-        <div className="text-center py-12 text-slate-400">Loading…</div>
+        <div className="py-12 text-center text-muted-foreground">Loading…</div>
       ) : staff.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <p className="text-slate-400 text-lg">No admin accounts found.</p>
+        <div className="rounded-xl border border-border bg-card p-12 text-center">
+          <p className="text-lg text-muted-foreground">No admin accounts found.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Name
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Email
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Type
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Role
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="px-6 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {staff.map((s) => (
-                <tr key={s.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-6 py-4 font-medium text-slate-900">{s.full_name}</td>
-                  <td className="px-6 py-4 text-slate-600">{s.email}</td>
-                  <td className="px-6 py-4 text-slate-600">{s.account_type}</td>
-                  <td className="px-6 py-4 text-slate-600">{s.role_name ?? '—'}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        s.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                      }`}
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-table-header">
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {staff.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium text-foreground">{s.full_name}</TableCell>
+                <TableCell className="text-muted-foreground">{s.email}</TableCell>
+                <TableCell className="text-muted-foreground">{s.account_type}</TableCell>
+                <TableCell className="text-muted-foreground">{s.role_name ?? '—'}</TableCell>
+                <TableCell>
+                  <Badge variant={s.is_active ? 'success' : 'neutral'}>
+                    {s.is_active ? 'Active' : 'Deactivated'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {s.is_active && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={isDeactivating && deactivatingId === s.id}
+                      onClick={() => deactivate(s.id)}
                     >
-                      {s.is_active ? 'Active' : 'Deactivated'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {s.is_active && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={isDeactivating && deactivatingId === s.id}
-                        onClick={() => deactivate(s.id)}
-                      >
-                        {isDeactivating && deactivatingId === s.id ? 'Deactivating…' : 'Deactivate'}
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      {isDeactivating && deactivatingId === s.id ? 'Deactivating…' : 'Deactivate'}
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {listQuery.data && listQuery.data.total_pages > 1 && (
-        <div className="flex justify-between items-center mt-4 text-sm text-slate-500">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             Page {listQuery.data.page + 1} of {listQuery.data.total_pages}
           </span>

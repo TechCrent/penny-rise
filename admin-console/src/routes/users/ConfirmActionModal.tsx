@@ -22,22 +22,22 @@ export function ConfirmActionModal({
 }: Props) {
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
       role="presentation"
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="px-6 py-5 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+      <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-lg">
+        <div className="border-b border-border px-6 py-5">
+          <h2 className="text-lg font-bold text-foreground">{title}</h2>
         </div>
 
         <div className="px-6 py-5">
-          <p className="text-sm text-slate-500">{description}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-200 flex items-center gap-3 justify-end">
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
           <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>

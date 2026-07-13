@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AdminShell } from '../../components/layout/AdminShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { PriorityBadge } from './PriorityBadge';
 import { relatedEntityLink } from './relatedEntityLink';
 import { useDisputeDetail } from './useDisputeDetail';
@@ -20,7 +21,7 @@ export default function DisputeDetailPage() {
   if (detailQuery.isLoading) {
     return (
       <AdminShell title="Dispute">
-        <div className="text-center py-12 text-slate-400">Loading…</div>
+        <div className="py-12 text-center text-muted-foreground">Loading…</div>
       </AdminShell>
     );
   }
@@ -28,7 +29,7 @@ export default function DisputeDetailPage() {
   if (detailQuery.isError || !detailQuery.data) {
     return (
       <AdminShell title="Dispute">
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Couldn't load this dispute.
         </div>
       </AdminShell>
@@ -49,15 +50,13 @@ export default function DisputeDetailPage() {
 
   return (
     <AdminShell title={dispute.subject}>
-      <div className="flex justify-between items-start mb-6">
-        <p className="text-slate-500 text-sm font-mono">
+      <div className="mb-6 flex items-start justify-between">
+        <p className="font-mono text-sm text-muted-foreground">
           Raised by {dispute.raisedByUserId.slice(0, 8)}…
         </p>
         <div className="flex gap-2">
           <PriorityBadge priority={dispute.priority} />
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-            {dispute.status}
-          </span>
+          <Badge variant="neutral">{dispute.status}</Badge>
         </div>
       </div>
 
@@ -66,7 +65,7 @@ export default function DisputeDetailPage() {
           <CardTitle>Description</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap text-slate-700">{dispute.description}</p>
+          <p className="whitespace-pre-wrap text-foreground">{dispute.description}</p>
         </CardContent>
       </Card>
 
@@ -75,18 +74,14 @@ export default function DisputeDetailPage() {
           <CardTitle>Related Entity</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-600">Type: {dispute.relatedEntityType}</p>
-          <p className="text-slate-600">ID: {dispute.relatedEntityId}</p>
+          <p className="text-muted-foreground">Type: {dispute.relatedEntityType}</p>
+          <p className="text-muted-foreground">ID: {dispute.relatedEntityId}</p>
           {link ? (
-            <Link
-              to={link}
-              className="text-sm underline text-slate-700"
-              data-testid="related-entity-link"
-            >
+            <Link to={link} className="text-sm text-primary underline" data-testid="related-entity-link">
               View {dispute.relatedEntityType.toLowerCase()}
             </Link>
           ) : (
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="mt-1 text-sm text-disabled-foreground">
               No admin detail view available for this entity type yet.
             </p>
           )}
@@ -99,12 +94,14 @@ export default function DisputeDetailPage() {
         </CardHeader>
         <CardContent>
           {dispute.assignmentHistory.length === 0 && (
-            <p className="text-slate-400">Not yet assigned.</p>
+            <p className="text-disabled-foreground">Not yet assigned.</p>
           )}
           {dispute.assignmentHistory.map((entry, i) => (
-            <div key={i} className="flex justify-between py-1 text-sm">
+            <div key={i} className="flex justify-between py-1 text-sm text-foreground">
               <span>{entry.adminName}</span>
-              <span className="text-slate-400">{new Date(entry.assignedAt).toLocaleString()}</span>
+              <span className="text-disabled-foreground">
+                {new Date(entry.assignedAt).toLocaleString()}
+              </span>
             </div>
           ))}
         </CardContent>
@@ -123,7 +120,7 @@ export default function DisputeDetailPage() {
               <textarea
                 id="resolution-notes"
                 aria-label="Resolution notes"
-                className="w-full border border-slate-300 rounded-md p-2 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-slate-400 mb-2"
+                className="mb-2 w-full resize-none rounded-md border border-input bg-card-secondary p-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
                 rows={3}
                 placeholder="Resolution notes (required)"
                 value={resolutionText}
@@ -150,7 +147,7 @@ export default function DisputeDetailPage() {
               <textarea
                 id="close-reason"
                 aria-label="Close reason"
-                className="w-full border border-slate-300 rounded-md p-2 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-slate-400 mb-2"
+                className="mb-2 w-full resize-none rounded-md border border-input bg-card-secondary p-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
                 rows={3}
                 placeholder="Reason for closing without action (required)"
                 value={closeReasonText}
@@ -170,7 +167,7 @@ export default function DisputeDetailPage() {
       )}
 
       {!isActionable && dispute.status === 'OPEN' && (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-disabled-foreground">
           This dispute must be assigned before it can be resolved or closed — go back to the queue
           and assign it first.
         </p>

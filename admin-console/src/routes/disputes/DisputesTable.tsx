@@ -1,5 +1,7 @@
 import { formatDistanceToNow, differenceInHours } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { PriorityBadge } from './PriorityBadge';
 import type { AdminDisputeListItem } from '../../api/disputesAdmin';
 
@@ -20,7 +22,7 @@ function TimeInQueue({ createdAt }: { createdAt: string }) {
   const hours = differenceInHours(new Date(), created);
 
   const color =
-    hours >= 24 ? 'text-red-600 font-semibold' : hours >= 4 ? 'text-amber-600' : 'text-slate-600';
+    hours >= 24 ? 'font-semibold text-destructive' : hours >= 4 ? 'text-warning' : 'text-muted-foreground';
 
   return <span className={color}>{distance}</span>;
 }
@@ -37,8 +39,8 @@ export function DisputesTable({
 }: DisputesTableProps) {
   if (items.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-        <p className="text-slate-400 text-lg">No disputes in this view.</p>
+      <div className="rounded-xl border border-border bg-card p-12 text-center">
+        <p className="text-lg text-muted-foreground">No disputes in this view.</p>
       </div>
     );
   }
@@ -48,95 +50,73 @@ export function DisputesTable({
     resolvable.length > 0 && resolvable.every((d) => selectedIds.has(d.id));
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50">
-            <th className="px-6 py-3 w-10">
-              <input
-                type="checkbox"
-                aria-label="Select all resolvable disputes"
-                checked={allResolvableSelected}
-                disabled={resolvable.length === 0}
-                onChange={onToggleSelectAllResolvable}
-              />
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Priority
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Subject
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Type
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Raised By
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Status
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Time in Queue
-            </th>
-            <th className="px-6 py-3" />
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((d, index) => (
-            <tr
-              key={d.id}
-              className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                index === items.length - 1 ? 'border-0' : ''
-              }`}
-              data-testid={`dispute-row-${d.id}`}
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-table-header">
+          <TableHead className="w-10">
+            <input
+              type="checkbox"
+              aria-label="Select all resolvable disputes"
+              checked={allResolvableSelected}
+              disabled={resolvable.length === 0}
+              onChange={onToggleSelectAllResolvable}
+            />
+          </TableHead>
+          <TableHead>Priority</TableHead>
+          <TableHead>Subject</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Raised By</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Time in Queue</TableHead>
+          <TableHead />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((d) => (
+          <TableRow key={d.id} data-testid={`dispute-row-${d.id}`}>
+            <TableCell>
+              {d.status === 'IN_REVIEW' && (
+                <input
+                  type="checkbox"
+                  aria-label={`Select dispute ${d.id}`}
+                  checked={selectedIds.has(d.id)}
+                  onChange={() => onToggleSelect(d.id)}
+                />
+              )}
+            </TableCell>
+            <TableCell>
+              <PriorityBadge priority={d.priority} />
+            </TableCell>
+            <TableCell
+              className="cursor-pointer font-medium text-foreground hover:underline"
+              onClick={() => onSelect(d.id)}
             >
-              <td className="px-6 py-4">
-                {d.status === 'IN_REVIEW' && (
-                  <input
-                    type="checkbox"
-                    aria-label={`Select dispute ${d.id}`}
-                    checked={selectedIds.has(d.id)}
-                    onChange={() => onToggleSelect(d.id)}
-                  />
-                )}
-              </td>
-              <td className="px-6 py-4">
-                <PriorityBadge priority={d.priority} />
-              </td>
-              <td
-                className="px-6 py-4 font-medium text-slate-900 cursor-pointer hover:underline"
-                onClick={() => onSelect(d.id)}
-              >
-                {d.subject}
-              </td>
-              <td className="px-6 py-4 text-slate-600">{d.disputeType}</td>
-              <td className="px-6 py-4 text-slate-400 text-xs font-mono">
-                {d.raisedByUserId.slice(0, 8)}…
-              </td>
-              <td className="px-6 py-4">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                  {d.status}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <TimeInQueue createdAt={d.createdAt} />
-              </td>
-              <td className="px-6 py-4 text-right">
-                {d.status === 'OPEN' && (
-                  <Button
-                    size="sm"
-                    disabled={isAssigning && assigningId === d.id}
-                    onClick={() => onAssign(d.id)}
-                  >
-                    {isAssigning && assigningId === d.id ? 'Assigning…' : 'Assign to Me'}
-                  </Button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              {d.subject}
+            </TableCell>
+            <TableCell className="text-muted-foreground">{d.disputeType}</TableCell>
+            <TableCell className="font-mono text-xs text-disabled-foreground">
+              {d.raisedByUserId.slice(0, 8)}…
+            </TableCell>
+            <TableCell>
+              <Badge variant="neutral">{d.status}</Badge>
+            </TableCell>
+            <TableCell>
+              <TimeInQueue createdAt={d.createdAt} />
+            </TableCell>
+            <TableCell className="text-right">
+              {d.status === 'OPEN' && (
+                <Button
+                  size="sm"
+                  disabled={isAssigning && assigningId === d.id}
+                  onClick={() => onAssign(d.id)}
+                >
+                  {isAssigning && assigningId === d.id ? 'Assigning…' : 'Assign to Me'}
+                </Button>
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

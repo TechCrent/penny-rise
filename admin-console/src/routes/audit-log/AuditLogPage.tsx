@@ -16,7 +16,7 @@ export default function AuditLogPage() {
 
   return (
     <AdminShell title="Audit Log">
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="mb-4 flex flex-wrap gap-3">
         <Input
           placeholder="Actor ID (UUID)"
           aria-label="Filter by actor ID"
@@ -27,7 +27,7 @@ export default function AuditLogPage() {
 
         <select
           aria-label="Filter by event type"
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          className="h-8 rounded-lg border border-input bg-card-secondary px-2.5 text-sm text-foreground"
           value={filters.eventType ?? ''}
           onChange={(e) => setFilters({ ...filters, eventType: e.target.value || undefined })}
         >
@@ -41,7 +41,7 @@ export default function AuditLogPage() {
 
         <select
           aria-label="Filter by target entity type"
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          className="h-8 rounded-lg border border-input bg-card-secondary px-2.5 text-sm text-foreground"
           value={filters.targetEntityType ?? ''}
           onChange={(e) =>
             setFilters({ ...filters, targetEntityType: e.target.value || undefined })
@@ -82,19 +82,19 @@ export default function AuditLogPage() {
       </div>
 
       {isError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 mb-4">
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Couldn&apos;t load the audit log.
         </div>
       )}
 
       {isLoading ? (
-        <div className="text-center py-12 text-slate-400">Loading…</div>
+        <div className="py-12 text-center text-muted-foreground">Loading…</div>
       ) : (
         <AuditLogTable entries={entries} />
       )}
 
       {hasNextPage && (
-        <div className="flex justify-center mt-4">
+        <div className="mt-4 flex justify-center">
           <Button variant="outline" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
             {isFetchingNextPage ? 'Loading…' : 'Load more'}
           </Button>

@@ -40,28 +40,28 @@ export function ReviewModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-8 px-4 pb-8 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-4 pt-8 pb-8"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       role="presentation"
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl">
-        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-900">KYC Review</h2>
+      <div className="w-full max-w-4xl rounded-xl border border-border bg-card shadow-lg">
+        <div className="flex items-center justify-between border-b border-border px-8 py-5">
+          <h2 className="text-xl font-bold text-foreground">KYC Review</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+            className="text-2xl leading-none text-muted-foreground hover:text-foreground"
             aria-label="Close"
           >
             ×
           </button>
         </div>
 
-        <div className="px-8 py-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8 px-8 py-6 lg:grid-cols-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
+            <h3 className="mb-4 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Submission Details
             </h3>
 
@@ -89,16 +89,18 @@ export function ReviewModal({
 
               {detail.provider_decisions.length > 0 ? (
                 <div>
-                  <dt className="text-xs font-medium text-slate-500 mb-1">Provider Decision</dt>
+                  <dt className="mb-1 text-xs font-medium text-muted-foreground">
+                    Provider Decision
+                  </dt>
                   {detail.provider_decisions.map((d, i) => (
-                    <dd key={i} className="text-sm text-slate-700">
+                    <dd key={i} className="text-sm text-foreground">
                       <span
-                        className={`font-semibold ${d.decision === 'PASS' ? 'text-green-600' : 'text-red-600'}`}
+                        className={`font-semibold ${d.decision === 'PASS' ? 'text-success' : 'text-destructive'}`}
                       >
                         {d.decision}
                       </span>
                       {d.confidence_score !== null ? (
-                        <span className="text-slate-400 ml-2">
+                        <span className="ml-2 text-disabled-foreground">
                           ({Math.round(d.confidence_score * 100)}% confidence)
                         </span>
                       ) : null}
@@ -109,16 +111,13 @@ export function ReviewModal({
             </dl>
 
             {showRejectForm ? (
-              <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
-                <label
-                  htmlFor="reject-reason"
-                  className="block text-sm font-medium text-red-800 mb-2"
-                >
-                  Rejection Reason <span className="text-red-600">*</span>
+              <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                <label htmlFor="reject-reason" className="mb-2 block text-sm font-medium text-destructive">
+                  Rejection Reason <span className="text-destructive">*</span>
                 </label>
                 <textarea
                   id="reject-reason"
-                  className="w-full border border-red-300 rounded-md p-2 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="w-full resize-none rounded-md border border-destructive/40 bg-card p-2 text-sm text-foreground focus:ring-2 focus:ring-destructive/40 focus:outline-none"
                   rows={3}
                   placeholder="Explain why this submission is being rejected…"
                   value={rejectReason}
@@ -127,8 +126,8 @@ export function ReviewModal({
                     setRejectError('');
                   }}
                 />
-                {rejectError ? <p className="text-xs text-red-600 mt-1">{rejectError}</p> : null}
-                <div className="flex gap-2 mt-3">
+                {rejectError ? <p className="mt-1 text-xs text-destructive">{rejectError}</p> : null}
+                <div className="mt-3 flex gap-2">
                   <Button
                     variant="destructive"
                     size="sm"
@@ -154,13 +153,13 @@ export function ReviewModal({
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
+            <h3 className="mb-4 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               Documents
             </h3>
             <div className="space-y-4">
               {Object.entries(detail.document_view_urls).map(([type, url]) => (
                 <div key={type}>
-                  <p className="text-xs font-medium text-slate-500 mb-1">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
                     {DOC_LABELS[type] ?? type}
                   </p>
                   <a
@@ -173,7 +172,7 @@ export function ReviewModal({
                     <img
                       src={url}
                       alt={DOC_LABELS[type] ?? type}
-                      className="w-full rounded-lg border border-slate-200 object-cover max-h-64 hover:opacity-90 transition-opacity"
+                      className="max-h-64 w-full rounded-lg border border-border object-cover transition-opacity hover:opacity-90"
                       onError={(e) => {
                         const img = e.target as HTMLImageElement;
                         img.style.display = 'none';
@@ -184,28 +183,26 @@ export function ReviewModal({
                 </div>
               ))}
               {Object.keys(detail.document_view_urls).length === 0 ? (
-                <p className="text-sm text-slate-400 italic">No documents available for preview.</p>
+                <p className="text-sm text-disabled-foreground italic">
+                  No documents available for preview.
+                </p>
               ) : null}
             </div>
           </div>
         </div>
 
         {!showRejectForm ? (
-          <div className="px-8 py-5 border-t border-slate-200 flex items-center gap-3 justify-end">
+          <div className="flex items-center justify-end gap-3 border-t border-border px-8 py-5">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setShowRejectForm(true)}
-              disabled={isApproving}
-            >
+            <Button variant="destructive" onClick={() => setShowRejectForm(true)} disabled={isApproving}>
               Reject
             </Button>
             <Button
               onClick={onApprove}
               disabled={isApproving}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-success text-success-foreground hover:bg-success/85"
             >
               {isApproving ? 'Approving…' : 'Approve'}
             </Button>
@@ -227,8 +224,8 @@ function DetailRow({
 }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-slate-500">{label}</dt>
-      <dd className={`text-sm text-slate-800 mt-0.5 ${valueClassName}`}>{value}</dd>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className={`mt-0.5 text-sm text-foreground ${valueClassName}`}>{value}</dd>
     </div>
   );
 }

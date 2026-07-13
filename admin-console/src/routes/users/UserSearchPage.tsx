@@ -31,7 +31,7 @@ export default function UserSearchPage() {
 
   return (
     <AdminShell title="Users">
-      <div className="flex gap-3 mb-4">
+      <div className="mb-4 flex gap-3">
         <Input
           placeholder="Search by email or phone"
           aria-label="Search by email or phone"
@@ -45,7 +45,7 @@ export default function UserSearchPage() {
 
         <select
           aria-label="Filter by KYC status"
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          className="h-8 rounded-lg border border-input bg-card-secondary px-2.5 text-sm text-foreground"
           value={kycStatus}
           onChange={(e) => {
             setKycStatus(e.target.value);
@@ -62,7 +62,7 @@ export default function UserSearchPage() {
 
         <select
           aria-label="Filter by account status"
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          className="h-8 rounded-lg border border-input bg-card-secondary px-2.5 text-sm text-foreground"
           value={accountStatus}
           onChange={(e) => {
             setAccountStatus(e.target.value);
@@ -79,7 +79,7 @@ export default function UserSearchPage() {
       </div>
 
       {isError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 mb-4">
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Couldn't load users.
           <button type="button" onClick={() => refetch()} className="ml-2 underline">
             Retry
@@ -88,13 +88,13 @@ export default function UserSearchPage() {
       )}
 
       {isLoading ? (
-        <div className="text-center py-12 text-slate-400">Loading…</div>
+        <div className="py-12 text-center text-muted-foreground">Loading…</div>
       ) : (
         <UsersTable items={data?.items ?? []} onSelect={(id) => navigate(`/users/${id}`)} />
       )}
 
       {data && data.totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 text-sm text-slate-500">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             Page {data.page + 1} of {data.totalPages} ({data.totalElements} users)
           </span>

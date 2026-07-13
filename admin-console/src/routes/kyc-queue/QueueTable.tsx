@@ -1,5 +1,7 @@
 import { formatDistanceToNow, format, differenceInHours } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import type { QueueItem } from '../../api/kycAdmin';
 
 interface QueueTableProps {
@@ -19,9 +21,11 @@ export function QueueTable({
 }: QueueTableProps) {
   if (items.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-        <p className="text-slate-400 text-lg">No submissions awaiting review.</p>
-        <p className="text-slate-300 text-sm mt-1">The queue is clear — check back later.</p>
+      <div className="rounded-xl border border-border bg-card p-12 text-center">
+        <p className="text-lg text-muted-foreground">No submissions awaiting review.</p>
+        <p className="mt-1 text-sm text-disabled-foreground">
+          The queue is clear — check back later.
+        </p>
       </div>
     );
   }
@@ -29,80 +33,63 @@ export function QueueTable({
   const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.submission_id));
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50">
-            <th className="px-6 py-3 w-10">
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-table-header">
+          <TableHead className="w-10">
+            <input
+              type="checkbox"
+              aria-label="Select all submissions"
+              checked={allSelected}
+              onChange={onToggleSelectAll}
+            />
+          </TableHead>
+          <TableHead>Applicant</TableHead>
+          <TableHead>Submitted</TableHead>
+          <TableHead>Time in Queue</TableHead>
+          <TableHead>Flag Reason</TableHead>
+          <TableHead />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={item.submission_id}>
+            <TableCell>
               <input
                 type="checkbox"
-                aria-label="Select all submissions"
-                checked={allSelected}
-                onChange={onToggleSelectAll}
+                aria-label={`Select submission ${item.submission_id}`}
+                checked={selectedIds.has(item.submission_id)}
+                onChange={() => onToggleSelect(item.submission_id)}
               />
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Applicant
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Submitted
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Time in Queue
-            </th>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Flag Reason
-            </th>
-            <th className="px-6 py-3" />
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, index) => (
-            <tr
-              key={item.submission_id}
-              className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                index === items.length - 1 ? 'border-0' : ''
-              }`}
-            >
-              <td className="px-6 py-4">
-                <input
-                  type="checkbox"
-                  aria-label={`Select submission ${item.submission_id}`}
-                  checked={selectedIds.has(item.submission_id)}
-                  onChange={() => onToggleSelect(item.submission_id)}
-                />
-              </td>
-              <td className="px-6 py-4">
-                <div className="font-medium text-slate-900">{item.full_name_on_card}</div>
-                <div className="text-slate-400 text-xs mt-0.5 font-mono">
-                  {item.user_id.slice(0, 8)}…
-                </div>
-              </td>
-              <td className="px-6 py-4 text-slate-600">
-                {format(new Date(item.submitted_at), 'dd MMM yyyy, HH:mm')}
-              </td>
-              <td className="px-6 py-4">
-                <TimeInQueue submittedAt={item.submitted_at} />
-              </td>
-              <td className="px-6 py-4">
-                {item.flag_reason ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                    {item.flag_reason}
-                  </span>
-                ) : (
-                  <span className="text-slate-300">—</span>
-                )}
-              </td>
-              <td className="px-6 py-4 text-right">
-                <Button size="sm" onClick={() => onReview(item.submission_id)}>
-                  Review
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+            </TableCell>
+            <TableCell>
+              <div className="font-medium text-foreground">{item.full_name_on_card}</div>
+              <div className="mt-0.5 font-mono text-xs text-disabled-foreground">
+                {item.user_id.slice(0, 8)}…
+              </div>
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              {format(new Date(item.submitted_at), 'dd MMM yyyy, HH:mm')}
+            </TableCell>
+            <TableCell>
+              <TimeInQueue submittedAt={item.submitted_at} />
+            </TableCell>
+            <TableCell>
+              {item.flag_reason ? (
+                <Badge variant="warning">{item.flag_reason}</Badge>
+              ) : (
+                <span className="text-disabled-foreground">—</span>
+              )}
+            </TableCell>
+            <TableCell className="text-right">
+              <Button size="sm" onClick={() => onReview(item.submission_id)}>
+                Review
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -112,7 +99,11 @@ function TimeInQueue({ submittedAt }: { submittedAt: string }) {
   const hours = differenceInHours(submitted, new Date());
 
   const color =
-    hours <= -24 ? 'text-red-600 font-semibold' : hours <= -4 ? 'text-amber-600' : 'text-slate-600';
+    hours <= -24
+      ? 'font-semibold text-destructive'
+      : hours <= -4
+        ? 'text-warning'
+        : 'text-muted-foreground';
 
   return <span className={color}>{distance}</span>;
 }

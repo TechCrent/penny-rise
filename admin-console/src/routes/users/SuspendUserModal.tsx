@@ -12,19 +12,19 @@ export function SuspendUserModal({ isSubmitting, onConfirm, onCancel }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
       role="presentation"
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="px-6 py-5 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900">Suspend this user?</h2>
+      <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-lg">
+        <div className="border-b border-border px-6 py-5">
+          <h2 className="text-lg font-bold text-foreground">Suspend this user?</h2>
         </div>
 
         <div className="px-6 py-5">
-          <p className="text-sm text-slate-500 mb-3">
+          <p className="mb-3 text-sm text-muted-foreground">
             The user will be immediately unable to log in or use any authenticated endpoint. Funds
             in their vaults and susu groups remain safe and untouched until you restore the account.
           </p>
@@ -35,7 +35,7 @@ export function SuspendUserModal({ isSubmitting, onConfirm, onCancel }: Props) {
           <textarea
             id="suspend-reason"
             aria-label="Suspension reason"
-            className="w-full border border-slate-300 rounded-md p-2 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="w-full resize-none rounded-md border border-input bg-card-secondary p-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
             rows={3}
             placeholder="Reason for suspension (required)"
             value={reason}
@@ -43,7 +43,7 @@ export function SuspendUserModal({ isSubmitting, onConfirm, onCancel }: Props) {
           />
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-200 flex items-center gap-3 justify-end">
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
           <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>

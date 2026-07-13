@@ -22,7 +22,7 @@ export default function UserDetailPage() {
   if (detailQuery.isLoading) {
     return (
       <AdminShell title="User">
-        <div className="text-center py-12 text-slate-400">Loading…</div>
+        <div className="py-12 text-center text-muted-foreground">Loading…</div>
       </AdminShell>
     );
   }
@@ -30,7 +30,7 @@ export default function UserDetailPage() {
   if (detailQuery.isError || !detailQuery.data) {
     return (
       <AdminShell title="User">
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Couldn't load this user.
         </div>
       </AdminShell>
@@ -50,12 +50,12 @@ export default function UserDetailPage() {
 
   return (
     <AdminShell title={user.displayName}>
-      <div className="flex justify-between items-start mb-6">
+      <div className="mb-6 flex items-start justify-between">
         <div>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             {user.email} · {user.phone}
           </p>
-          <div className="flex gap-2 mt-2">
+          <div className="mt-2 flex gap-2">
             <Pill>{user.kycStatus}</Pill>
             <Pill tone={user.accountStatus === 'SUSPENDED' ? 'red' : 'default'}>
               {user.accountStatus}
@@ -86,7 +86,7 @@ export default function UserDetailPage() {
           <CardTitle>Identity</CardTitle>
         </CardHeader>
         <CardContent>
-          <p data-testid="ghana-card-masked">
+          <p className="text-foreground" data-testid="ghana-card-masked">
             Ghana Card: {user.maskedGhanaCard ?? '— not on file —'}
           </p>
         </CardContent>
@@ -98,28 +98,27 @@ export default function UserDetailPage() {
         </CardHeader>
         <CardContent>
           {kycSubmissionHistory.length === 0 && (
-            <p className="text-slate-400">No KYC submissions.</p>
+            <p className="text-disabled-foreground">No KYC submissions.</p>
           )}
           {kycSubmissionHistory.map((submission) => (
-            <div
-              key={submission.submissionId}
-              className="border-b border-slate-100 py-3 last:border-none"
-            >
+            <div key={submission.submissionId} className="border-b border-border py-3 last:border-none">
               <div className="flex justify-between">
-                <span className="font-medium text-slate-800">{submission.status}</span>
-                <span className="text-sm text-slate-400">
+                <span className="font-medium text-foreground">{submission.status}</span>
+                <span className="text-sm text-disabled-foreground">
                   {new Date(submission.submittedAt).toLocaleDateString()}
                 </span>
               </div>
               {submission.decisionReason && (
-                <p className="text-sm text-slate-500">{submission.decisionReason}</p>
+                <p className="text-sm text-muted-foreground">{submission.decisionReason}</p>
               )}
 
               {submission.documents && submission.documents.length > 0 ? (
-                <div className="grid grid-cols-3 gap-3 mt-2" data-testid="kyc-documents">
+                <div className="mt-2 grid grid-cols-3 gap-3" data-testid="kyc-documents">
                   {submission.documents.map((doc) => (
                     <div key={doc.documentType}>
-                      <p className="text-xs font-medium text-slate-500 mb-1">{doc.documentType}</p>
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        {doc.documentType}
+                      </p>
                       <a
                         href={doc.signedUrl}
                         target="_blank"
@@ -130,7 +129,7 @@ export default function UserDetailPage() {
                         <img
                           src={doc.signedUrl}
                           alt={doc.documentType}
-                          className="w-full rounded-lg border border-slate-200 object-cover max-h-48 hover:opacity-90 transition-opacity"
+                          className="max-h-48 w-full rounded-lg border border-border object-cover transition-opacity hover:opacity-90"
                           onError={(e) => {
                             const img = e.target as HTMLImageElement;
                             img.style.display = 'none';
@@ -142,7 +141,7 @@ export default function UserDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="mt-1 text-xs text-disabled-foreground">
                   No document images available for this submission.
                 </p>
               )}
@@ -151,17 +150,17 @@ export default function UserDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Vaults</CardTitle>
           </CardHeader>
           <CardContent>
-            {vaults.length === 0 && <p className="text-slate-400">No vaults.</p>}
+            {vaults.length === 0 && <p className="text-disabled-foreground">No vaults.</p>}
             {vaults.map((v) => (
-              <div key={v.id} className="flex justify-between py-1 text-sm">
+              <div key={v.id} className="flex justify-between py-1 text-sm text-foreground">
                 <span>
-                  {v.name} <span className="text-slate-400">({v.vaultType})</span>
+                  {v.name} <span className="text-disabled-foreground">({v.vaultType})</span>
                 </span>
                 <span>GHS {pesewasToCedis(v.balancePesewas)}</span>
               </div>
@@ -175,12 +174,12 @@ export default function UserDetailPage() {
           </CardHeader>
           <CardContent>
             {activeSusuMemberships.length === 0 && (
-              <p className="text-slate-400">No active susu memberships.</p>
+              <p className="text-disabled-foreground">No active susu memberships.</p>
             )}
             {activeSusuMemberships.map((m) => (
-              <div key={m.susuGroupId} className="flex justify-between py-1 text-sm">
+              <div key={m.susuGroupId} className="flex justify-between py-1 text-sm text-foreground">
                 <span>{m.susuGroupName}</span>
-                <span className="text-slate-400">Position {m.rotationPosition}</span>
+                <span className="text-disabled-foreground">Position {m.rotationPosition}</span>
               </div>
             ))}
           </CardContent>
@@ -194,13 +193,13 @@ export default function UserDetailPage() {
           </CardHeader>
           <CardContent>
             {recentTransactions.length === 0 && (
-              <p className="text-slate-400">No recent transactions.</p>
+              <p className="text-disabled-foreground">No recent transactions.</p>
             )}
             {recentTransactions.map((t) => (
-              <div key={t.reference} className="flex justify-between py-1 text-sm">
+              <div key={t.reference} className="flex justify-between py-1 text-sm text-foreground">
                 <span>{t.type}</span>
                 <span>GHS {pesewasToCedis(t.amountPesewas)}</span>
-                <span className="text-slate-400">{t.status}</span>
+                <span className="text-disabled-foreground">{t.status}</span>
               </div>
             ))}
           </CardContent>
@@ -212,13 +211,13 @@ export default function UserDetailPage() {
           </CardHeader>
           <CardContent>
             {sessions === undefined && (
-              <p className="text-xs text-slate-400">Session data isn't available yet.</p>
+              <p className="text-xs text-disabled-foreground">Session data isn't available yet.</p>
             )}
-            {sessions?.length === 0 && <p className="text-slate-400">No active sessions.</p>}
+            {sessions?.length === 0 && <p className="text-disabled-foreground">No active sessions.</p>}
             {sessions?.map((s) => (
-              <div key={s.id} className="flex justify-between py-1 text-sm">
+              <div key={s.id} className="flex justify-between py-1 text-sm text-foreground">
                 <span>{s.deviceLabel ?? s.ipAddress}</span>
-                <span className="text-slate-400">
+                <span className="text-disabled-foreground">
                   Last used {new Date(s.lastUsedAt).toLocaleString()}
                 </span>
               </div>
@@ -263,8 +262,10 @@ export default function UserDetailPage() {
 function Pill({ children, tone = 'default' }: { children: ReactNode; tone?: 'default' | 'red' }) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-        tone === 'red' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+        tone === 'red'
+          ? 'border border-destructive/30 bg-destructive/15 text-destructive'
+          : 'border border-border bg-card-secondary text-muted-foreground'
       }`}
     >
       {children}

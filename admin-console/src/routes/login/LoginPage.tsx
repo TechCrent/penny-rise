@@ -46,10 +46,10 @@ export default function LoginPage() {
         } else if (status === 429) {
           setError('Too many login attempts — wait a moment and try again.');
         } else {
-          setError('Login failed. Make sure the Stash monolith is running on :8080.');
+          setError('Login failed. Make sure the PennyRise monolith is running on :8080.');
         }
       } else {
-        setError('Login failed. Make sure the Stash monolith is running on :8080.');
+        setError('Login failed. Make sure the PennyRise monolith is running on :8080.');
       }
     } finally {
       setIsLoading(false);
@@ -57,10 +57,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <Card className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">Stash Admin</CardTitle>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground">
+              P
+            </span>
+            <CardTitle className="text-2xl">PennyRise Admin</CardTitle>
+          </div>
           <CardDescription>Sign in with your admin account credentials.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,7 +75,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@stash.local"
+                placeholder="admin@pennyrise.local"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -93,7 +98,7 @@ export default function LoginPage() {
                 disabled={isLoading}
               />
             </div>
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Signing in…' : 'Sign In'}
             </Button>

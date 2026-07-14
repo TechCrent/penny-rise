@@ -33,7 +33,14 @@ import { ChallengeCard } from './Challenges/components/ChallengeCard';
 import { VaultCard } from '../components/VaultCard';
 import { SusuCard } from '../components/susu/SusuCard';
 import { HomeSkeleton } from '../components/HomeSkeleton';
-import { AnimatedNumber, EmptyState, Icon, PressableScale, ProgressRing, fadeInUp } from '../components/ui';
+import {
+  AnimatedNumber,
+  EmptyState,
+  Icon,
+  PressableScale,
+  ProgressRing,
+  fadeInUp,
+} from '../components/ui';
 import type { IconName } from '../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../theme';
 import type { VaultListItem } from '../api/vaults';
@@ -95,8 +102,11 @@ export default function HomeScreen() {
     error: vaultsError,
     refetch: refetchVaults,
   } = useVaults();
-  const { balance: walletBalance, loading: walletLoading, fetch: fetchWalletBalance } =
-    useWalletBalance();
+  const {
+    balance: walletBalance,
+    loading: walletLoading,
+    fetch: fetchWalletBalance,
+  } = useWalletBalance();
   const { groups: susuGroups, loading: susuLoading, fetch: fetchSusuGroups } = useSusuGroups();
   const { data: challenges } = useChallenges();
   const unreadNotificationsCount = useUnreadNotificationsCount();
@@ -117,8 +127,7 @@ export default function HomeScreen() {
   );
   const vaultTotalPesewas = vaultsData ? computeTotalPesewas(vaultsData.vaults) : null;
   const walletPesewas = walletBalance?.balancePesewas ?? 0;
-  const grandTotalPesewas =
-    vaultTotalPesewas !== null ? vaultTotalPesewas + walletPesewas : null;
+  const grandTotalPesewas = vaultTotalPesewas !== null ? vaultTotalPesewas + walletPesewas : null;
 
   const activeChallenges = (challenges ?? []).filter(c => sectionFor(c) === 'ACTIVE');
 
@@ -131,9 +140,17 @@ export default function HomeScreen() {
   }
 
   const heroValue =
-    homeState === 'TOTAL' ? grandTotalPesewas : homeState === 'SAVINGS' ? vaultTotalPesewas : walletPesewas;
+    homeState === 'TOTAL'
+      ? grandTotalPesewas
+      : homeState === 'SAVINGS'
+        ? vaultTotalPesewas
+        : walletPesewas;
   const heroLabel =
-    homeState === 'TOTAL' ? 'Total balance' : homeState === 'SAVINGS' ? 'Savings total' : 'Wallet balance';
+    homeState === 'TOTAL'
+      ? 'Total balance'
+      : homeState === 'SAVINGS'
+        ? 'Savings total'
+        : 'Wallet balance';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -397,7 +414,8 @@ function PortfolioInsight({ vaultCount, susuCount }: { vaultCount: number; susuC
       </View>
       <Text style={styles.insightText}>
         You&apos;re actively saving across {vaultCount} vault{vaultCount !== 1 ? 's' : ''}
-        {susuCount > 0 ? ` and ${susuCount} susu group${susuCount !== 1 ? 's' : ''}` : ''}. Keep it up.
+        {susuCount > 0 ? ` and ${susuCount} susu group${susuCount !== 1 ? 's' : ''}` : ''}. Keep it
+        up.
       </Text>
     </View>
   );
@@ -501,7 +519,10 @@ function SavingsStateBody({
           <Text style={styles.seeAll}>See all</Text>
         </TouchableOpacity>
       </View>
-      <ActivityPreview items={activityQuery.data?.transactions} isLoading={activityQuery.isLoading} />
+      <ActivityPreview
+        items={activityQuery.data?.transactions}
+        isLoading={activityQuery.isLoading}
+      />
     </>
   );
 }
@@ -531,7 +552,9 @@ function WalletStateBody({
   return (
     <>
       {!walletLoading && (
-        <IdlePayoutNudge onPress={() => navigation.navigate('AccountPicker', { mode: 'DEPOSIT' })} />
+        <IdlePayoutNudge
+          onPress={() => navigation.navigate('AccountPicker', { mode: 'DEPOSIT' })}
+        />
       )}
 
       <View style={styles.sectionHeader}>
@@ -569,7 +592,10 @@ function WalletStateBody({
           <Text style={styles.seeAll}>See all</Text>
         </TouchableOpacity>
       </View>
-      <ActivityPreview items={activityQuery.data?.transactions} isLoading={activityQuery.isLoading} />
+      <ActivityPreview
+        items={activityQuery.data?.transactions}
+        isLoading={activityQuery.isLoading}
+      />
     </>
   );
 }
@@ -590,7 +616,11 @@ function useIdlePayoutNudge() {
     queryKey: ['transactions', 'idle-payout-check'],
     queryFn: async () => {
       const [walletPage, vaultPage] = await Promise.all([
-        fetchUnifiedTransactions({ scope: 'wallet', transactionType: 'SUSU_DISBURSEMENT', limit: 1 }),
+        fetchUnifiedTransactions({
+          scope: 'wallet',
+          transactionType: 'SUSU_DISBURSEMENT',
+          limit: 1,
+        }),
         fetchUnifiedTransactions({ scope: 'vault', transactionType: 'DEPOSIT', limit: 1 }),
       ]);
 
@@ -629,8 +659,8 @@ function IdlePayoutNudge({ onPress }: { onPress: () => void }) {
           <Icon name="sparkles" size={15} color={colors.gold.text} />
         </View>
         <Text style={styles.nudgeText}>
-          <Text style={styles.nudgeAmount}>GHS {payout.amountCedis} is sitting in your wallet</Text> ·{' '}
-          {payout.accountName} · move it into a vault to keep it safe.
+          <Text style={styles.nudgeAmount}>GHS {payout.amountCedis} is sitting in your wallet</Text>{' '}
+          · {payout.accountName} · move it into a vault to keep it safe.
         </Text>
       </PressableScale>
     </Animated.View>

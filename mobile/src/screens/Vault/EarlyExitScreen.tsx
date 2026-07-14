@@ -23,8 +23,8 @@ import {
   type EarlyExitResponse,
 } from '../../api/hooks/useEarlyExit';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
-import { Icon, PressableScale, type IconName } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { Banner, Icon, PressableScale, ScreenHeader, type IconName } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -161,18 +161,8 @@ export default function EarlyExitScreen() {
   // ── Shared header ─────────────────────────────────────────────────────
   function renderHeader(title: string, onBack?: () => void) {
     return (
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={onBack ?? (() => navigation.goBack())}
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.headerBtnIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {title}
-        </Text>
-        <View style={styles.headerBtn} />
+      <View style={styles.headerWrap}>
+        <ScreenHeader title={title} onBack={onBack ?? (() => navigation.goBack())} />
       </View>
     );
   }
@@ -330,29 +320,19 @@ export default function EarlyExitScreen() {
           </View>
 
           {/* Cool-off explanation */}
-          <View style={styles.coolOffCard}>
-            <View style={styles.coolOffTitleRow}>
-              <Icon name="hourglass-outline" size={16} color={colors.status.warningText} />
-              <Text style={styles.coolOffTitle}>72-hour cool-off</Text>
-            </View>
-            <Text style={styles.coolOffBody}>
-              Your money won&apos;t be released immediately. You can cancel at any time before{' '}
-              <Text style={styles.coolOffBold}>
-                {formatDatetime(estimatedRelease.toISOString())}
-              </Text>{' '}
-              — your vault returns to normal with no fee charged.
-            </Text>
+          <View style={styles.coolOffBannerWrap}>
+            <Banner
+              tone="warning"
+              title="72-hour cool-off"
+              message={`Your money won't be released immediately. You can cancel at any time before ${formatDatetime(estimatedRelease.toISOString())} — your vault returns to normal with no fee charged.`}
+            />
           </View>
 
-          {/* Deposit note */}
-          <View style={styles.depositNote}>
-            <Icon name="bulb-outline" size={15} color={colors.gold.text} style={styles.depositNoteIcon} />
-            <Text style={styles.depositNoteText}>
-              Any deposits you make{' '}
-              <Text style={styles.depositNoteBold}>during the 72-hour window</Text> will be included
-              in your release — the 5% fee only applies to your balance right now.
-            </Text>
-          </View>
+          <Banner
+            tone="info"
+            icon="bulb-outline"
+            message="Any deposits you make during the 72-hour window will be included in your release — the 5% fee only applies to your balance right now."
+          />
 
           <PressableScale
             style={styles.cta}
@@ -388,15 +368,11 @@ export default function EarlyExitScreen() {
         {renderHeader('Confirm early exit', () => setPhase('preview'))}
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {/* Deliberate confirmation copy */}
-          <View style={styles.confirmIntro}>
-            <Icon name="warning-outline" size={26} color={colors.status.error} />
-            <Text style={styles.confirmIntroTitle}>You&apos;re starting the exit process</Text>
-            <Text style={styles.confirmIntroBody}>
-              Once confirmed, the 72-hour cool-off begins. Your vault will show as{' '}
-              <Text style={styles.confirmIntroBold}>Early Exit Pending</Text>. You can cancel at any
-              time before the 72 hours are up.
-            </Text>
-          </View>
+          <Banner
+            tone="error"
+            title="You're starting the exit process"
+            message="Once confirmed, the 72-hour cool-off begins. Your vault will show as Early Exit Pending. You can cancel at any time before the 72 hours are up."
+          />
 
           {/* Final summary */}
           <View style={styles.finalSummary}>
@@ -407,11 +383,7 @@ export default function EarlyExitScreen() {
             <FinalRow label="You'll receive" value={`GHS ${formatCedis(releasePesewas)}`} bold />
           </View>
 
-          {serverError && (
-            <View style={styles.serverErrorBox}>
-              <Text style={styles.serverErrorText}>{serverError}</Text>
-            </View>
-          )}
+          {serverError && <Banner tone="error" message={serverError} />}
 
           {/* Deliberate action button — not "Confirm" */}
           <PressableScale
@@ -487,12 +459,11 @@ export default function EarlyExitScreen() {
             </Text>
           </Text>
 
-          <View style={styles.doneNote}>
-            <Text style={styles.doneNoteText}>
-              Your vault now shows as <Text style={styles.doneNoteBold}>Early Exit Pending</Text>.
-              You can still cancel from the vault screen before the deadline — no fee will be
-              charged if you cancel.
-            </Text>
+          <View style={styles.fullWidth}>
+            <Banner
+              tone="success"
+              message="Your vault now shows as Early Exit Pending. You can still cancel from the vault screen before the deadline — no fee will be charged if you cancel."
+            />
           </View>
 
           <PressableScale
@@ -675,19 +646,12 @@ const styles = StyleSheet.create({
   doneContent: { alignItems: 'center', paddingTop: spacing['2xl'] },
   fullWidth: { width: '100%' },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerWrap: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
   },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  headerTitle: { ...typography.h3, color: colors.textPrimary, flex: 1, textAlign: 'center' },
 
   // Reason phase
   explainerCard: {
@@ -713,11 +677,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     padding: spacing.md,
     marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
   },
   vaultContextName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
   vaultContextBalance: { fontSize: 14, fontWeight: '600', color: colors.gold.text },
@@ -730,7 +695,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  sectionSub: { fontSize: 12, color: colors.textSecondary, marginBottom: spacing.lg, lineHeight: 17 },
+  sectionSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+    lineHeight: 17,
+  },
 
   reasonCard: {
     flexDirection: 'row',
@@ -768,7 +738,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     marginTop: spacing.sm,
   },
-  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  providerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
   providerPill: {
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
@@ -788,7 +763,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
-  fieldError: { fontSize: 12, color: colors.status.error, marginTop: -spacing.md, marginBottom: spacing.lg },
+  fieldError: {
+    fontSize: 12,
+    color: colors.status.error,
+    marginTop: -spacing.md,
+    marginBottom: spacing.lg,
+  },
 
   // Preview phase
   releaseHero: { alignItems: 'center', paddingVertical: spacing['2xl'] },
@@ -800,15 +780,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     marginBottom: spacing.sm,
   },
-  releaseAmountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.sm },
+  releaseAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
   releaseCurrency: { fontSize: 20, fontWeight: '700', color: colors.status.successText },
-  releaseAmount: { fontSize: 44, fontWeight: '800', color: colors.status.successText, letterSpacing: -1.5 },
+  releaseAmount: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: colors.status.successText,
+    letterSpacing: -1.5,
+  },
   releaseWhen: { fontSize: 13, color: colors.textSecondary },
 
   breakdownCard: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
-    padding: 4,
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
@@ -816,56 +805,12 @@ const styles = StyleSheet.create({
   },
   breakdownDivider: { height: 1, backgroundColor: colors.neutral[100], marginVertical: spacing.xs },
 
-  coolOffCard: {
-    backgroundColor: colors.status.warningBg,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.warningBorder,
-  },
-  coolOffTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
-  coolOffTitle: { fontSize: 14, fontWeight: '700', color: colors.status.warningText },
-  coolOffBody: { fontSize: 13, color: colors.status.warningInk, lineHeight: 19 },
-  coolOffBold: { fontWeight: '700' },
-
-  depositNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.gold.light,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  depositNoteIcon: { marginTop: 1 },
-  depositNoteText: { flex: 1, fontSize: 13, color: colors.gold.text, lineHeight: 18 },
-  depositNoteBold: { fontWeight: '700' },
+  coolOffBannerWrap: { width: '100%' },
 
   cancelLink: { alignItems: 'center', marginTop: spacing.md },
   cancelLinkText: { fontSize: 14, color: colors.textSecondary, textDecorationLine: 'underline' },
 
   // Confirm phase
-  confirmIntro: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.lg,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
-  },
-  confirmIntroTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  confirmIntroBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, textAlign: 'center' },
-  confirmIntroBold: { fontWeight: '700', color: colors.textPrimary },
-
   finalSummary: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
@@ -874,15 +819,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  serverErrorBox: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
-  },
-  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   // Done phase
   doneIconBadge: {
@@ -894,7 +830,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.lg,
   },
-  doneTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  doneTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
   doneCountdown: {
     fontSize: 28,
     fontWeight: '800',
@@ -902,17 +843,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
     marginBottom: spacing['2xl'],
   },
-  doneRelease: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginVertical: spacing.lg },
-  doneReleaseBold: { fontWeight: '700', color: colors.textPrimary },
-  doneNote: {
-    backgroundColor: colors.status.successBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
-    width: '100%',
+  doneRelease: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
   },
-  doneNoteText: { fontSize: 13, color: colors.status.successText, lineHeight: 18 },
-  doneNoteBold: { fontWeight: '700' },
+  doneReleaseBold: { fontWeight: '700', color: colors.textPrimary },
 
   // Shared CTA
   cta: {
@@ -977,10 +914,25 @@ const panelStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.status.warningBorder,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.lg },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
   headerBody: { flex: 1 },
-  headerTitle: { fontSize: 15, fontWeight: '700', color: colors.status.warningText, marginBottom: 2 },
-  headerCountdown: { fontSize: 22, fontWeight: '800', color: colors.status.warningText, letterSpacing: -0.5 },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.status.warningText,
+    marginBottom: 2,
+  },
+  headerCountdown: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.status.warningText,
+    letterSpacing: -0.5,
+  },
 
   amountRow: {
     flexDirection: 'row',
@@ -1003,7 +955,12 @@ const panelStyles = StyleSheet.create({
   amountValue: { fontSize: 16, fontWeight: '800', color: colors.status.warningInk },
   amountPositive: { color: colors.status.successText },
 
-  releaseDate: { fontSize: 12, color: colors.status.warningInkSoft, marginBottom: spacing.md, textAlign: 'center' },
+  releaseDate: {
+    fontSize: 12,
+    color: colors.status.warningInkSoft,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
 
   cancelBtn: {
     borderWidth: 1.5,
@@ -1018,5 +975,10 @@ const panelStyles = StyleSheet.create({
   cancelBtnText: { fontSize: 14, fontWeight: '700', color: colors.status.error },
 
   cancelNote: { fontSize: 12, color: colors.status.warningInkSoft, textAlign: 'center' },
-  cancelError: { fontSize: 12, color: colors.status.error, marginBottom: spacing.sm, textAlign: 'center' },
+  cancelError: {
+    fontSize: 12,
+    color: colors.status.error,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
 });

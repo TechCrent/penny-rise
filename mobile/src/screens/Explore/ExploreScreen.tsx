@@ -12,7 +12,7 @@ import { useWalletBalance } from '../../hooks/useWalletBalance';
 import Animated from 'react-native-reanimated';
 import { useChallenges } from '../Challenges/useChallenges';
 import { sectionFor } from '../Challenges/types';
-import { Icon, PressableScale, fadeInUp, type IconName } from '../../components/ui';
+import { GradientHero, Icon, PressableScale, fadeInUp, type IconName } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = CompositeNavigationProp<
@@ -46,13 +46,13 @@ function DestinationCard({
       accessibilityLabel={`${title}. ${summary}`}
     >
       <View style={styles.cardIcon}>
-        <Icon name={icon} size={20} color={colors.gold.text} />
+        <Icon name={icon} size={22} color={colors.gold.text} />
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle}>{title}</Text>
         <Text style={styles.cardSummary}>{summary}</Text>
       </View>
-      <Text style={styles.chevron}>›</Text>
+      <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
     </PressableScale>
   );
 }
@@ -80,31 +80,42 @@ export function ExploreScreen() {
   return (
     <SafeAreaView style={styles.safe} testID="explore-screen">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.heading}>Explore</Text>
-        <Text style={styles.subheading}>Jump straight into any part of your account.</Text>
+        <Animated.View entering={fadeInUp(40)}>
+          <GradientHero
+            icon="compass-outline"
+            title="Explore"
+            subtitle="Jump straight into any part of your account."
+          />
+        </Animated.View>
 
-        <DestinationCard
-          icon="wallet-outline"
-          title="Vaults"
-          summary={`${vaultCount} vault${vaultCount !== 1 ? 's' : ''} · GHS ${formatCedis(vaultSavedPesewas)} saved`}
-          onPress={() => navigation.navigate('VaultList')}
-        />
-        <DestinationCard
-          icon="card-outline"
-          title="Wallet"
-          summary={
-            walletBalance
-              ? `GHS ${walletBalance.balanceCedis} · payouts & transfers`
-              : 'Payouts & transfers'
-          }
-          onPress={() => navigation.navigate('Wallet')}
-        />
-        <DestinationCard
-          icon="trophy-outline"
-          title="Challenges"
-          summary={`${activeCount} active · ${availableCount} to join`}
-          onPress={() => navigation.navigate('ChallengesList')}
-        />
+        <Animated.View entering={fadeInUp(80)}>
+          <DestinationCard
+            icon="wallet-outline"
+            title="Vaults"
+            summary={`${vaultCount} vault${vaultCount !== 1 ? 's' : ''} · GHS ${formatCedis(vaultSavedPesewas)} saved`}
+            onPress={() => navigation.navigate('VaultList')}
+          />
+        </Animated.View>
+        <Animated.View entering={fadeInUp(120)}>
+          <DestinationCard
+            icon="card-outline"
+            title="Wallet"
+            summary={
+              walletBalance
+                ? `GHS ${walletBalance.balanceCedis} · payouts & transfers`
+                : 'Payouts & transfers'
+            }
+            onPress={() => navigation.navigate('Wallet')}
+          />
+        </Animated.View>
+        <Animated.View entering={fadeInUp(160)}>
+          <DestinationCard
+            icon="trophy-outline"
+            title="Challenges"
+            summary={`${activeCount} active · ${availableCount} to join`}
+            onPress={() => navigation.navigate('ChallengesList')}
+          />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -112,14 +123,16 @@ export function ExploreScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing['4xl'] },
-  heading: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.xs },
-  subheading: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing['2xl'] },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radii.lg,
+    borderRadius: radii['2xl'],
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
@@ -127,16 +140,21 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   cardIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: radii.pill,
     backgroundColor: colors.gold.light,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
+    ...shadows.sm,
   },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
-  cardSummary: { fontSize: 13, color: colors.textSecondary },
-  chevron: { fontSize: 20, color: colors.textTertiary },
+  cardTitle: {
+    ...typography.bodyMedium,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  cardSummary: { ...typography.caption, color: colors.textSecondary },
 });

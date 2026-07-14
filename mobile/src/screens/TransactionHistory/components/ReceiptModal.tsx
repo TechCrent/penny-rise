@@ -68,7 +68,11 @@ export function ReceiptModal({ transaction, onClose }: Props) {
         </View>
 
         {loadingLive ? (
-          <ActivityIndicator style={styles.loader} color={colors.gold.base} testID="receipt-loading" />
+          <ActivityIndicator
+            style={styles.loader}
+            color={colors.gold.base}
+            testID="receipt-loading"
+          />
         ) : (
           <ScrollView contentContainerStyle={styles.content}>
             <ReceiptRow
@@ -160,6 +164,12 @@ const rowStyles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   label: { fontSize: 13, color: colors.textSecondary },
-  value: { fontSize: 14, color: colors.textPrimary, flex: 1, textAlign: 'right', marginLeft: spacing.md },
+  value: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: spacing.md,
+  },
   pendingValue: { color: colors.status.warningText, fontWeight: '700' },
 });

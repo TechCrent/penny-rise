@@ -111,9 +111,7 @@ export function ChangePasswordScreen() {
           <ScreenHeader title="Change password" onBack={() => navigation.goBack()} />
 
           <Animated.View entering={fadeInUp(60)} style={styles.formCard}>
-            {success ? (
-              <Banner tone="success" message="Password changed successfully." />
-            ) : null}
+            {success ? <Banner tone="success" message="Password changed successfully." /> : null}
 
             <Controller
               control={control}

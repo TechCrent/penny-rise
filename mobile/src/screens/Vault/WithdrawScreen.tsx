@@ -21,8 +21,8 @@ import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useAuth } from '../../hooks/useAuth';
 import { useVaultWithdrawal } from '../../api/hooks/useVaultWithdrawal';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
-import { Icon, PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { Banner, Icon, PressableScale, ScreenHeader } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -150,16 +150,8 @@ export default function WithdrawScreen() {
 
   function renderHeader(title: string, backFn?: () => void) {
     return (
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={backFn ?? (() => navigation.goBack())}
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.headerBtnIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{title}</Text>
-        <View style={styles.headerBtn} />
+      <View style={styles.headerWrap}>
+        <ScreenHeader title={title} onBack={backFn ?? (() => navigation.goBack())} />
       </View>
     );
   }
@@ -222,11 +214,10 @@ export default function WithdrawScreen() {
             )}
 
             {exceedsBalance && (
-              <View style={styles.exceedsBox}>
-                <Text style={styles.exceedsText}>
-                  ⚠️ Amount exceeds your balance of GHS {formatCedis(availablePesewas)}
-                </Text>
-              </View>
+              <Banner
+                tone="error"
+                message={`Amount exceeds your balance of GHS ${formatCedis(availablePesewas)}`}
+              />
             )}
 
             {amountError && !exceedsBalance && <Text style={styles.fieldError}>{amountError}</Text>}
@@ -263,14 +254,10 @@ export default function WithdrawScreen() {
               accessibilityLabel="MoMo destination number"
             />
 
-            <View style={styles.warningBox}>
-              <Icon name="time-outline" size={16} color={colors.status.warningText} />
-              <Text style={styles.warningText}>
-                MoMo transfers usually arrive within{' '}
-                <Text style={styles.warningBold}>5–10 minutes</Text>. Occasionally up to 24 hours
-                during network congestion.
-              </Text>
-            </View>
+            <Banner
+              tone="warning"
+              message="MoMo transfers usually arrive within 5–10 minutes. Occasionally up to 24 hours during network congestion."
+            />
 
             <PressableScale
               style={[styles.cta, exceedsBalance && styles.ctaDisabled]}
@@ -315,22 +302,13 @@ export default function WithdrawScreen() {
             <SummaryRow label="Fee" value="Free" />
           </LinearGradient>
 
-          <View style={styles.settlementNote}>
-            <Icon name="hourglass-outline" size={20} color={colors.status.warningText} />
-            <View style={styles.settlementBody}>
-              <Text style={styles.settlementTitle}>Takes a few minutes</Text>
-              <Text style={styles.settlementDesc}>
-                Your money will arrive on {momoNumber} within 5–10 minutes. We&apos;ll notify you
-                when it lands.
-              </Text>
-            </View>
-          </View>
+          <Banner
+            tone="warning"
+            title="Takes a few minutes"
+            message={`Your money will arrive on ${momoNumber} within 5–10 minutes. We'll notify you when it lands.`}
+          />
 
-          {serverError && (
-            <View style={styles.serverErrorBox}>
-              <Text style={styles.serverErrorText}>{serverError}</Text>
-            </View>
-          )}
+          {serverError && <Banner tone="error" message={serverError} />}
 
           <PressableScale
             style={[styles.cta, isPending && styles.ctaDisabled]}
@@ -430,13 +408,22 @@ export default function WithdrawScreen() {
           <View style={styles.statusRow}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>Sent to Paystack</Text>
-            <Icon name="checkmark" size={16} color={colors.status.success} style={styles.statusIndicator} />
+            <Icon
+              name="checkmark"
+              size={16}
+              color={colors.status.success}
+              style={styles.statusIndicator}
+            />
           </View>
           <View style={styles.statusConnector} />
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, styles.statusDotPending]} />
             <Text style={styles.statusText}>Paystack → your network</Text>
-            <ActivityIndicator size="small" color={colors.gold.base} style={styles.statusIndicator} />
+            <ActivityIndicator
+              size="small"
+              color={colors.gold.base}
+              style={styles.statusIndicator}
+            />
           </View>
           <View style={styles.statusConnector} />
           <View style={styles.statusRow}>
@@ -517,19 +504,12 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
   pendingContent: { paddingTop: spacing.xl },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerWrap: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
   },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
 
   // Amount phase
   balanceCard: {
@@ -566,7 +546,12 @@ const styles = StyleSheet.create({
     marginTop: spacing['2xl'],
   },
 
-  amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
   ghsPrefix: { fontSize: 20, fontWeight: '600', color: colors.textSecondary },
   amountInput: {
     flex: 1,
@@ -579,20 +564,21 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderStrong,
   },
   amountInputError: { borderBottomColor: colors.status.error },
-  afterBalance: { fontSize: 13, color: colors.status.successText, fontWeight: '600', marginBottom: spacing.lg },
-
-  exceedsBox: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
+  afterBalance: {
+    fontSize: 13,
+    color: colors.status.successText,
+    fontWeight: '600',
+    marginBottom: spacing.lg,
   },
-  exceedsText: { fontSize: 13, color: colors.status.errorText, fontWeight: '500' },
+
   fieldError: { fontSize: 12, color: colors.status.error, marginBottom: spacing.sm },
 
-  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  providerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   providerPill: {
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
@@ -613,20 +599,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
-
-  warningBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.status.warningBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.warningBorder,
-    marginBottom: spacing['2xl'],
-  },
-  warningText: { flex: 1, fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
-  warningBold: { fontWeight: '700' },
 
   // Confirm phase
   summaryCard: {
@@ -649,32 +621,11 @@ const styles = StyleSheet.create({
     letterSpacing: -2,
     marginBottom: spacing.xl,
   },
-  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginBottom: spacing.md },
-
-  settlementNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    backgroundColor: colors.status.warningBg,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.warningBorder,
-    marginBottom: spacing.xl,
-  },
-  settlementBody: { flex: 1 },
-  settlementTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText, marginBottom: 3 },
-  settlementDesc: { fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
-
-  serverErrorBox: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
+  summaryDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
   },
-  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   // Pending phase
   pendingHero: { alignItems: 'center', marginBottom: spacing['2xl'] },
@@ -696,7 +647,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  pendingTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
+  pendingTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
   pendingAmount: {
     fontSize: 36,
     fontWeight: '800',
@@ -759,7 +715,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  infoTitle: { fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  infoTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
   infoBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 19 },
   infoBold: { fontWeight: '700', color: colors.textPrimary },
 

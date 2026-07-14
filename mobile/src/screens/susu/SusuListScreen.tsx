@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ScrollView, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  ScrollView,
+  RefreshControl,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
@@ -96,7 +104,12 @@ export function SusuListScreen() {
         <ScrollView
           contentContainerStyle={styles.emptyScroll}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold.base} colors={[colors.gold.base]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              tintColor={colors.gold.base}
+              colors={[colors.gold.base]}
+            />
           }
         >
           <EmptyState />
@@ -115,7 +128,12 @@ export function SusuListScreen() {
           )}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold.base} colors={[colors.gold.base]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              tintColor={colors.gold.base}
+              colors={[colors.gold.base]}
+            />
           }
           ListEmptyComponent={
             <View style={styles.pastEmpty}>
@@ -134,7 +152,13 @@ export function SusuListScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.background },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    backgroundColor: colors.background,
+  },
   tabRow: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm },
   tabBar: {
     flexDirection: 'row',
@@ -153,7 +177,12 @@ const styles = StyleSheet.create({
   tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
   list: { padding: spacing.lg, gap: spacing.md },
   emptyScroll: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-  error: { color: colors.status.error, fontSize: 13, paddingHorizontal: spacing.lg, marginTop: spacing.sm },
+  error: {
+    color: colors.status.error,
+    fontSize: 13,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+  },
   emptyContainer: {
     alignItems: 'center',
     padding: spacing['3xl'],
@@ -173,7 +202,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   emptyTitle: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
-  emptySubtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing['2xl'] },
+  emptySubtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing['2xl'],
+  },
   emptyCtaRow: { flexDirection: 'row', gap: spacing.md, alignSelf: 'stretch' },
   emptyBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, alignItems: 'center' },
   emptyBtnPrimary: { backgroundColor: colors.gold.base, ...shadows.sm },

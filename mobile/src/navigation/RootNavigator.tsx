@@ -120,7 +120,7 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const linking = {
-  prefixes: ['stash://', 'https://stash.app'],
+  prefixes: ['pennyrise://', 'https://pennyrise.app'],
   config: {
     screens: {
       ResetPassword: { path: 'reset-password', parse: { token: String } },

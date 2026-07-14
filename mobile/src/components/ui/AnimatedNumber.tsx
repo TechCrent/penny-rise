@@ -41,6 +41,14 @@ export function AnimatedNumber({
   const progress = useSharedValue(0);
   const [display, setDisplay] = useState(() => formatter(IS_TEST_ENV ? value : 0));
   const hasMounted = React.useRef(false);
+  // Keep formatter on the JS thread — calling it inside useAnimatedReaction
+  // runs on the UI thread where JS functions are opaque objects.
+  const formatterRef = React.useRef(formatter);
+  formatterRef.current = formatter;
+
+  const updateDisplay = React.useCallback((current: number) => {
+    setDisplay(formatterRef.current(current));
+  }, []);
 
   useEffect(() => {
     if (IS_TEST_ENV) {
@@ -61,9 +69,9 @@ export function AnimatedNumber({
     () => progress.value,
     current => {
       if (IS_TEST_ENV) return;
-      runOnJS(setDisplay)(formatter(current));
+      runOnJS(updateDisplay)(current);
     },
-    [formatter],
+    [updateDisplay],
   );
 
   return (

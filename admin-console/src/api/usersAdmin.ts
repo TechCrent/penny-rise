@@ -65,7 +65,7 @@ export interface AdminKycSubmissionSummary {
 }
 
 // Proposed — no sessions endpoint exists anywhere in the backend today
-// (verified: no GET .../sessions route under com.stash.admin). `sessions`
+// (verified: no GET .../sessions route under com.pennyrise.admin). `sessions`
 // is optional/absent on AdminUserDetailResponse until it's built.
 export interface AdminSessionSummary {
   id: string;

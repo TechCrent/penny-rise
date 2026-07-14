@@ -14,12 +14,7 @@ type Route = RouteProp<RootStackParamList, 'ChallengeDetail'>;
 export function ChallengeDetailScreen() {
   const route = useRoute<Route>();
   const { challengeId } = route.params;
-  const {
-    data: challenge,
-    isLoading,
-    isError,
-    refetch,
-  } = useChallengeDetail(challengeId);
+  const { data: challenge, isLoading, isError, refetch } = useChallengeDetail(challengeId);
   const joinMutation = useJoinChallenge();
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
@@ -135,13 +130,33 @@ export function ChallengeDetailScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   container: { padding: spacing.xl },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
-  message: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.md },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing['3xl'],
+  },
+  message: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
   retryButton: { paddingHorizontal: spacing.xl },
   badgeSection: { alignItems: 'center', marginBottom: spacing.xl },
-  badgeEarnedLabel: { fontSize: 15, fontWeight: '700', color: colors.status.successText, marginTop: spacing.sm },
+  badgeEarnedLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.status.successText,
+    marginTop: spacing.sm,
+  },
   title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
-  description: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.xl, lineHeight: 20 },
+  description: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+    lineHeight: 20,
+  },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

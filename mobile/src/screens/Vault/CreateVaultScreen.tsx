@@ -19,7 +19,7 @@ import { useVaults } from '../../api/hooks/useVaults';
 import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { VaultTypeCard } from './components/VaultTypeCard';
-import { Icon, PressableScale } from '../../components/ui';
+import { Banner, PressableScale, ScreenHeader } from '../../components/ui';
 import { colors, radii, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CreateVault'>;
@@ -185,17 +185,11 @@ export default function CreateVaultScreen() {
           freely with no penalty.
         </Text>
 
-        <View style={styles.warningBox}>
-          <Icon name="warning-outline" size={18} color={colors.status.warningText} />
-          <View style={styles.warningBody}>
-            <Text style={styles.warningTitle}>Early exit penalty</Text>
-            <Text style={styles.warningDesc}>
-              Breaking the lock before conditions are met incurs a{' '}
-              <Text style={styles.warningBold}>5% penalty</Text> on the vault balance at the time of
-              exit.
-            </Text>
-          </View>
-        </View>
+        <Banner
+          tone="warning"
+          title="Early exit penalty"
+          message="Breaking the lock before conditions are met incurs a 5% penalty on the vault balance at the time of exit."
+        />
 
         <Text style={styles.fieldLabel}>
           Unlock date <Text style={styles.optional}>(optional)</Text>
@@ -261,11 +255,7 @@ export default function CreateVaultScreen() {
           </View>
         )}
 
-        {!!fieldErrors.unlock && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>{fieldErrors.unlock}</Text>
-          </View>
-        )}
+        {!!fieldErrors.unlock && <Banner tone="error" message={fieldErrors.unlock} />}
       </>
     );
   }
@@ -276,18 +266,11 @@ export default function CreateVaultScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => (step === 2 ? setStep(1) : navigation.goBack())}
-            accessibilityLabel={step === 2 ? 'Back to step 1' : 'Cancel'}
-            style={styles.backButton}
-          >
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {step === 1 ? 'Create a vault' : 'Unlock conditions'}
-          </Text>
-          <View style={styles.backButton} />
+        <View style={styles.headerWrap}>
+          <ScreenHeader
+            title={step === 1 ? 'Create a vault' : 'Unlock conditions'}
+            onBack={() => (step === 2 ? setStep(1) : navigation.goBack())}
+          />
         </View>
 
         <ScrollView
@@ -351,11 +334,7 @@ export default function CreateVaultScreen() {
             renderStep2()
           )}
 
-          {!!serverError && (
-            <View style={styles.serverErrorBox}>
-              <Text style={styles.serverErrorText}>{serverError}</Text>
-            </View>
-          )}
+          {!!serverError && <Banner tone="error" message={serverError} />}
 
           {!!upgradeUrl && (
             <TouchableOpacity
@@ -369,12 +348,10 @@ export default function CreateVaultScreen() {
           )}
 
           {step === 1 && selectedLimited && (
-            <View style={styles.upgradeBanner}>
-              <Text style={styles.upgradeText}>
-                You&apos;ve used your free {vaultType === 'STANDARD' ? 'standard' : 'locked'} vault
-                allowance. Upgrade to Premium for unlimited vaults.
-              </Text>
-            </View>
+            <Banner
+              tone="info"
+              message={`You've used your free ${vaultType === 'STANDARD' ? 'standard' : 'locked'} vault allowance. Upgrade to Premium for unlimited vaults.`}
+            />
           )}
 
           <PressableScale
@@ -417,19 +394,12 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing['6xl'] },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerWrap: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center' },
-  backIcon: { fontSize: 22, color: colors.textPrimary },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
 
   stepIndicator: {
     flexDirection: 'row',
@@ -443,7 +413,12 @@ const styles = StyleSheet.create({
   stepLine: { flex: 1, height: 2, backgroundColor: colors.border, marginHorizontal: spacing.sm },
 
   stepTitle: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.xs },
-  stepSubtitle: { fontSize: 14, color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.xl },
+  stepSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+  },
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
@@ -455,7 +430,12 @@ const styles = StyleSheet.create({
   optional: { fontWeight: '400', color: colors.textSecondary, textTransform: 'none' },
   fieldLabelMt16: { marginTop: spacing.lg },
   fieldLabelVaultType: { marginTop: spacing['2xl'], marginBottom: spacing.md },
-  charCount: { fontSize: 12, color: colors.textTertiary, textAlign: 'right', marginTop: spacing.xs },
+  charCount: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    textAlign: 'right',
+    marginTop: spacing.xs,
+  },
 
   input: {
     backgroundColor: colors.surface,
@@ -470,24 +450,6 @@ const styles = StyleSheet.create({
   inputError: { borderColor: colors.status.error },
 
   errorText: { fontSize: 12, color: colors.status.error, marginTop: spacing.xs },
-  errorBanner: { backgroundColor: colors.status.errorBg, borderRadius: radii.md, padding: spacing.md, marginTop: spacing.md },
-  errorBannerText: { fontSize: 13, color: colors.status.errorText, fontWeight: '500' },
-
-  warningBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.status.warningBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.status.warningBorder,
-  },
-  warningBody: { flex: 1 },
-  warningTitle: { fontSize: 13, fontWeight: '700', color: colors.status.warningText, marginBottom: 3 },
-  warningDesc: { fontSize: 13, color: colors.status.warningInk, lineHeight: 18 },
-  warningBold: { fontWeight: '700' },
 
   logicRow: { marginTop: spacing.xl, marginBottom: spacing.xs },
   logicLabel: {
@@ -498,32 +460,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  logicToggle: { flexDirection: 'row', backgroundColor: colors.neutral[100], borderRadius: radii.md, padding: 3 },
+  logicToggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.neutral[100],
+    borderRadius: radii.md,
+    padding: 3,
+  },
   logicOption: { flex: 1, paddingVertical: 9, borderRadius: radii.sm, alignItems: 'center' },
   logicOptionActive: { backgroundColor: colors.gold.base },
   logicOptionText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
   logicOptionTextActive: { color: colors.neutral[900] },
 
-  serverErrorBox: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginTop: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
-  },
-  serverErrorText: { fontSize: 13, color: colors.status.errorText, lineHeight: 19 },
   upgradeLink: { marginTop: spacing.sm, alignItems: 'center', paddingVertical: spacing.xs },
   upgradeLinkText: { fontSize: 14, fontWeight: '700', color: colors.gold.text },
-
-  upgradeBanner: {
-    backgroundColor: colors.status.infoBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  upgradeText: { fontSize: 13, color: colors.status.infoText, lineHeight: 19 },
 
   ctaButton: {
     backgroundColor: colors.gold.base,

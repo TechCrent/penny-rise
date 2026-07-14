@@ -61,7 +61,9 @@ export function CreateSusuInviteScreen() {
           <Text style={styles.code} testID="join-code-text">
             {joinCode}
           </Text>
-          <Text style={styles.codeHint}>Send this code to your future members so they can join.</Text>
+          <Text style={styles.codeHint}>
+            Send this code to your future members so they can join.
+          </Text>
         </LinearGradient>
 
         <PressableScale style={styles.shareBtn} onPress={handleShare} testID="share-btn">
@@ -70,7 +72,11 @@ export function CreateSusuInviteScreen() {
         </PressableScale>
       </Animated.View>
 
-      <Animated.View entering={fadeInUp(120)} style={styles.memberProgress} testID="member-progress">
+      <Animated.View
+        entering={fadeInUp(120)}
+        style={styles.memberProgress}
+        testID="member-progress"
+      >
         <Text style={styles.memberProgressLabel}>Members joined</Text>
         <Text style={styles.memberProgressCount}>
           {memberCount} / {targetMemberCount}
@@ -153,7 +159,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   progressBg: { height: 6, backgroundColor: colors.neutral[200], borderRadius: radii.pill },
-  progressFill: { height: 6, backgroundColor: colors.gold.base, borderRadius: radii.pill, width: '66%' },
+  progressFill: {
+    height: 6,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.pill,
+    width: '66%',
+  },
   codeHero: {
     borderRadius: radii['2xl'],
     padding: spacing['2xl'],
@@ -197,14 +208,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     ...shadows.sm,
   },
-  memberProgressLabel: { ...typography.label, color: colors.textSecondary, marginBottom: spacing.xs },
-  memberProgressCount: { ...typography.numericLarge, color: colors.textPrimary, marginBottom: spacing.sm },
+  memberProgressLabel: {
+    ...typography.label,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  memberProgressCount: {
+    ...typography.numericLarge,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
   memberFill: { height: 6, backgroundColor: colors.gold.base, borderRadius: radii.pill },
   memberProgressHint: { color: colors.textTertiary, fontSize: 12, marginTop: spacing.sm },
   memberProgressLoading: { marginTop: spacing.sm, alignItems: 'flex-start' },
   memberProgressError: { marginTop: spacing.sm },
   memberProgressErrorText: { color: colors.status.error, fontSize: 12 },
-  memberProgressRetryText: { color: colors.textPrimary, fontSize: 12, fontWeight: '700', marginTop: spacing.xs },
+  memberProgressRetryText: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: spacing.xs,
+  },
   summary: {
     backgroundColor: colors.surface,
     borderRadius: radii['2xl'],

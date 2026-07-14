@@ -81,11 +81,20 @@ export function NotificationInboxScreen() {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.gold.base} colors={[colors.gold.base]} />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colors.gold.base}
+            colors={[colors.gold.base]}
+          />
         }
         ListFooterComponent={
           isFetchingNextPage ? (
-            <ActivityIndicator style={styles.footerSpinner} color={colors.gold.base} testID="load-more-spinner" />
+            <ActivityIndicator
+              style={styles.footerSpinner}
+              color={colors.gold.base}
+              testID="load-more-spinner"
+            />
           ) : null
         }
         testID="notification-list"

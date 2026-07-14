@@ -265,7 +265,7 @@ describe('CreateVaultScreen', () => {
           error: {
             code: 'VAULT_TIER_LIMIT_EXCEEDED',
             message: "You've reached your plan's limit of 2 STANDARD vault(s).",
-            details: { upgrade_url: 'stash://subscription/upgrade' },
+            details: { upgrade_url: 'pennyrise://subscription/upgrade' },
           },
         },
       } as AxiosResponse),

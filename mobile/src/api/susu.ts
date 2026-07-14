@@ -100,9 +100,9 @@ export const walletApi = {
 export async function shareJoinCode(code: string, groupName: string) {
   await Share.share({
     message:
-      `Join my Stash susu group "${groupName}"! ` +
-      `Use code ${code} on the Stash app to join. ` +
-      `Download Stash at stash.app`,
-    title: `Join ${groupName} on Stash`,
+      `Join my PennyRise susu group "${groupName}"! ` +
+      `Use code ${code} on the PennyRise app to join. ` +
+      `Download PennyRise at pennyrise.app`,
+    title: `Join ${groupName} on PennyRise`,
   });
 }

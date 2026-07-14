@@ -29,7 +29,7 @@ const flaggedUser: AdminUserListResponse = {
     {
       id: 'user-1',
       displayName: 'Kwame Asante',
-      email: 'kwame@stash.app',
+      email: 'kwame@pennyrise.app',
       phone: '+233241234567',
       kycStatus: 'RESUBMISSION_REQUIRED',
       accountStatus: 'ACTIVE',

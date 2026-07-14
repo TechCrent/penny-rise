@@ -75,7 +75,11 @@ export function RotationRing({
             : isCompleted
               ? colors.neutral[400]
               : colors.neutral[700];
-        const textColor = isCurrent ? colors.neutral[900] : isCompleted ? colors.neutral[0] : colors.neutral[700];
+        const textColor = isCurrent
+          ? colors.neutral[900]
+          : isCompleted
+            ? colors.neutral[0]
+            : colors.neutral[700];
 
         const labelX = center + (radius + 24) * Math.cos(angle);
         const labelY = center + (radius + 24) * Math.sin(angle);

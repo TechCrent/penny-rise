@@ -1,4 +1,4 @@
-# Stash Admin Console
+# PennyRise Admin Console
 
 Operator-facing web app for KYC review, support, reconciliation, and ops dashboards.
 

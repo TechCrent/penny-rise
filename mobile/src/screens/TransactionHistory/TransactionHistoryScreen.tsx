@@ -1,5 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, View, Text, ActivityIndicator, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  FlatList,
+  View,
+  Text,
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -96,7 +104,11 @@ export function TransactionHistoryScreen() {
           }
           ListFooterComponent={
             isFetchingNextPage ? (
-              <ActivityIndicator style={styles.footerSpinner} color={colors.gold.base} testID="load-more-spinner" />
+              <ActivityIndicator
+                style={styles.footerSpinner}
+                color={colors.gold.base}
+                testID="load-more-spinner"
+              />
             ) : null
           }
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -130,6 +142,10 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
   message: { fontSize: 14, color: colors.textSecondary, textAlign: 'center' },
   footerSpinner: { paddingVertical: spacing.lg },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginLeft: spacing.lg },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.lg,
+  },
   emptyContent: { flexGrow: 1 },
 });

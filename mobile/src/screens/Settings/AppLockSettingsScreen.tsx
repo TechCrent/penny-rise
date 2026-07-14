@@ -210,7 +210,7 @@ export function AppLockSettingsScreen() {
           </Text>
           <Text style={styles.subheading}>
             {step === 'create-pin'
-              ? 'You will use this to unlock Stash.'
+              ? 'You will use this to unlock PennyRise.'
               : 'Enter the same PIN again.'}
           </Text>
           <PinEntryPad
@@ -232,7 +232,7 @@ export function AppLockSettingsScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <ScreenHeader title="App Lock" onBack={() => navigation.goBack()} />
         <Text style={styles.subheading}>
-          Require unlocking to open Stash after it&apos;s been backgrounded. Optional — use your
+          Require unlocking to open PennyRise after it&apos;s been backgrounded. Optional — use your
           device unlock, a 6-digit PIN, or both.
         </Text>
 
@@ -280,7 +280,11 @@ export function AppLockSettingsScreen() {
                 />
                 {method !== 'system' ? (
                   <>
-                    <LinkRow label="Change PIN" icon="lock-closed-outline" onPress={startChangePin} />
+                    <LinkRow
+                      label="Change PIN"
+                      icon="lock-closed-outline"
+                      onPress={startChangePin}
+                    />
                     <LinkRow
                       label="Remove PIN"
                       icon="close-circle"
@@ -336,7 +340,11 @@ function LinkRow({ label, icon, onPress, destructive, isLast }: LinkRowProps) {
     >
       <View style={styles.rowLeft}>
         <View style={[styles.badge, destructive ? styles.badgeDestructive : null]}>
-          <Icon name={icon} size={18} color={destructive ? colors.status.error : colors.gold.text} />
+          <Icon
+            name={icon}
+            size={18}
+            color={destructive ? colors.status.error : colors.gold.text}
+          />
         </View>
         <Text style={[styles.linkText, destructive ? styles.linkTextDanger : null]}>{label}</Text>
       </View>

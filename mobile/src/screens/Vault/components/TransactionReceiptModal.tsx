@@ -52,8 +52,14 @@ const STATUS_TEXT_COLOR: Record<string, { color: string }> = {
   DEFAULT: { color: colors.textSecondary },
 };
 
-const ENTRY_CREDIT = { dot: { backgroundColor: colors.status.success }, amount: { color: colors.status.successText } };
-const ENTRY_DEBIT = { dot: { backgroundColor: colors.status.error }, amount: { color: colors.status.error } };
+const ENTRY_CREDIT = {
+  dot: { backgroundColor: colors.status.success },
+  amount: { color: colors.status.successText },
+};
+const ENTRY_DEBIT = {
+  dot: { backgroundColor: colors.status.error },
+  amount: { color: colors.status.error },
+};
 
 export function TransactionReceiptModal({ reference, onClose }: Props) {
   const { data, isLoading, error } = useTransactionDetail(reference);
@@ -195,7 +201,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: spacing.sm,
   },
-  heroAmount: { fontSize: 36, fontWeight: '800', color: colors.textPrimary, letterSpacing: -1, marginBottom: spacing.md },
+  heroAmount: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    letterSpacing: -1,
+    marginBottom: spacing.md,
+  },
   statusPill: { borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: 4 },
   statusText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
 
@@ -222,7 +234,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: spacing.md,
   },
-  entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm, gap: spacing.sm },
+  entryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
   entryBorder: { borderBottomWidth: 1, borderBottomColor: colors.neutral[100] },
   directionDot: { width: 8, height: 8, borderRadius: 4 },
   entryInfo: { flex: 1 },

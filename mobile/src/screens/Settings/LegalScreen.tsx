@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { colors, radii, spacing, typography } from '../../theme';
+import { Banner, GradientHero, ScreenHeader, fadeInUp } from '../../components/ui';
+import { colors, radii, spacing, typography, shadows } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Legal'>;
 
@@ -19,35 +21,40 @@ export function LegalScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Terms &amp; Privacy</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <ScreenHeader title="Terms & Privacy" onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.placeholderBanner}>
-          <Text style={styles.placeholderText}>
-            Placeholder copy — pending final review from legal. This is not the binding Terms of
-            Service or Privacy Policy.
+        <Animated.View entering={fadeInUp(50)}>
+          <GradientHero icon="receipt-outline" title="Terms & Privacy" />
+        </Animated.View>
+
+        <Animated.View entering={fadeInUp(110)}>
+          <Banner
+            tone="warning"
+            message="Placeholder copy — pending final review from legal. This is not the binding Terms of Service or Privacy Policy."
+          />
+        </Animated.View>
+
+        <Animated.View entering={fadeInUp(170)} style={styles.contentCard}>
+          <Text style={styles.sectionHeading}>Terms of Service</Text>
+          <Text style={styles.body}>
+            By using PennyRise, you agree to save responsibly, keep your account credentials secure,
+            and provide accurate information during signup and identity verification. PennyRise
+            reserves the right to suspend accounts that violate these terms or applicable law.
           </Text>
-        </View>
 
-        <Text style={styles.sectionHeading}>Terms of Service</Text>
-        <Text style={styles.body}>
-          By using Stash, you agree to save responsibly, keep your account credentials secure, and
-          provide accurate information during signup and identity verification. Stash reserves the
-          right to suspend accounts that violate these terms or applicable law.
-        </Text>
-
-        <Text style={styles.sectionHeading}>Privacy Policy</Text>
-        <Text style={styles.body}>
-          Stash collects the information you provide at signup, KYC verification documents, and
-          transaction data needed to operate your vaults, susu groups, and transfers. We do not sell
-          your personal data. Data is retained as required for regulatory and operational purposes.
-        </Text>
+          <Text style={styles.sectionHeading}>Privacy Policy</Text>
+          <Text style={styles.body}>
+            PennyRise collects the information you provide at signup, KYC verification documents,
+            and transaction data needed to operate your vaults, susu groups, and transfers. We do
+            not sell your personal data. Data is retained as required for regulatory and operational
+            purposes.
+          </Text>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -55,31 +62,30 @@ export function LegalScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  scroll: {
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
   },
-  backText: { color: colors.textPrimary, fontSize: 15 },
-  title: { ...typography.h3, color: colors.textPrimary },
-  headerSpacer: { width: 44 },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: spacing['4xl'] },
-  placeholderBanner: {
-    backgroundColor: colors.status.warningBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing['2xl'],
+  contentCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginTop: spacing.xl,
+    ...shadows.sm,
   },
-  placeholderText: { color: colors.status.warningText, fontSize: 13, lineHeight: 19 },
   sectionHeading: {
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.h3,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
     marginTop: spacing.sm,
   },
-  body: { fontSize: 14, color: colors.neutral[700], lineHeight: 21, marginBottom: spacing.xl },
+  body: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 24,
+    marginBottom: spacing.xl,
+  },
 });

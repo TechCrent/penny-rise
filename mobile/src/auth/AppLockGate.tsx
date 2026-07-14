@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, type AppStateStatus, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  AppState,
+  type AppStateStatus,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -30,7 +37,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
 
   const promptSystemUnlock = useCallback(async () => {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock Stash',
+      promptMessage: 'Unlock PennyRise',
       disableDeviceFallback: false,
     });
     if (result.success) {
@@ -100,7 +107,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
           <View style={styles.iconBadge}>
             <Icon name="lock-closed" size={28} color={colors.gold.text} />
           </View>
-          <Text style={styles.heading}>Stash is locked</Text>
+          <Text style={styles.heading}>PennyRise is locked</Text>
 
           {unlockMode === 'pin' ? (
             <>
@@ -116,11 +123,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
               <Text style={styles.body}>
                 Unlock with your device biometrics or passcode to continue.
               </Text>
-              <PrimaryButton
-                title="Unlock"
-                onPress={promptSystemUnlock}
-                style={styles.button}
-              />
+              <PrimaryButton title="Unlock" onPress={promptSystemUnlock} style={styles.button} />
             </>
           )}
 
@@ -147,7 +150,12 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing['3xl'],
+  },
   iconBadge: {
     width: 72,
     height: 72,
@@ -158,7 +166,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
   },
   heading: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
-  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing['2xl'] },
+  body: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing['2xl'],
+  },
   button: { alignSelf: 'stretch' },
   switchButton: { marginTop: spacing['2xl'], padding: spacing.sm },
   switchText: { color: colors.textPrimary, fontSize: 14, fontWeight: '500' },

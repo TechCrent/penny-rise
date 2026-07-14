@@ -25,8 +25,8 @@ import { useVaultDeposit, useVaultDepositOtp } from '../../api/hooks/useVaultDep
 import { useWalletDeposit, useWalletDepositOtp } from '../../api/hooks/useWalletDeposit';
 import { useTransactionPoll } from '../../api/hooks/useTransactionPoll';
 import { PROVIDERS, ProviderId, validateMomoNumber } from '../../constants/momoProviders';
-import { Icon, PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { Banner, Icon, PressableScale, ScreenHeader } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -269,25 +269,20 @@ export default function DepositScreen() {
 
   function renderHeader(title: string, canBack = true) {
     return (
-      <View style={styles.header}>
-        {canBack ? (
-          <TouchableOpacity
-            onPress={() => {
-              if (phase === 'method') setPhase('amount');
-              else if (phase === 'confirm') setPhase('method');
-              else if (phase === 'otp') setPhase('confirm');
-              else navigation.goBack();
-            }}
-            style={styles.headerBtn}
-            accessibilityLabel="Go back"
-          >
-            <Text style={styles.headerBtnIcon}>←</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.headerBtn} />
-        )}
-        <Text style={styles.headerTitle}>{title}</Text>
-        <View style={styles.headerBtn} />
+      <View style={styles.headerWrap}>
+        <ScreenHeader
+          title={title}
+          onBack={
+            canBack
+              ? () => {
+                  if (phase === 'method') setPhase('amount');
+                  else if (phase === 'confirm') setPhase('method');
+                  else if (phase === 'otp') setPhase('confirm');
+                  else navigation.goBack();
+                }
+              : undefined
+          }
+        />
       </View>
     );
   }
@@ -533,11 +528,7 @@ export default function DepositScreen() {
             phone when prompted by your network.
           </Text>
 
-          {serverError && (
-            <View style={styles.serverErrorBox}>
-              <Text style={styles.serverErrorText}>{serverError}</Text>
-            </View>
-          )}
+          {serverError && <Banner tone="error" message={serverError} />}
 
           <PressableScale
             style={[styles.cta, isPending && styles.ctaDisabled]}
@@ -596,11 +587,7 @@ export default function DepositScreen() {
               accessibilityLabel="Verification code"
             />
 
-            {serverError && (
-              <View style={styles.serverErrorBox}>
-                <Text style={styles.serverErrorText}>{serverError}</Text>
-              </View>
-            )}
+            {serverError && <Banner tone="error" message={serverError} />}
 
             <PressableScale
               style={[styles.cta, isOtpPending && styles.ctaDisabled]}
@@ -807,19 +794,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerWrap: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
   },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
 
   // Amount phase
   vaultContextCard: {
@@ -829,6 +809,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
   },
   vaultContextLabel: {
     fontSize: 11,
@@ -847,7 +828,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  ghsPrefix: { fontSize: 24, fontWeight: '600', color: colors.textSecondary, marginRight: spacing.sm, marginTop: spacing.sm },
+  ghsPrefix: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
+    marginTop: spacing.sm,
+  },
   amountInput: {
     fontSize: 56,
     fontWeight: '800',
@@ -856,7 +843,12 @@ const styles = StyleSheet.create({
     minWidth: 120,
     textAlign: 'center',
   },
-  amountErrorText: { color: colors.status.error, fontSize: 13, textAlign: 'center', marginBottom: spacing.sm },
+  amountErrorText: {
+    color: colors.status.error,
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
 
   pillRow: {
     flexDirection: 'row',
@@ -918,7 +910,12 @@ const styles = StyleSheet.create({
   comingSoonText: { fontSize: 10, fontWeight: '600', color: colors.textSecondary },
 
   momoSection: { marginBottom: spacing['2xl'] },
-  providerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xs },
+  providerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   providerPill: {
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
@@ -970,7 +967,11 @@ const styles = StyleSheet.create({
     letterSpacing: -2,
     marginBottom: spacing.xl,
   },
-  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginBottom: spacing.md },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    marginBottom: spacing.md,
+  },
   confirmNotice: {
     fontSize: 13,
     color: colors.textSecondary,
@@ -978,15 +979,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
-  serverErrorBox: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
-  },
-  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   // OTP phase
   otpTitle: {
@@ -1019,11 +1011,32 @@ const styles = StyleSheet.create({
   },
 
   // Waiting / result screens
-  waitingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
-  waitingTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginTop: spacing.xl, marginBottom: spacing.sm },
-  waitingSubtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 21 },
+  waitingCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing['3xl'],
+  },
+  waitingTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  waitingSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 21,
+  },
 
-  resultCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
+  resultCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing['3xl'],
+  },
   successIconBadge: {
     width: 88,
     height: 88,
@@ -1042,7 +1055,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  resultTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
+  resultTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
   resultAmount: {
     fontSize: 36,
     fontWeight: '800',

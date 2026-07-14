@@ -124,7 +124,7 @@ describe('LoginScreen', () => {
   it('shows the KYC under-review banner when a previous session left it under review', async () => {
     const getItemAsync = jest.requireMock('expo-secure-store').getItemAsync as jest.Mock;
     getItemAsync.mockImplementation((key: string) =>
-      Promise.resolve(key === 'stash_kyc_under_review_banner' ? 'true' : null),
+      Promise.resolve(key === 'pennyrise_kyc_under_review_banner' ? 'true' : null),
     );
 
     const utils = render(<LoginScreen />, { wrapper });

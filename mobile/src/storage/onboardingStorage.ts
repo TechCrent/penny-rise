@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-const ONBOARDING_SEEN_KEY = 'stash_onboarding_seen';
+const ONBOARDING_SEEN_KEY = 'pennyrise_onboarding_seen';
 
 export async function hasSeenOnboarding(): Promise<boolean> {
   try {

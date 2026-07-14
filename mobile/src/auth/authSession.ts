@@ -1,9 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import { clearKycSubmission } from '../storage/kycStorage';
 
-const ACCESS_TOKEN_KEY = 'stash_access_token';
-const REFRESH_TOKEN_KEY = 'stash_refresh_token';
-const KYC_STATUS_KEY = 'stash_kyc_status';
+const ACCESS_TOKEN_KEY = 'pennyrise_access_token';
+const REFRESH_TOKEN_KEY = 'pennyrise_refresh_token';
+const KYC_STATUS_KEY = 'pennyrise_kyc_status';
 
 export interface SessionTokens {
   accessToken: string;

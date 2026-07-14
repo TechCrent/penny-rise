@@ -1,13 +1,15 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaults } from '../../hooks/useVaults';
 import { VaultCard } from '../../components/VaultCard';
-import { colors, spacing, typography } from '../../theme';
+import { GradientHero, ScreenHeader, fadeInUp } from '../../components/ui';
+import { colors, spacing } from '../../theme';
 import type { VaultListItem } from '../../api/vaults';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AccountPicker'>;
@@ -45,6 +47,7 @@ export function AccountPickerScreen() {
   }
 
   const { title, helper } = COPY[mode];
+  const heroIcon = mode === 'DEPOSIT' ? 'arrow-down-circle-outline' : 'arrow-up-circle-outline';
 
   if (isLoading || (vaults.length === 0 && !isLoading)) {
     return (
@@ -58,25 +61,19 @@ export function AccountPickerScreen() {
 
   return (
     <SafeAreaView style={styles.safe} testID="account-picker-screen">
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.headerBtnIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{title}</Text>
-        <View style={styles.headerBtn} />
-      </View>
-
-      <Text style={styles.helper}>{helper}</Text>
-
       <FlatList
         data={vaults}
         keyExtractor={v => v.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <>
+            <ScreenHeader title={title} onBack={() => navigation.goBack()} />
+            <Animated.View entering={fadeInUp(50)}>
+              <GradientHero icon={heroIcon} title={title} subtitle={helper} />
+            </Animated.View>
+          </>
+        }
         renderItem={({ item }) => <VaultCard vault={item} onPress={() => selectVault(item)} />}
       />
     </SafeAreaView>
@@ -86,16 +83,9 @@ export function AccountPickerScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  list: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
   },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
-  helper: { fontSize: 14, color: colors.textSecondary, paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing['4xl'] },
 });

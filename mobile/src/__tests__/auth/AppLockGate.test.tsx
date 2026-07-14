@@ -60,7 +60,7 @@ describe('AppLockGate', () => {
       </AppLockGate>,
     );
 
-    expect(await screen.findByText('Stash is locked')).toBeTruthy();
+    expect(await screen.findByText('PennyRise is locked')).toBeTruthy();
     expect(screen.queryByText('Home content')).toBeNull();
 
     await act(async () => typePin('123456'));
@@ -80,7 +80,7 @@ describe('AppLockGate', () => {
       </AppLockGate>,
     );
 
-    await screen.findByText('Stash is locked');
+    await screen.findByText('PennyRise is locked');
     await act(async () => typePin('000000'));
 
     expect(await screen.findByText('Incorrect PIN. Try again.')).toBeTruthy();

@@ -127,7 +127,11 @@ export function ContributeBottomSheet({ visible, group, onClose, onSuccess }: Pr
 
               <View style={styles.balanceRow} testID="wallet-balance-row">
                 {balanceLoading ? (
-                  <ActivityIndicator size="small" color={colors.textSecondary} testID="balance-loading" />
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.textSecondary}
+                    testID="balance-loading"
+                  />
                 ) : (
                   <Text
                     style={[styles.balanceText, isInsufficientBalance && styles.balanceLow]}
@@ -217,7 +221,12 @@ const styles = StyleSheet.create({
   balanceRow: { marginBottom: spacing.lg, minHeight: 20 },
   balanceText: { fontSize: 13, color: colors.textSecondary },
   balanceLow: { color: colors.status.error },
-  errorText: { color: colors.status.error, fontSize: 13, marginBottom: spacing.md, textAlign: 'center' },
+  errorText: {
+    color: colors.status.error,
+    fontSize: 13,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
   confirmBtn: {
     backgroundColor: colors.gold.base,
     paddingVertical: spacing.lg,
@@ -242,6 +251,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  successTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
   successSub: { fontSize: 15, color: colors.textSecondary, textAlign: 'center' },
 });

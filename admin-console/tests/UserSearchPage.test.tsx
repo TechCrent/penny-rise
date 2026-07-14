@@ -27,7 +27,7 @@ const sampleResponse: AdminUserListResponse = {
     {
       id: 'user-1',
       displayName: 'Akua Mensah',
-      email: 'akua@stash.app',
+      email: 'akua@pennyrise.app',
       phone: '+233241234567',
       kycStatus: 'APPROVED',
       accountStatus: 'ACTIVE',
@@ -51,7 +51,7 @@ describe('UserSearchPage', () => {
     renderPage();
 
     expect(await screen.findByText('Akua Mensah')).toBeInTheDocument();
-    expect(screen.getByText('akua@stash.app')).toBeInTheDocument();
+    expect(screen.getByText('akua@pennyrise.app')).toBeInTheDocument();
   });
 
   it('typing in the search box triggers a re-fetch with the search term', async () => {
@@ -60,12 +60,12 @@ describe('UserSearchPage', () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Search by email or phone'), {
-      target: { value: 'akua@stash.app' },
+      target: { value: 'akua@pennyrise.app' },
     });
 
     await waitFor(() =>
       expect(usersAdmin.searchUsers).toHaveBeenCalledWith(
-        expect.objectContaining({ search: 'akua@stash.app' }),
+        expect.objectContaining({ search: 'akua@pennyrise.app' }),
       ),
     );
   });

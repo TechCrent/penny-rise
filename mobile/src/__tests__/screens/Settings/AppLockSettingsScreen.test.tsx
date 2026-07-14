@@ -33,7 +33,9 @@ function mockLoad(overrides: {
   jest.mocked(appLock.isAppLockEnabled).mockResolvedValue(overrides.enabled ?? false);
   jest.mocked(appLock.getAppLockMethod).mockResolvedValue(overrides.method ?? null);
   jest.mocked(appLock.hasPin).mockResolvedValue(overrides.pinSet ?? false);
-  jest.mocked(LocalAuthentication.hasHardwareAsync).mockResolvedValue(overrides.hasHardware ?? true);
+  jest
+    .mocked(LocalAuthentication.hasHardwareAsync)
+    .mockResolvedValue(overrides.hasHardware ?? true);
   jest.mocked(LocalAuthentication.isEnrolledAsync).mockResolvedValue(overrides.isEnrolled ?? true);
 }
 

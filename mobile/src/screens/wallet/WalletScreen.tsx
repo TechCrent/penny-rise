@@ -1,5 +1,14 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Pressable, RefreshControl, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
@@ -107,7 +116,12 @@ export function WalletScreen() {
         ) : (
           <>
             <Text style={styles.balanceAmount} testID="balance-amount">
-              GHS {balance ? <AnimatedNumber value={balance.balancePesewas} formatter={formatWalletCedis} /> : '—'}
+              GHS{' '}
+              {balance ? (
+                <AnimatedNumber value={balance.balancePesewas} formatter={formatWalletCedis} />
+              ) : (
+                '—'
+              )}
             </Text>
             <Text style={styles.balanceAccountId} numberOfLines={1}>
               Wallet · {balance?.accountId?.slice(0, 8) ?? ''}
@@ -193,9 +207,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  balanceAmount: { fontSize: 44, fontWeight: '900', color: colors.textOnDark, marginBottom: spacing.xs },
+  balanceAmount: {
+    fontSize: 44,
+    fontWeight: '900',
+    color: colors.textOnDark,
+    marginBottom: spacing.xs,
+  },
   balanceAccountId: { fontSize: 12, color: colors.textOnDarkFaint },
-  balanceUnavailable: { fontSize: 24, fontWeight: '700', color: colors.textOnDarkMuted, marginBottom: spacing.xs },
+  balanceUnavailable: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.textOnDarkMuted,
+    marginBottom: spacing.xs,
+  },
   balanceRetryLink: { color: colors.gold.base, fontSize: 13 },
 
   quickActions: {

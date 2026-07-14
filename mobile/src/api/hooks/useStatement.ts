@@ -28,10 +28,9 @@ export function useStatement(vaultId: string, enabled = true) {
       const params: Record<string, string> = { limit: '20' };
       if (pageParam) params.cursor = pageParam as string;
 
-      const { data } = await apiClient.get<StatementPage>(
-        `/api/v1/vaults/${vaultId}/statement`,
-        { params },
-      );
+      const { data } = await apiClient.get<StatementPage>(`/api/v1/vaults/${vaultId}/statement`, {
+        params,
+      });
       return data;
     },
     initialPageParam: null,

@@ -44,7 +44,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     email: request.email,
     password: request.password,
     deviceId: request.deviceId ?? 'mobile',
-    deviceLabel: request.deviceLabel ?? 'Stash Mobile',
+    deviceLabel: request.deviceLabel ?? 'PennyRise Mobile',
   });
   return data;
 }

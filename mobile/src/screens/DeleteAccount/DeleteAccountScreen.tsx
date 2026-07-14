@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDeletionRequest } from './useDeletionRequest';
 import { PreSubmissionView } from './PreSubmissionView';
 import { CoolOffView } from './CoolOffView';
-import { colors } from '../../theme';
+import { colors, spacing } from '../../theme';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'DeleteAccount'>;
@@ -42,9 +43,11 @@ export function DeleteAccountScreen() {
 
   if (screenState === 'LOADING') {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.gold.base} testID="delete-account-loading" />
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.gold.base} testID="delete-account-loading" />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -71,5 +74,6 @@ export function DeleteAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  safe: { flex: 1, backgroundColor: colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'] },
 });

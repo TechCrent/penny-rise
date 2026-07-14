@@ -86,7 +86,7 @@ export function UpgradeScreen() {
 
       if (httpStatus && httpStatus >= 500) {
         setPhase('network_error');
-        setErrorMessage("Couldn't reach Stash to confirm your upgrade. Please try again.");
+        setErrorMessage("Couldn't reach PennyRise to confirm your upgrade. Please try again.");
       } else {
         setPhase('paystack_failure');
         setErrorMessage(
@@ -176,7 +176,7 @@ export function UpgradeScreen() {
               <Icon name="close-circle" size={40} color={colors.status.error} />
             </View>
             <Text style={styles.centeredTitle} testID="upgrade-error-title">
-              {phase === 'network_error' ? "Couldn't reach Stash" : "Upgrade didn't complete"}
+              {phase === 'network_error' ? "Couldn't reach PennyRise" : "Upgrade didn't complete"}
             </Text>
             <Text style={styles.centeredSubtitle} testID="upgrade-error-message">
               {errorMessage ?? 'Please try again.'}
@@ -208,7 +208,7 @@ export function UpgradeScreen() {
         <ScreenHeader onBack={() => navigation.goBack()} />
 
         <Animated.View entering={fadeInUp(40)}>
-          <GradientHero icon="star" title="Stash Premium" />
+          <GradientHero icon="star" title="PennyRise Premium" />
         </Animated.View>
 
         <Animated.View entering={fadeInUp(110)} style={styles.card}>
@@ -234,11 +234,7 @@ export function UpgradeScreen() {
         </Animated.View>
 
         <Animated.View entering={fadeInUp(180)}>
-          <PrimaryButton
-            title="Upgrade to Premium"
-            onPress={startUpgrade}
-            style={styles.cta}
-          />
+          <PrimaryButton title="Upgrade to Premium" onPress={startUpgrade} style={styles.cta} />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>

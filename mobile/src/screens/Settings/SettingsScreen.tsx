@@ -23,11 +23,7 @@ function SettingsRow({ label, icon, onPress, destructive, isLast }: SettingsRowC
   return (
     <PressableScale style={[styles.row, isLast ? styles.rowLast : null]} onPress={onPress}>
       <View style={[styles.rowBadge, destructive ? styles.rowBadgeDestructive : null]}>
-        <Icon
-          name={icon}
-          size={18}
-          color={destructive ? colors.status.error : colors.gold.text}
-        />
+        <Icon name={icon} size={18} color={destructive ? colors.status.error : colors.gold.text} />
       </View>
       <Text style={[styles.rowLabel, destructive ? styles.rowLabelDestructive : null]}>
         {label}
@@ -100,7 +96,13 @@ export function SettingsScreen() {
           </View>
 
           <View style={[styles.section, styles.sectionLoose]}>
-            <SettingsRow label="Log out" icon="lock-open-outline" onPress={confirmLogout} destructive isLast />
+            <SettingsRow
+              label="Log out"
+              icon="lock-open-outline"
+              onPress={confirmLogout}
+              destructive
+              isLast
+            />
           </View>
         </Animated.View>
       </ScrollView>

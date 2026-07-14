@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "Stash",
-    "slug": "stash",
+    "name": "PennyRise",
+    "slug": "pennyrise",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "stash",
+    "scheme": "pennyrise",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.stash.mobile",
+      "bundleIdentifier": "com.pennyrise.mobile",
       "associatedDomains": [
-        "applinks:stash.app"
+        "applinks:pennyrise.app"
       ],
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Stash uses Face ID to unlock the app when App Lock is enabled."
+        "NSFaceIDUsageDescription": "PennyRise uses Face ID to unlock the app when App Lock is enabled."
       }
     },
     "android": {
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.stash.mobile",
+      "package": "com.pennyrise.mobile",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -30,7 +30,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "stash.app"
+              "host": "pennyrise.app"
             }
           ],
           "category": [
@@ -59,8 +59,8 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Stash uses your camera to capture KYC documents (Ghana Card, selfie).",
-          "photosPermission": "Stash uses your photo library so you can upload existing KYC documents."
+          "cameraPermission": "PennyRise uses your camera to capture KYC documents (Ghana Card, selfie).",
+          "photosPermission": "PennyRise uses your photo library so you can upload existing KYC documents."
         }
       ]
     ],

@@ -9,7 +9,7 @@ export const adminApiClient = axios.create({
 });
 
 adminApiClient.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('stash_admin_token');
+  const token = sessionStorage.getItem('pennyrise_admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
     config.headers['X-Admin-Token'] = token;
@@ -24,23 +24,23 @@ adminApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      sessionStorage.removeItem('stash_admin_token');
+      sessionStorage.removeItem('pennyrise_admin_token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   },
 );
 
-export interface StashApiError {
+export interface PennyRiseApiError {
   code: string;
   message: string;
   details?: Record<string, string>;
   correlation_id?: string;
 }
 
-export function extractApiError(error: unknown): StashApiError | null {
+export function extractApiError(error: unknown): PennyRiseApiError | null {
   if (axios.isAxiosError(error) && error.response?.data?.error) {
-    return error.response.data.error as StashApiError;
+    return error.response.data.error as PennyRiseApiError;
   }
   return null;
 }

@@ -5,24 +5,17 @@ import { useNavigation } from '@react-navigation/native';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 import type { MainTabParamList } from '../../navigation/MainTabNavigator';
 import { useProfile } from '../Settings/useProfile';
-import { Icon, PressableScale } from '../../components/ui';
+import { GradientHero, Icon, PressableScale, fadeInUp } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Profile'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-function initialsFor(name: string | undefined): string {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-  return (first + last).toUpperCase();
-}
 
 export function ProfileHomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -32,15 +25,15 @@ export function ProfileHomeScreen() {
   return (
     <SafeAreaView style={styles.safe} testID="profile-home-screen">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initialsFor(profile?.display_name)}</Text>
-          </View>
-          <Text style={styles.name}>{profile?.display_name ?? '—'}</Text>
-          <Text style={styles.email}>{profile?.email ?? ''}</Text>
-        </View>
+        <Animated.View entering={fadeInUp(40)}>
+          <GradientHero
+            icon="person-circle-outline"
+            title={profile?.display_name ?? '—'}
+            subtitle={profile?.email ?? ''}
+          />
+        </Animated.View>
 
-        <View style={styles.identityCard}>
+        <Animated.View entering={fadeInUp(110)} style={styles.identityCard}>
           <View style={styles.identityHeader}>
             <Text style={styles.identityTitle}>Identity verification</Text>
             <View style={[styles.pill, styles.pillVerified]}>
@@ -51,17 +44,22 @@ export function ProfileHomeScreen() {
           <Text style={[styles.identityBody, styles.identityBodyGreen]}>
             Your identity has been verified.
           </Text>
-        </View>
+        </Animated.View>
 
-        <View style={styles.section}>
-          <PressableScale
-            style={[styles.row, styles.rowLast]}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Text style={styles.rowLabel}>Settings &amp; security</Text>
-            <Text style={styles.chevron}>›</Text>
-          </PressableScale>
-        </View>
+        <Animated.View entering={fadeInUp(180)}>
+          <View style={styles.section}>
+            <PressableScale
+              style={[styles.row, styles.rowLast]}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <View style={styles.rowBadge}>
+                <Icon name="shield-checkmark-outline" size={18} color={colors.gold.text} />
+              </View>
+              <Text style={styles.rowLabel}>Settings &amp; security</Text>
+              <Icon name="arrow-forward" size={18} color={colors.textTertiary} />
+            </PressableScale>
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -69,25 +67,15 @@ export function ProfileHomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing['2xl'], paddingBottom: spacing['4xl'] },
-  header: { alignItems: 'center', marginBottom: spacing['2xl'] },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: radii.pill,
-    backgroundColor: colors.gold.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
   },
-  avatarText: { fontSize: 26, fontWeight: '700', color: colors.gold.text },
-  name: { fontSize: 19, fontWeight: '700', color: colors.textPrimary },
-  email: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-
   identityCard: {
     backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
+    borderRadius: radii['2xl'],
+    padding: spacing.xl,
     marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: colors.border,
@@ -112,26 +100,38 @@ const styles = StyleSheet.create({
   pillVerified: { backgroundColor: colors.status.successBg },
   pillText: { fontSize: 11, fontWeight: '700', color: colors.textSecondary },
   pillTextVerified: { color: colors.status.successText },
-  identityBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, marginBottom: spacing.md },
+  identityBody: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+    marginBottom: spacing.md,
+  },
   identityBodyGreen: { color: colors.status.successText, marginBottom: 0 },
-
   section: {
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
+    borderRadius: radii['2xl'],
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
+    ...shadows.sm,
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[100],
   },
   rowLast: { borderBottomWidth: 0 },
-  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary },
-  chevron: { fontSize: 18, color: colors.textTertiary },
+  rowBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: colors.gold.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowLabel: { ...typography.bodyMedium, color: colors.textPrimary, flex: 1 },
 });

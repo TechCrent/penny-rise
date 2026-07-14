@@ -8,11 +8,21 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated from 'react-native-reanimated';
 import { susuApi } from '../../api/susu';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { Icon, PressableScale } from '../../components/ui';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import {
+  Banner,
+  GradientHero,
+  Icon,
+  PressableScale,
+  ScreenHeader,
+  fadeInUp,
+} from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 const CODE_LENGTH = 8;
@@ -153,101 +163,136 @@ export function JoinSusuScreen() {
   const isAlreadyMember = error?.code === 'SUSU_ALREADY_A_MEMBER';
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      testID="join-susu-screen"
-    >
-      <Text style={styles.heading}>Join a susu</Text>
-      <Text style={styles.subheading}>Enter the 8-character code from the group organiser.</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        testID="join-susu-screen"
+      >
+        <ScreenHeader onBack={() => navigation.goBack()} />
 
-      <CodeInput value={code} onChange={setCode} />
+        <Animated.View entering={fadeInUp(40)}>
+          <GradientHero
+            icon="people-outline"
+            title="Join a susu"
+            subtitle="Enter the 8-character code from the group organiser."
+          />
+        </Animated.View>
 
-      {joining && (
-        <View style={styles.center} testID="joining-indicator">
-          <ActivityIndicator color={colors.gold.base} />
-          <Text style={styles.joiningText}>{'Looking up group…'}</Text>
-        </View>
-      )}
+        <Animated.View entering={fadeInUp(80)} style={styles.card}>
+          <Text style={styles.codeLabel}>Join code</Text>
+          <CodeInput value={code} onChange={setCode} />
+        </Animated.View>
 
-      {error && !joining && (
-        <View style={[styles.previewCard, styles.errorCard]} testID="join-error">
-          <Text style={styles.errorCardText}>{error.message}</Text>
-          {isAlreadyMember && (
-            <TouchableOpacity onPress={handleAlreadyMember} testID="view-group-btn">
-              <Text style={styles.errorCardLink}>{'View group →'}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+        {joining && (
+          <Animated.View entering={fadeInUp(120)} style={styles.center} testID="joining-indicator">
+            <ActivityIndicator color={colors.gold.base} />
+            <Text style={styles.joiningText}>{'Looking up group…'}</Text>
+          </Animated.View>
+        )}
 
-      {result && !joining && (
-        <View style={styles.previewCard} testID="join-preview">
-          <Text style={styles.previewName}>{result.group.name}</Text>
+        {error && !joining && (
+          <Animated.View entering={fadeInUp(120)} style={styles.errorWrap} testID="join-error">
+            <Banner tone="error" message={error.message} />
+            {isAlreadyMember && (
+              <PressableScale
+                onPress={handleAlreadyMember}
+                style={styles.errorLink}
+                testID="view-group-btn"
+              >
+                <Text style={styles.errorCardLink}>{'View group →'}</Text>
+              </PressableScale>
+            )}
+          </Animated.View>
+        )}
 
-          <View style={styles.previewRow}>
-            <Text style={styles.previewKey}>Contribution</Text>
-            <Text style={styles.previewValue}>
-              {'GHS '}
-              {result.group.contribution_amount_cedis}
-              {' / round'}
-            </Text>
-          </View>
-          <View style={styles.previewRow}>
-            <Text style={styles.previewKey}>Frequency</Text>
-            <Text style={styles.previewValue}>{formatFreq(result.group.frequency)}</Text>
-          </View>
-          <View style={styles.previewRow}>
-            <Text style={styles.previewKey}>Members</Text>
-            <Text style={styles.previewValue}>
-              {result.group.current_member_count} / {result.group.target_member_count}
-            </Text>
-          </View>
-          <View style={styles.previewRow}>
-            <Text style={styles.previewKey}>Status</Text>
-            <Text
-              style={[
-                styles.previewValue,
-                result.group.status === 'PENDING' ? styles.statusPending : styles.statusActive,
-              ]}
-            >
-              {result.group.status === 'PENDING' ? 'Waiting to start' : 'Active'}
-            </Text>
-          </View>
+        {result && !joining && (
+          <Animated.View entering={fadeInUp(120)} style={styles.previewCard} testID="join-preview">
+            <Text style={styles.previewName}>{result.group.name}</Text>
 
-          <View style={styles.joinedBadge} testID="joined-badge">
-            <Icon name="checkmark-circle" size={15} color={colors.status.successText} />
-            <Text style={styles.joinedBadgeText}>You&apos;ve joined!</Text>
-          </View>
+            <View style={styles.previewRow}>
+              <Text style={styles.previewKey}>Contribution</Text>
+              <Text style={styles.previewValue}>
+                {'GHS '}
+                {result.group.contribution_amount_cedis}
+                {' / round'}
+              </Text>
+            </View>
+            <View style={styles.previewRow}>
+              <Text style={styles.previewKey}>Frequency</Text>
+              <Text style={styles.previewValue}>{formatFreq(result.group.frequency)}</Text>
+            </View>
+            <View style={styles.previewRow}>
+              <Text style={styles.previewKey}>Members</Text>
+              <Text style={styles.previewValue}>
+                {result.group.current_member_count} / {result.group.target_member_count}
+              </Text>
+            </View>
+            <View style={[styles.previewRow, styles.previewRowLast]}>
+              <Text style={styles.previewKey}>Status</Text>
+              <Text
+                style={[
+                  styles.previewValue,
+                  result.group.status === 'PENDING' ? styles.statusPending : styles.statusActive,
+                ]}
+              >
+                {result.group.status === 'PENDING' ? 'Waiting to start' : 'Active'}
+              </Text>
+            </View>
 
-          <PressableScale
-            style={styles.viewGroupBtn}
-            onPress={handleConfirmNavigate}
-            testID="view-group-btn"
-          >
-            <Text style={styles.viewGroupBtnText}>{'View group →'}</Text>
-          </PressableScale>
-        </View>
-      )}
-    </ScrollView>
+            <View style={styles.joinedBadge} testID="joined-badge">
+              <Icon name="checkmark-circle" size={15} color={colors.status.successText} />
+              <Text style={styles.joinedBadgeText}>You&apos;ve joined!</Text>
+            </View>
+
+            <PrimaryButton
+              title="View group →"
+              onPress={handleConfirmNavigate}
+              testID="view-group-btn"
+            />
+          </Animated.View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
-  heading: { ...typography.h1, fontSize: 24, color: colors.textPrimary, marginBottom: spacing.sm },
-  subheading: { fontSize: 15, color: colors.textSecondary, marginBottom: spacing['3xl'] },
-
-  codeRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, marginBottom: spacing['2xl'] },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
+  codeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.neutral[700],
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  codeRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm },
   codeBox: {
-    width: 36,
-    height: 48,
-    borderRadius: radii.sm,
+    width: 38,
+    height: 52,
+    borderRadius: radii.md,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.sm,
   },
   codeBoxEmpty: { borderColor: colors.border, backgroundColor: colors.surface },
   codeBoxFilled: { borderColor: colors.gold.base, backgroundColor: colors.gold.light },
@@ -255,27 +300,39 @@ const styles = StyleSheet.create({
   codeChar: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
   hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
 
-  center: { alignItems: 'center', paddingVertical: spacing['2xl'] },
+  center: {
+    alignItems: 'center',
+    paddingVertical: spacing['2xl'],
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
   joiningText: { color: colors.textSecondary, marginTop: spacing.sm, fontSize: 13 },
+
+  errorWrap: { marginBottom: spacing.lg },
+  errorLink: { alignSelf: 'flex-start', marginTop: spacing.sm, paddingVertical: spacing.xs },
+  errorCardLink: { color: colors.gold.text, fontWeight: '600', fontSize: 14 },
 
   previewCard: {
     backgroundColor: colors.surface,
-    borderRadius: radii.lg,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.xl,
     ...shadows.sm,
   },
-  errorCard: { backgroundColor: colors.status.errorBg, borderWidth: 1, borderColor: '#FECACA' },
-  errorCardText: { color: colors.status.errorText, fontSize: 14, marginBottom: spacing.sm },
-  errorCardLink: { color: colors.status.infoText, fontWeight: '600', fontSize: 14 },
-
-  previewName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.lg },
+  previewName: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.lg },
   previewRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral[100],
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
+  previewRowLast: { borderBottomWidth: 0 },
   previewKey: { fontSize: 13, color: colors.textSecondary },
   previewValue: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   statusPending: { color: colors.status.warningText },
@@ -287,18 +344,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     backgroundColor: colors.status.successBg,
-    borderRadius: radii.sm,
+    borderRadius: radii.lg,
     padding: spacing.md,
     marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
   joinedBadgeText: { color: colors.status.successText, fontWeight: '700', fontSize: 15 },
-
-  viewGroupBtn: {
-    backgroundColor: colors.gold.base,
-    paddingVertical: spacing.md,
-    borderRadius: radii.md,
-    alignItems: 'center',
-  },
-  viewGroupBtnText: { color: colors.neutral[900], fontWeight: '700' },
 });

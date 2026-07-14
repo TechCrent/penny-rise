@@ -8,7 +8,7 @@ import { colors, radii, shadows, spacing, typography } from '../../theme';
 interface GradientHeroProps {
   title: string;
   subtitle?: string;
-  /** Show the Stash logo badge (mutually exclusive with `icon`). */
+  /** Show the PennyRise logo badge (mutually exclusive with `icon`). */
   showLogo?: boolean;
   /** Show a gold icon badge instead of the logo. */
   icon?: IconName;

@@ -41,8 +41,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
             </View>
             <Text style={styles.heading}>Something went wrong</Text>
             <Text style={styles.body}>
-              Stash ran into an unexpected error. Try again, and if it keeps happening, restart the
-              app.
+              PennyRise ran into an unexpected error. Try again, and if it keeps happening, restart
+              the app.
             </Text>
             <PressableScale style={styles.button} onPress={this.reset}>
               <Text style={styles.buttonText}>Try again</Text>
@@ -58,7 +58,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing['3xl'],
+  },
   iconBadge: {
     width: 64,
     height: 64,

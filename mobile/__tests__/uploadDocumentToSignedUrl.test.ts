@@ -10,17 +10,21 @@ describe('uploadDocumentToSignedUrl', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('reports real intermediate progress via the createUploadTask callback, not just 0 then 1', async () => {
-    let capturedCallback: ((data: { totalBytesSent: number; totalBytesExpectedToSend: number }) => void) | undefined;
-    (FileSystem.createUploadTask as jest.Mock).mockImplementation((_url, _fileUri, _options, callback) => {
-      capturedCallback = callback;
-      return {
-        uploadAsync: jest.fn().mockImplementation(async () => {
-          capturedCallback?.({ totalBytesSent: 50, totalBytesExpectedToSend: 200 });
-          capturedCallback?.({ totalBytesSent: 200, totalBytesExpectedToSend: 200 });
-          return { status: 201, body: '', headers: {} };
-        }),
-      };
-    });
+    let capturedCallback:
+      | ((data: { totalBytesSent: number; totalBytesExpectedToSend: number }) => void)
+      | undefined;
+    (FileSystem.createUploadTask as jest.Mock).mockImplementation(
+      (_url, _fileUri, _options, callback) => {
+        capturedCallback = callback;
+        return {
+          uploadAsync: jest.fn().mockImplementation(async () => {
+            capturedCallback?.({ totalBytesSent: 50, totalBytesExpectedToSend: 200 });
+            capturedCallback?.({ totalBytesSent: 200, totalBytesExpectedToSend: 200 });
+            return { status: 201, body: '', headers: {} };
+          }),
+        };
+      },
+    );
 
     const progressUpdates: number[] = [];
     await uploadDocumentToSignedUrl(

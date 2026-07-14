@@ -312,7 +312,9 @@ export default function VaultDetailScreen() {
               {isLocked && unlockInfo && (
                 <View style={styles.unlockSection}>
                   <Text style={styles.unlockLabel}>{unlockInfo.label}</Text>
-                  {unlockInfo.progress !== null && <AnimatedProgressFill progress={unlockInfo.progress} />}
+                  {unlockInfo.progress !== null && (
+                    <AnimatedProgressFill progress={unlockInfo.progress} />
+                  )}
                   {unlockInfo.progress !== null && (
                     <Text style={styles.progressPct}>
                       {unlockInfo.progress.toFixed(0)}% of goal
@@ -386,8 +388,18 @@ export default function VaultDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing['3xl'] },
-  errorText: { color: colors.status.error, fontSize: 14, textAlign: 'center', marginBottom: spacing.md },
+  loadingCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing['3xl'],
+  },
+  errorText: {
+    color: colors.status.error,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
   retryBtn: { paddingHorizontal: spacing.xl },
   listContent: { paddingBottom: spacing.xl },
 
@@ -458,7 +470,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: { height: '100%', backgroundColor: colors.gold.base, borderRadius: 2 },
-  progressPct: { fontSize: 11, color: colors.textOnDarkFaint, marginTop: spacing.xs, textAlign: 'right' },
+  progressPct: {
+    fontSize: 11,
+    color: colors.textOnDarkFaint,
+    marginTop: spacing.xs,
+    textAlign: 'right',
+  },
 
   metaCard: {
     backgroundColor: colors.surface,
@@ -481,7 +498,11 @@ const styles = StyleSheet.create({
 
   statementLoading: { paddingVertical: spacing['2xl'], alignItems: 'center' },
   loadMore: { paddingVertical: spacing.lg, alignItems: 'center' },
-  emptyStatement: { alignItems: 'center', paddingVertical: spacing['4xl'], paddingHorizontal: spacing['3xl'] },
+  emptyStatement: {
+    alignItems: 'center',
+    paddingVertical: spacing['4xl'],
+    paddingHorizontal: spacing['3xl'],
+  },
   emptyIconWrap: {
     width: 44,
     height: 44,
@@ -491,7 +512,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  emptyText: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
   emptySubtext: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 19 },
 });
 
@@ -528,7 +554,12 @@ const txStyles = StyleSheet.create({
   dotCredit: { backgroundColor: colors.status.success },
   dotDebit: { backgroundColor: colors.status.error },
   rowBody: { flex: 1 },
-  txType: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, textTransform: 'capitalize' },
+  txType: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textTransform: 'capitalize',
+  },
   narrative: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   timestamp: { fontSize: 11, color: colors.textTertiary, marginTop: 3 },
   amount: { fontSize: 14, fontWeight: '700' },

@@ -1,11 +1,11 @@
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 
-const APP_LOCK_ENABLED_KEY = 'stash_app_lock_enabled';
-const APP_LOCK_METHOD_KEY = 'stash_app_lock_method';
-const APP_LOCK_PIN_HASH_KEY = 'stash_app_lock_pin_hash';
-const APP_LOCK_PIN_SALT_KEY = 'stash_app_lock_pin_salt';
-const APP_LOCK_PROMPTED_KEY = 'stash_app_lock_prompted';
+const APP_LOCK_ENABLED_KEY = 'pennyrise_app_lock_enabled';
+const APP_LOCK_METHOD_KEY = 'pennyrise_app_lock_method';
+const APP_LOCK_PIN_HASH_KEY = 'pennyrise_app_lock_pin_hash';
+const APP_LOCK_PIN_SALT_KEY = 'pennyrise_app_lock_pin_salt';
+const APP_LOCK_PROMPTED_KEY = 'pennyrise_app_lock_prompted';
 
 export type AppLockMethod = 'system' | 'pin' | 'both';
 

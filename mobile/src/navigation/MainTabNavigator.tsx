@@ -59,7 +59,11 @@ export default function MainTabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused, size }) => (
-          <TabIcon icon={TAB_ICONS[route.name as keyof MainTabParamList]} focused={focused} size={size} />
+          <TabIcon
+            icon={TAB_ICONS[route.name as keyof MainTabParamList]}
+            focused={focused}
+            size={size}
+          />
         ),
         tabBarActiveTintColor: colors.gold.text,
         tabBarInactiveTintColor: colors.textTertiary,

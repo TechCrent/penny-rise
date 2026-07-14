@@ -183,7 +183,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing['2xl'],
     ...shadows.sm,
   },
-  heading: { ...typography.h1, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
+  heading: {
+    ...typography.h1,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   body: { fontSize: 16, color: colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   backLink: { marginTop: spacing['3xl'], padding: spacing.md },
   backLinkText: { color: colors.gold.text, fontSize: 15, fontWeight: '700' },

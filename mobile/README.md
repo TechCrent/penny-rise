@@ -1,6 +1,6 @@
-# Stash Mobile App
+# PennyRise Mobile App
 
-React Native + Expo (SDK 54) customer app for the Stash savings platform.
+React Native + Expo (SDK 54) customer app for the PennyRise savings platform.
 
 ## Prerequisites
 

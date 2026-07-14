@@ -1,16 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { Icon, PressableScale } from '../../components/ui';
+import { PrimaryButton } from '../../components/PrimaryButton';
+import { AnimatedNumber, Banner, Icon, fadeInUp } from '../../components/ui';
 import { colors, radii, shadows, spacing, typography } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'TransferSuccess'>;
 type Route = RouteProp<RootStackParamList, 'TransferSuccess'>;
+
+function formatGhsFromPesewas(value: number): string {
+  return `GHS ${(value / 100).toFixed(2)}`;
+}
 
 export function TransferSuccessScreen() {
   const navigation = useNavigation<Nav>();
@@ -19,22 +24,24 @@ export function TransferSuccessScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Animated.View entering={FadeIn.duration(400)} style={styles.card}>
-        <View style={styles.iconBadge}>
-          <Icon name="checkmark-circle" size={40} color={colors.status.success} />
-        </View>
-        <Text style={styles.title}>Transfer Sent!</Text>
-        <Text style={styles.subtitle} testID="recipient-label">
-          To {recipientName}
-        </Text>
-
-        <View style={styles.detailBlock}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Amount</Text>
-            <Text style={[styles.detailValue, detailStyles.mono]} testID="amount">
-              GHS {result.amountCedis}
-            </Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={fadeInUp(40)} style={styles.heroSection}>
+          <View style={styles.iconBadge}>
+            <Icon name="checkmark-circle" size={48} color={colors.status.success} />
           </View>
+          <Text style={styles.title}>Transfer Sent!</Text>
+          <Text style={styles.subtitle} testID="recipient-label">
+            To {recipientName}
+          </Text>
+          <AnimatedNumber
+            value={result.amount}
+            formatter={formatGhsFromPesewas}
+            style={styles.heroAmount}
+            testID="amount"
+          />
+        </Animated.View>
+
+        <Animated.View entering={fadeInUp(100)} style={styles.detailCard}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Fee</Text>
             <Text style={[styles.detailValue, detailStyles.mono]} testID="fee">
@@ -47,71 +54,97 @@ export function TransferSuccessScreen() {
               GHS {result.totalDebitedCedis}
             </Text>
           </View>
-          <View style={styles.detailRow}>
+          <View style={[styles.detailRow, styles.detailRowLast]}>
             <Text style={styles.detailLabel}>Reference</Text>
             <Text style={[styles.detailValue, detailStyles.mono]} testID="reference">
               {result.transactionReference}
             </Text>
           </View>
-          {result.freeTransfersRemaining > 0 && (
-            <Text style={styles.freeNote} testID="free-note">
-              {result.freeTransfersRemaining} free transfer
-              {result.freeTransfersRemaining > 1 ? 's' : ''} remaining this month
-            </Text>
-          )}
-        </View>
+        </Animated.View>
 
-        <PressableScale
-          style={styles.doneBtn}
-          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
-          testID="done-btn"
-        >
-          <Text style={styles.doneBtnText}>Done</Text>
-        </PressableScale>
-      </Animated.View>
+        {result.freeTransfersRemaining > 0 && (
+          <Animated.View entering={fadeInUp(130)} style={styles.freeNoteWrap}>
+            <Banner
+              tone="success"
+              message={`${result.freeTransfersRemaining} free transfer${
+                result.freeTransfersRemaining > 1 ? 's' : ''
+              } remaining this month`}
+              testID="free-note"
+            />
+          </Animated.View>
+        )}
+
+        <Animated.View entering={fadeInUp(160)} style={styles.ctaWrap}>
+          <PrimaryButton
+            title="Done"
+            onPress={() => navigation.navigate('Main', { screen: 'Home' })}
+            testID="done-btn"
+          />
+        </Animated.View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.neutral[900],
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: {
+    flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing['2xl'],
+    paddingBottom: spacing['4xl'],
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radii['2xl'],
-    padding: spacing['2xl'],
+  heroSection: {
     alignItems: 'center',
-    width: '100%',
-    ...shadows.xl,
+    marginBottom: spacing.xl,
   },
   iconBadge: {
-    width: 76,
-    height: 76,
+    width: 88,
+    height: 88,
     borderRadius: radii.pill,
     backgroundColor: colors.status.successBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    ...shadows.md,
   },
-  title: { ...typography.h1, fontSize: 26, color: colors.textPrimary, marginBottom: spacing.xs },
-  subtitle: { fontSize: 15, color: colors.textSecondary, marginBottom: spacing['2xl'] },
-  detailBlock: { width: '100%', marginBottom: spacing['2xl'] },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm },
-  detailLabel: { fontSize: 14, color: colors.textSecondary },
-  detailValue: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  freeNote: { fontSize: 12, color: colors.status.success, marginTop: spacing.sm, textAlign: 'center' },
-  doneBtn: {
-    backgroundColor: colors.gold.base,
-    borderRadius: radii.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
+  title: {
+    ...typography.h1,
+    fontSize: 28,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  heroAmount: { ...typography.numericHero, color: colors.gold.text },
+  detailCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
     width: '100%',
+    marginBottom: spacing.lg,
+    ...shadows.sm,
   },
-  doneBtnText: { color: colors.neutral[900], fontSize: 16, fontWeight: '700' },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  detailRowLast: { borderBottomWidth: 0 },
+  detailLabel: { ...typography.caption, color: colors.textSecondary },
+  detailValue: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
+  freeNoteWrap: { width: '100%', marginBottom: spacing.lg },
+  ctaWrap: { width: '100%' },
 });
 
 const detailStyles = StyleSheet.create({

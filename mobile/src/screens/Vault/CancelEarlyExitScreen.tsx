@@ -1,5 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,8 +14,8 @@ import { extractApiError } from '../../api/client';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useVaultDetail } from '../../api/hooks/useVaultDetail';
 import { useCancelEarlyExit } from '../../api/hooks/useEarlyExit';
-import { Icon, PressableScale } from '../../components/ui';
-import { colors, radii, spacing, typography } from '../../theme';
+import { Banner, Icon, PressableScale, ScreenHeader } from '../../components/ui';
+import { colors, radii, spacing } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CancelEarlyExit'>;
 type Route = RouteProp<RootStackParamList, 'CancelEarlyExit'>;
@@ -44,18 +51,8 @@ export default function CancelEarlyExitScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel="Go back"
-        >
-          <Text style={styles.headerBtnIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          Cancel early exit
-        </Text>
-        <View style={styles.headerBtn} />
+      <View style={styles.headerWrap}>
+        <ScreenHeader title="Cancel early exit" onBack={() => navigation.goBack()} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -71,11 +68,7 @@ export default function CancelEarlyExitScreen() {
           </Text>
         </View>
 
-        {serverError && (
-          <View style={styles.serverErrorBox}>
-            <Text style={styles.serverErrorText}>{serverError}</Text>
-          </View>
-        )}
+        {serverError && <Banner tone="error" message={serverError} />}
 
         <PressableScale
           style={[styles.cta, isPending && styles.ctaDisabled]}
@@ -112,29 +105,23 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing['5xl'] },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerWrap: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
   },
-  headerBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  headerTitle: { ...typography.h3, color: colors.textPrimary, flex: 1, textAlign: 'center' },
 
   introCard: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: spacing.xl,
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
     marginBottom: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
   },
   introIconWrap: {
     width: 56,
@@ -154,16 +141,6 @@ const styles = StyleSheet.create({
   },
   introBody: { fontSize: 14, color: colors.textSecondary, lineHeight: 20, textAlign: 'center' },
   introBold: { fontWeight: '700', color: colors.textPrimary },
-
-  serverErrorBox: {
-    backgroundColor: colors.status.errorBg,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.errorBorder,
-  },
-  serverErrorText: { fontSize: 13, color: colors.status.errorText },
 
   cta: {
     backgroundColor: colors.gold.base,

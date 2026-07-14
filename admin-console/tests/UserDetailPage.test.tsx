@@ -28,7 +28,7 @@ const baseDetail: AdminUserDetailResponse = {
   user: {
     id: 'user-1',
     displayName: 'Akua Mensah',
-    email: 'akua@stash.app',
+    email: 'akua@pennyrise.app',
     phone: '+233241234567',
     kycStatus: 'APPROVED',
     accountStatus: 'ACTIVE',

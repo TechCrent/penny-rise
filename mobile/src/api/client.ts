@@ -103,19 +103,19 @@ apiClient.interceptors.response.use(
 
 /**
  * Maps a server error response to a structured error object.
- * All Stash API errors follow the §6.3 envelope:
+ * All PennyRise API errors follow the §6.3 envelope:
  * { error: { code, message, details, correlation_id } }
  */
-export interface StashApiError {
+export interface PennyRiseApiError {
   code: string;
   message: string;
   details?: Record<string, string>;
   correlation_id?: string;
 }
 
-export function extractApiError(error: unknown): StashApiError | null {
+export function extractApiError(error: unknown): PennyRiseApiError | null {
   if (axios.isAxiosError(error) && error.response?.data?.error) {
-    return error.response.data.error as StashApiError;
+    return error.response.data.error as PennyRiseApiError;
   }
   return null;
 }

@@ -167,7 +167,11 @@ export function CreateSusuScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Contribution per round (GHS)</Text>
             <TextInput
-              style={[styles.input, styles.inputMoney, errors.contributionCedis && styles.inputError]}
+              style={[
+                styles.input,
+                styles.inputMoney,
+                errors.contributionCedis && styles.inputError,
+              ]}
               value={form.contributionCedis}
               onChangeText={v => update('contributionCedis', v.replace(/[^0-9.]/g, ''))}
               placeholder="e.g. 200.00"
@@ -273,7 +277,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   progressBg: { height: 6, backgroundColor: colors.neutral[200], borderRadius: radii.pill },
-  progressFill: { height: 6, backgroundColor: colors.gold.base, borderRadius: radii.pill, width: '33%' },
+  progressFill: {
+    height: 6,
+    backgroundColor: colors.gold.base,
+    borderRadius: radii.pill,
+    width: '33%',
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii['2xl'],

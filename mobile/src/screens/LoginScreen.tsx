@@ -139,7 +139,11 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <Animated.View entering={fadeInUp(40)}>
-            <GradientHero showLogo title="Welcome back" subtitle="Sign in to your Stash account." />
+            <GradientHero
+              showLogo
+              title="Welcome back"
+              subtitle="Sign in to your PennyRise account."
+            />
           </Animated.View>
 
           <Animated.View entering={fadeInUp(110)} style={styles.formCard}>

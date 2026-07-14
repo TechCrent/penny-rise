@@ -5,7 +5,7 @@ import type { RootStackParamList } from '../../navigation/RootNavigator';
  * Maps a notification's type + data to a navigation action. Deliberately
  * driven by `type`/`data` (both already in the API response) rather than
  * the backend's `deep_link` column — v0.5-015 dropped `deep_link` from the
- * response DTO, and typed navigation params beat parsing a `stash://...`
+ * response DTO, and typed navigation params beat parsing a `pennyrise://...`
  * URL string anyway.
  *
  * Only types with a real destination screen in RootStackParamList are

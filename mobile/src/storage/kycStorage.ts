@@ -1,8 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 
-const KYC_SUBMISSION_KEY = 'stash_kyc_submission';
-const KYC_APPROVAL_ACKNOWLEDGED_KEY = 'stash_kyc_approval_acknowledged';
-const KYC_UNDER_REVIEW_BANNER_KEY = 'stash_kyc_under_review_banner';
+const KYC_SUBMISSION_KEY = 'pennyrise_kyc_submission';
+const KYC_APPROVAL_ACKNOWLEDGED_KEY = 'pennyrise_kyc_approval_acknowledged';
+const KYC_UNDER_REVIEW_BANNER_KEY = 'pennyrise_kyc_under_review_banner';
 
 export interface StoredKycSubmission {
   submissionId: string;

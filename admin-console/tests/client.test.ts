@@ -13,7 +13,7 @@ describe('adminApiClient request interceptor', () => {
   });
 
   it('attaches both Authorization: Bearer and X-Admin-Token when a token is stored', async () => {
-    sessionStorage.setItem('stash_admin_token', 'test-token-123');
+    sessionStorage.setItem('pennyrise_admin_token', 'test-token-123');
 
     // @ts-expect-error — accessing axios's internal interceptor handler array to invoke it directly
     const fulfilled = adminApiClient.interceptors.request.handlers[0].fulfilled;

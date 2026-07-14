@@ -52,7 +52,7 @@ export default function WelcomeScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.delay(100).duration(500)}>
-          <Text style={styles.title}>Stash</Text>
+          <Text style={styles.title}>PennyRise</Text>
           <Text style={styles.kicker}>SECURE · TARGET</Text>
         </Animated.View>
 
@@ -77,8 +77,8 @@ export default function WelcomeScreen() {
           <View style={styles.offlineBox} testID="welcome-offline-message">
             <Text style={styles.offlineTitle}>No internet connection</Text>
             <Text style={styles.offlineBody}>
-              Stash needs a connection to create an account or sign in. Connect to Wi-Fi or mobile
-              data and try again.
+              PennyRise needs a connection to create an account or sign in. Connect to Wi-Fi or
+              mobile data and try again.
             </Text>
             <PressableScale
               style={styles.offlineRetryButton}

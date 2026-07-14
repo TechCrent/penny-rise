@@ -15,7 +15,7 @@ export async function performTokenRefresh(refreshToken: string): Promise<Refresh
     {
       refresh_token: refreshToken,
       device_id: 'mobile',
-      device_label: 'Stash Mobile',
+      device_label: 'PennyRise Mobile',
     },
     {
       timeout: 15_000,

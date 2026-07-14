@@ -49,7 +49,7 @@ describe('UpgradeScreen', () => {
 
     renderScreen();
 
-    expect(await screen.findByText('Stash Premium')).toBeTruthy();
+    expect(await screen.findByText('PennyRise Premium')).toBeTruthy();
     expect(screen.getByText('GHS 15 / month')).toBeTruthy();
     expect(screen.getByLabelText('Upgrade to Premium')).toBeTruthy();
   });
@@ -131,7 +131,7 @@ describe('UpgradeScreen', () => {
 
     fireEvent.press(await screen.findByLabelText('Upgrade to Premium'));
 
-    expect(await screen.findByText("Couldn't reach Stash")).toBeTruthy();
+    expect(await screen.findByText("Couldn't reach PennyRise")).toBeTruthy();
   });
 
   it('server 5xx error during confirm shows the network error state, distinct from a Paystack failure', async () => {
@@ -150,7 +150,7 @@ describe('UpgradeScreen', () => {
 
     fireEvent.press(await screen.findByLabelText('Upgrade to Premium'));
 
-    expect(await screen.findByText("Couldn't reach Stash")).toBeTruthy();
+    expect(await screen.findByText("Couldn't reach PennyRise")).toBeTruthy();
   });
 
   it('retry from a failure state returns to the benefits screen, not a dead end', async () => {
@@ -159,10 +159,10 @@ describe('UpgradeScreen', () => {
 
     renderScreen();
     fireEvent.press(await screen.findByLabelText('Upgrade to Premium'));
-    await screen.findByText("Couldn't reach Stash");
+    await screen.findByText("Couldn't reach PennyRise");
 
     fireEvent.press(screen.getByLabelText('Retry upgrade'));
 
-    expect(await screen.findByText('Stash Premium')).toBeTruthy();
+    expect(await screen.findByText('PennyRise Premium')).toBeTruthy();
   });
 });

@@ -13,7 +13,7 @@ interface AdminAuthContextValue extends AdminAuthState {
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
-const SESSION_KEY = 'stash_admin_token';
+const SESSION_KEY = 'pennyrise_admin_token';
 
 // Presentation-only decoding (no signature verification — that's the
 // backend's job via @PreAuthorize) so nav links can be hidden for account

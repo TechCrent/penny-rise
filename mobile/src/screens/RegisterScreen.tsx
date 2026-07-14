@@ -120,7 +120,7 @@ export default function RegisterScreen() {
             <GradientHero
               showLogo
               title="Create your account"
-              subtitle="Start saving smarter with Stash."
+              subtitle="Start saving smarter with PennyRise."
             />
           </Animated.View>
 

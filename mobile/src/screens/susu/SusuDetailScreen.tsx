@@ -124,7 +124,12 @@ export function SusuDetailScreen() {
       <ScrollView
         style={styles.screen}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold.base} colors={[colors.gold.base]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={colors.gold.base}
+            colors={[colors.gold.base]}
+          />
         }
         testID="susu-detail-screen"
       >
@@ -155,7 +160,8 @@ export function SusuDetailScreen() {
             </Text>
             <Text style={styles.recipientName}>{round.recipient_display_name}</Text>
             <Text style={styles.potAmount}>
-              GHS <AnimatedNumber value={round.expected_pot_amount} formatter={formatPotCedis} /> pot
+              GHS <AnimatedNumber value={round.expected_pot_amount} formatter={formatPotCedis} />{' '}
+              pot
             </Text>
             {round.scheduled_collection_at && (
               <Text style={styles.dueDate}>Due {formatDate(round.scheduled_collection_at)}</Text>
@@ -300,17 +306,37 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-  errorText: { color: colors.status.error, fontSize: 14, textAlign: 'center', marginBottom: spacing.md },
+  errorText: {
+    color: colors.status.error,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
   retryBtn: { paddingHorizontal: spacing.xl },
 
   pendingBanner: { backgroundColor: colors.status.warningBg, padding: spacing.lg },
   pendingBannerText: { color: colors.status.warningText, fontSize: 13, fontWeight: '500' },
-  joinCode: { color: colors.status.warningText, fontSize: 15, fontWeight: '800', marginTop: spacing.xs },
+  joinCode: {
+    color: colors.status.warningText,
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: spacing.xs,
+  },
 
   roundHero: { padding: spacing.xl },
   completedHero: { backgroundColor: colors.status.successText },
-  roundLabel: { color: colors.textOnDarkMuted, fontSize: 12, fontWeight: '600', marginBottom: spacing.xs },
-  recipientName: { color: colors.textOnDark, fontSize: 22, fontWeight: '800', marginBottom: spacing.xs },
+  roundLabel: {
+    color: colors.textOnDarkMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  recipientName: {
+    color: colors.textOnDark,
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: spacing.xs,
+  },
   potAmount: { color: '#D1FAE5', fontSize: 16, fontWeight: '600', marginBottom: 2 },
   dueDate: { color: colors.textOnDarkMuted, fontSize: 13, marginTop: 2 },
   disbursingBadge: {
@@ -336,7 +362,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  pendingRingNote: { textAlign: 'center', color: colors.textTertiary, fontSize: 12, marginTop: spacing.md },
+  pendingRingNote: {
+    textAlign: 'center',
+    color: colors.textTertiary,
+    fontSize: 12,
+    marginTop: spacing.md,
+  },
 
   contribRow: {
     flexDirection: 'row',
